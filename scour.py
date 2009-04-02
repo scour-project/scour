@@ -19,4 +19,19 @@
 #  along with Carve.  If not, see http://www.gnu.org/licenses/ .
 #
 
-print "Scour is here!"
+# TODOs:
+#
+# 0) Output program name and version
+# 1) Process input arguments -i input.svg -o output.svg
+# 2) Issue errors if any of those arguments are not present (display syntax)
+# 3) Issue error if input.svg does not exist
+# 4) Create the output file (issue error if cannot create)
+# 5) Copy input file text to output file text
+# 
+
+APP = "Scour"
+VER = "0.01"
+COPYRIGHT = "Copyright Jeff Schiller, 2009"
+
+print APP + ' version ' + VER
+print COPYRIGHT
