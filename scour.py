@@ -27,7 +27,11 @@
 # 3) Issue error if input.svg does not exist
 # 4) Create the output file (issue error if cannot create)
 # 5) Copy input file text to output file text
-# 
+# 6) Read input file into memory using an XML library
+# 7) Implement a function that will remove all unreferenced id attributes from
+#    from an SVG document (xlink:href="#someid", fill="url(#someid)", etc)
+# 8) Implement a function that will remove all gradients that have no id
+# 9) Implement command-line options to run the above 2 rules
 
 APP = "Scour"
 VER = "0.01"
