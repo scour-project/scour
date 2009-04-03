@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 #  Scour
 #  Version 0.01
 #
@@ -21,9 +22,6 @@
 
 # TODOs:
 #
-# 0) Output program name and version
-# 1) Process input arguments -i input.svg -o output.svg
-# 2) Issue errors if any of those arguments are not present (display syntax)
 # 3) Issue error if input.svg does not exist
 # 4) Create the output file (issue error if cannot create)
 # 5) Copy input file text to output file text
@@ -33,9 +31,41 @@
 # 8) Implement a function that will remove all gradients that have no id
 # 9) Implement command-line options to run the above 2 rules
 
-APP = "Scour"
-VER = "0.01"
-COPYRIGHT = "Copyright Jeff Schiller, 2009"
+import sys
 
-print APP + ' version ' + VER
+APP = 'Scour'
+VER = '0.01'
+COPYRIGHT = 'Copyright Jeff Schiller, 2009'
+
+print APP + ' ' + VER
 print COPYRIGHT
+
+# parse command-line arguments
+args = sys.argv[1:]
+
+if( len(args) != 4 ):
+	print 'Error!  Invalid number of arguments'
+	quit()
+	
+infile = ''
+outfile = ''
+	
+if( args[0] == '-i' ):
+	infile = args[1]
+elif( args[2] == '-i' ):
+	infile = args[3]
+	
+if( args[0] == '-o' ):
+	outfile = args[1]
+elif(args[2] == '-o' ):
+	outfile = args[3]
+
+if( infile == '' ):
+	print 'Error!  -i argument missing'
+	quit()
+	
+if( outfile == '' ):
+	print 'Error!  -o argument is missing'
+	quit()
+	
+print 'infile=' + infile + ', outfile=' + outfile
