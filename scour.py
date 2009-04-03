@@ -22,8 +22,6 @@
 
 # TODOs:
 #
-# 3) Issue error if input.svg does not exist
-# 4) Create the output file (issue error if cannot create)
 # 5) Copy input file text to output file text
 # 6) Read input file into memory using an XML library
 # 7) Implement a function that will remove all unreferenced id attributes from
@@ -68,4 +66,8 @@ if( outfile == '' ):
 	print 'Error!  -o argument is missing'
 	quit()
 	
-print 'infile=' + infile + ', outfile=' + outfile
+input = open(infile, 'r')
+output = open(outfile, 'w')
+
+input.close()
+output.close()
