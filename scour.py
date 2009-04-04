@@ -22,7 +22,6 @@
 
 # TODOs:
 #
-# 5) Copy input file text to output file text
 # 6) Read input file into memory using an XML library
 # 7) Implement a function that will remove all unreferenced id attributes from
 #    from an SVG document (xlink:href="#someid", fill="url(#someid)", etc)
@@ -47,12 +46,14 @@ if( len(args) != 4 ):
 	
 infile = ''
 outfile = ''
-	
+
+# Get input file	
 if( args[0] == '-i' ):
 	infile = args[1]
 elif( args[2] == '-i' ):
 	infile = args[3]
 	
+# Get output file
 if( args[0] == '-o' ):
 	outfile = args[1]
 elif(args[2] == '-o' ):
@@ -65,9 +66,14 @@ if( infile == '' ):
 if( outfile == '' ):
 	print 'Error!  -o argument is missing'
 	quit()
-	
+
+# Open input file for reading, throws error if file does not exist
 input = open(infile, 'r')
+# Open output file for writing, overwriting file if necessary
 output = open(outfile, 'w')
 
+output.write(input.read());
+
+# Close input and output files
 input.close()
 output.close()
