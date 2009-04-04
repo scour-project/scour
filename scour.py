@@ -22,8 +22,6 @@
 
 # TODOs:
 #
-# 8) Implement a function that will remove all elements in a defs that have no id
-# 9) Repeatedly run the two rules until no attributes or elements have been removed
 # 10) Remove all inkscape/sodipodi namespaced elements
 # 11) Remove all inkscape/sodipodi namespaced attributes
 # 12) Command-line switches to enable/disable each option
@@ -34,7 +32,7 @@ import string
 import xml.dom.minidom
 
 APP = 'scour'
-VER = '0.01'
+VER = '0.02'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 SVGNS = 'http://www.w3.org/2000/svg'
@@ -145,17 +143,41 @@ def findReferencedElements(node,ids={}):
 				findReferencedElements(child, ids)
 	return ids
 
-identifiedElements = findElementsWithId(doc.documentElement)
-referencedIDs = findReferencedElements(doc.documentElement)
-
-# determine which identified elements are never referenced
-# and then remove the unreferenced id attribute
 numIDsRemoved = 0
-for id in identifiedElements.keys():
-	node = identifiedElements[id]
-	if( referencedIDs.has_key(id) == False ):
-		node.removeAttribute('id')
-		numIDsRemoved += 1
+numElemsRemoved = 0
+
+# removes the unreferenced ID attributes
+# returns the number of ID attributes removed
+def removeUnreferencedIDs(referencedIDs, identifiedElements):
+	global numIDsRemoved
+	num = 0;
+	for id in identifiedElements.keys():
+		node = identifiedElements[id]
+		if( referencedIDs.has_key(id) == False ):
+			node.removeAttribute('id')
+			# now remove the element from our list of elements with ids
+			del identifiedElements[id]
+			numIDsRemoved += 1
+			num += 1
+	return num
+
+def vacuumDefs(doc):
+	global numElemsRemoved
+	num = 0
+	defs = doc.documentElement.getElementsByTagNameNS(SVGNS, 'defs')
+	for aDef in defs:
+		for elem in aDef.childNodes:
+			if( elem.nodeType == 1 and elem.getAttribute('id') == '' ):
+				aDef.removeChild(elem)
+				numElemsRemoved += 
+				num += 1
+	return num
+
+bContinueLooping = True
+while bContinueLooping:
+	identifiedElements = findElementsWithId(doc.documentElement)
+	referencedIDs = findReferencedElements(doc.documentElement)
+	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
 
 # output the document
 doc.documentElement.writexml(output)
@@ -167,3 +189,4 @@ output.close()
 # output some statistics if we are not using stdout
 if( bOutputReport):
 	print "Number of unreferenced id attributes removed:", numIDsRemoved 
+	print "Number of unreferenced elements removed:", numElemsRemoved
