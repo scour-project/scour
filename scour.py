@@ -105,6 +105,8 @@ def findElementsWithId(node,elems={}):
 # returns the number of times an id is referenced
 # currently looks at fill, stroke and xlink:href attributes
 def findReferencedElements(node,ids={}):
+	# TODO: error here (ids is not cleared upon next invocation), the
+	# input argument ids is clunky here (see below how it is called)
 	href = node.getAttributeNS(XLINKNS,'href')
 	
 	# if xlink:href is set, then grab the id
@@ -169,14 +171,14 @@ def vacuumDefs(doc):
 		for elem in aDef.childNodes:
 			if( elem.nodeType == 1 and elem.getAttribute('id') == '' ):
 				aDef.removeChild(elem)
-				numElemsRemoved += 
+				numElemsRemoved += 1
 				num += 1
 	return num
 
 bContinueLooping = True
 while bContinueLooping:
-	identifiedElements = findElementsWithId(doc.documentElement)
-	referencedIDs = findReferencedElements(doc.documentElement)
+	identifiedElements = findElementsWithId(doc.documentElement, {})
+	referencedIDs = findReferencedElements(doc.documentElement, {})
 	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
 
 # output the document
