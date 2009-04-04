@@ -1,0 +1,9 @@
+<foo xmlns:xlink="http://www.w3.org/1999/xlink">
+  <bar id="johansen" />
+  <baz xlink:href="#johansen"/>
+  <bar id="scarlett">
+  	<fudge id="f1" fill="url(#scarlett)"/>
+  </bar>
+  
+  <fudge id="f2" stroke="url(#scarlett)"/>
+</foo>

@@ -22,38 +22,50 @@
 
 # TODOs:
 #
-# 4) Accept file from stdin if no -i arg present
-# 5) Write file to stdout if no -o present
-# 6) Read input file into memory using an XML library
 # 7) Implement a function that will remove all unreferenced id attributes from
 #    from an SVG document (xlink:href="#someid", fill="url(#someid)", etc)
 # 8) Implement a function that will remove all gradients that have no id
 # 9) Implement command-line options to run the above 2 rules
 
 import sys
+import string
+import xml.dom.minidom
 
-APP = 'Scour'
+APP = 'scour'
 VER = '0.01'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
-print APP , VER
-print COPYRIGHT
+SVGNS = 'http://www.w3.org/2000/svg'
+XLINKNS = 'http://www.w3.org/1999/xlink'
+
+def printHeader():
+	print APP , VER
+	print COPYRIGHT
+
+def printSyntaxAndQuit():
+	printHeader()
+	print 'usage: scour.py [-i input.svg] [-o output.svg]\n'
+	print 'If the input file is not specified, stdin is used.'
+	print 'If the output file is not specified, stdout is used.'
+	quit()	
 
 # parse command-line arguments
 args = sys.argv[1:]
 
+# by default the input and output are the standard streams
 input = sys.stdin
 output = sys.stdout
 
+# if -i or -o is supplied, switch the stream to the file
 if( len(args) == 2):
 	if( args[0] == '-i' ):
 		input = open(args[1], 'r')
 	elif( args[0] == '-o' ):
 		output = open(args[1], 'w')
 	else:
-		sys.stderr.write('Invalid syntax\n')
-		quit()
+		printSyntaxAndQuit()
 
+# if both -o and -o are supplied, switch streams to the files
 elif( len(args) == 4 ):
 	if( args[0] == '-i' and args[2] == '-o' ):
 		input = open(args[1], 'r')
@@ -62,16 +74,94 @@ elif( len(args) == 4 ):
 		output = open(args[1], 'w')
 		input = open(args[3], 'r')
 	else:
-		sys.stderr.write('Invalid syntax\n')
-		quit()
-	
-elif( len(args) != 0 ):
-	sys.stderr.write('Invalid syntax\n')
-	quit()
+		printSyntaxAndQuit()
 
-# simply write the input to the output for now
-output.write(input.read());
+# else invalid syntax
+elif( len(args) != 0 ):
+	printSyntaxAndQuit()
+
+# if we are not sending to stdout, then print out app information
+bOutputReport = False
+if( output != sys.stdout ):
+	bOutputReport = True
+	printHeader()
+
+# build DOM in memory
+doc = xml.dom.minidom.parse(input)
+
+# returns all elements with id attributes
+def findElementsWithId(node,elems={}):
+	id = node.getAttribute('id')
+	if( id != '' ):
+		elems[id] = node
+	if( node.hasChildNodes() ):
+		for child in node.childNodes:
+			# from http://www.w3.org/TR/DOM-Level-2-Core/idl-definitions.html
+			# we are only really interested in nodes of type Element (1)
+			if( child.nodeType == 1 ):
+				findElementsWithId(child, elems)
+	return elems
+
+# returns the number of times an id is referenced
+# currently looks at fill, stroke and xlink:href attributes
+def findReferencedElements(node,ids={}):
+	href = node.getAttributeNS(XLINKNS,'href')
+	
+	# if xlink:href is set, then grab the id
+	if( href != '' and len(href) > 1 and href[0] == '#'):
+		# we remove the hash mark from the beginning of the id
+		id = href[1:]
+		if( ids.has_key(id) ):
+			ids[id] += 1
+		else:
+			ids[id] = 1
+
+	# now get all style properties and the fill, stroke, filter attributes
+	styles = string.split(node.getAttribute('style'),';')
+	# TODO: can i reuse this list below in the if/or check?
+	for attr in ['fill', 'stroke', 'filter', 'clip-path', 'mask', 
+				 'marker-start', 'marker-end', 'marker-mid']:
+		styles.append( string.join([attr,node.getAttribute(attr)],':') )
+			
+	for style in styles:
+		propval = string.split(style,':')
+		if(len(propval) == 2):
+			prop = propval[0].strip()
+			val = propval[1].strip()
+			if( (prop=='fill' or prop=='stroke' or prop=='filter' or prop=='clip-path' 
+				 or prop=='mask' or prop=='marker-start' or prop=='marker-end' or prop=='marker-mid') 
+				 and val != '' and val[0:5] == 'url(#' ):
+				id = val[5:val.find(')')]
+				if( ids.has_key(id) ):
+					ids[id] += 1
+				else:
+					ids[id] = 1
+					
+	if( node.hasChildNodes() ):
+		for child in node.childNodes:
+			if( child.nodeType == 1 ):
+				findReferencedElements(child, ids)
+	return ids
+
+identifiedElements = findElementsWithId(doc.documentElement)
+referencedIDs = findReferencedElements(doc.documentElement)
+
+# determine which identified elements are never referenced
+# and then remove the unreferenced id attribute
+numIDsRemoved = 0
+for id in identifiedElements.keys():
+	node = identifiedElements[id]
+	if( referencedIDs.has_key(id) == False ):
+		node.removeAttribute('id')
+		numIDsRemoved += 1
+
+# output the document
+doc.documentElement.writexml(output)
 
 # Close input and output files
 input.close()
 output.close()
+
+# output some statistics if we are not using stdout
+if( bOutputReport):
+	print "Number of unreferenced id attributes removed:", numIDsRemoved 
