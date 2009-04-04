@@ -22,10 +22,12 @@
 
 # TODOs:
 #
-# 7) Implement a function that will remove all unreferenced id attributes from
-#    from an SVG document (xlink:href="#someid", fill="url(#someid)", etc)
-# 8) Implement a function that will remove all gradients that have no id
-# 9) Implement command-line options to run the above 2 rules
+# 8) Implement a function that will remove all elements in a defs that have no id
+# 9) Repeatedly run the two rules until no attributes or elements have been removed
+# 10) Remove all inkscape/sodipodi namespaced elements
+# 11) Remove all inkscape/sodipodi namespaced attributes
+# 12) Command-line switches to enable/disable each option
+# 13) Look into automating the testing (how to do reftest?)
 
 import sys
 import string
