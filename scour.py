@@ -22,6 +22,8 @@
 
 # TODOs:
 #
+# 4) Accept file from stdin if no -i arg present
+# 5) Write file to stdout if no -o present
 # 6) Read input file into memory using an XML library
 # 7) Implement a function that will remove all unreferenced id attributes from
 #    from an SVG document (xlink:href="#someid", fill="url(#someid)", etc)
@@ -34,44 +36,40 @@ APP = 'Scour'
 VER = '0.01'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
-print APP + ' ' + VER
+print APP , VER
 print COPYRIGHT
 
 # parse command-line arguments
 args = sys.argv[1:]
 
-if( len(args) != 4 ):
-	print 'Error!  Invalid number of arguments'
-	quit()
+input = sys.stdin
+output = sys.stdout
+
+if( len(args) == 2):
+	if( args[0] == '-i' ):
+		input = open(args[1], 'r')
+	elif( args[0] == '-o' ):
+		output = open(args[1], 'w')
+	else:
+		sys.stderr.write('Invalid syntax\n')
+		quit()
+
+elif( len(args) == 4 ):
+	if( args[0] == '-i' and args[2] == '-o' ):
+		input = open(args[1], 'r')
+		output = open(args[3], 'w')
+	elif( args[0] == '-o' and args[2] == 'i' ):
+		output = open(args[1], 'w')
+		input = open(args[3], 'r')
+	else:
+		sys.stderr.write('Invalid syntax\n')
+		quit()
 	
-infile = ''
-outfile = ''
-
-# Get input file	
-if( args[0] == '-i' ):
-	infile = args[1]
-elif( args[2] == '-i' ):
-	infile = args[3]
-	
-# Get output file
-if( args[0] == '-o' ):
-	outfile = args[1]
-elif(args[2] == '-o' ):
-	outfile = args[3]
-
-if( infile == '' ):
-	print 'Error!  -i argument missing'
-	quit()
-	
-if( outfile == '' ):
-	print 'Error!  -o argument is missing'
+elif( len(args) != 0 ):
+	sys.stderr.write('Invalid syntax\n')
 	quit()
 
-# Open input file for reading, throws error if file does not exist
-input = open(infile, 'r')
-# Open output file for writing, overwriting file if necessary
-output = open(outfile, 'w')
-
+# simply write the input to the output for now
 output.write(input.read());
 
 # Close input and output files
