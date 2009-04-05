@@ -35,8 +35,11 @@ APP = 'scour'
 VER = '0.02'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
-SVGNS = 'http://www.w3.org/2000/svg'
-XLINKNS = 'http://www.w3.org/1999/xlink'
+NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
+		'XLINK': 	'http://www.w3.org/1999/xlink', 
+		'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
+		'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape'
+		}
 
 def printHeader():
 	print APP , VER
@@ -57,32 +60,32 @@ input = sys.stdin
 output = sys.stdout
 
 # if -i or -o is supplied, switch the stream to the file
-if( len(args) == 2):
-	if( args[0] == '-i' ):
+if len(args) == 2:
+	if args[0] == '-i' :
 		input = open(args[1], 'r')
-	elif( args[0] == '-o' ):
+	elif args[0] == '-o' :
 		output = open(args[1], 'w')
 	else:
 		printSyntaxAndQuit()
 
 # if both -o and -o are supplied, switch streams to the files
-elif( len(args) == 4 ):
-	if( args[0] == '-i' and args[2] == '-o' ):
+elif len(args) == 4 :
+	if args[0] == '-i' and args[2] == '-o' :
 		input = open(args[1], 'r')
 		output = open(args[3], 'w')
-	elif( args[0] == '-o' and args[2] == 'i' ):
+	elif args[0] == '-o' and args[2] == 'i' :
 		output = open(args[1], 'w')
 		input = open(args[3], 'r')
 	else:
 		printSyntaxAndQuit()
 
 # else invalid syntax
-elif( len(args) != 0 ):
+elif len(args) != 0 :
 	printSyntaxAndQuit()
 
 # if we are not sending to stdout, then print out app information
 bOutputReport = False
-if( output != sys.stdout ):
+if output != sys.stdout :
 	bOutputReport = True
 	printHeader()
 
@@ -92,13 +95,13 @@ doc = xml.dom.minidom.parse(input)
 # returns all elements with id attributes
 def findElementsWithId(node,elems={}):
 	id = node.getAttribute('id')
-	if( id != '' ):
+	if id != '' :
 		elems[id] = node
-	if( node.hasChildNodes() ):
+	if node.hasChildNodes() :
 		for child in node.childNodes:
 			# from http://www.w3.org/TR/DOM-Level-2-Core/idl-definitions.html
 			# we are only really interested in nodes of type Element (1)
-			if( child.nodeType == 1 ):
+			if child.nodeType == 1 :
 				findElementsWithId(child, elems)
 	return elems
 
@@ -107,13 +110,13 @@ def findElementsWithId(node,elems={}):
 def findReferencedElements(node,ids={}):
 	# TODO: error here (ids is not cleared upon next invocation), the
 	# input argument ids is clunky here (see below how it is called)
-	href = node.getAttributeNS(XLINKNS,'href')
+	href = node.getAttributeNS(NS['XLINK'],'href')
 	
 	# if xlink:href is set, then grab the id
-	if( href != '' and len(href) > 1 and href[0] == '#'):
+	if href != '' and len(href) > 1 and href[0] == '#':
 		# we remove the hash mark from the beginning of the id
 		id = href[1:]
-		if( ids.has_key(id) ):
+		if ids.has_key(id) :
 			ids[id] += 1
 		else:
 			ids[id] = 1
@@ -128,24 +131,25 @@ def findReferencedElements(node,ids={}):
 			
 	for style in styles:
 		propval = string.split(style,':')
-		if(len(propval) == 2):
+		if len(propval) == 2 :
 			prop = propval[0].strip()
 			val = propval[1].strip()
-			if( prop in referencingProps and val != '' and val[0:5] == 'url(#' ):
+			if prop in referencingProps and val != '' and val[0:5] == 'url(#' :
 				id = val[5:val.find(')')]
-				if( ids.has_key(id) ):
+				if ids.has_key(id) :
 					ids[id] += 1
 				else:
 					ids[id] = 1
 					
-	if( node.hasChildNodes() ):
+	if node.hasChildNodes() :
 		for child in node.childNodes:
-			if( child.nodeType == 1 ):
+			if child.nodeType == 1 :
 				findReferencedElements(child, ids)
 	return ids
 
 numIDsRemoved = 0
 numElemsRemoved = 0
+numAttrsRemoved = 0
 
 # removes the unreferenced ID attributes
 # returns the number of ID attributes removed
@@ -154,7 +158,7 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 	num = 0;
 	for id in identifiedElements.keys():
 		node = identifiedElements[id]
-		if( referencedIDs.has_key(id) == False ):
+		if referencedIDs.has_key(id) == False :
 			node.removeAttribute('id')
 			# now remove the element from our list of elements with ids
 			# not necessary if we're calculating the array again every time
@@ -166,14 +170,59 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 def vacuumDefs(doc):
 	global numElemsRemoved
 	num = 0
-	defs = doc.documentElement.getElementsByTagNameNS(SVGNS, 'defs')
+	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
 	for aDef in defs:
 		for elem in aDef.childNodes:
-			if( elem.nodeType == 1 and elem.getAttribute('id') == '' ):
+			if elem.nodeType == 1 and elem.getAttribute('id') == '' :
 				aDef.removeChild(elem)
 				numElemsRemoved += 1
 				num += 1
 	return num
+
+# TODO: check namespaceURI and remove
+# TODO: iterate through children
+def removeNamespacedAttributes(node, namespaces):
+	global numAttrsRemoved
+	num = 0
+	if node.nodeType == 1 :
+		# remove all namespace'd attributes from this element
+		attrList = node.attributes
+		for attrNum in range(attrList.length):
+			attr = attrList.item(attrNum)
+			if attr != None and attr.namespaceURI in namespaces:
+				num += 1
+				numAttrsRemoved += 1
+				node.removeAttribute(attr.nodeName)
+		
+		# now recurse for children
+		for child in node.childNodes:
+			removeNamespacedAttributes(child, namespaces)
+	return num
+	
+def removeNamespacedElements(node, namespaces):
+	global numElemsRemoved
+	num = 0
+	if node.nodeType == 1 :
+		# remove all namespace'd child nodes from this element
+		childList = node.childNodes
+		for child in childList:
+			if child != None and child.namespaceURI in namespaces:
+				num += 1
+				numElemsRemoved += 1
+				node.removeChild(child)
+		
+		# now recurse for children
+		for child in node.childNodes:
+			removeNamespacedElements(child, namespaces)
+	return num
+
+# for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
+# on the first pass, so we do it multiple times
+while removeNamespacedElements( doc.documentElement, [ NS['SODIPODI'], NS['INKSCAPE'] ] ) > 0 :
+	pass
+	
+while removeNamespacedAttributes( doc.documentElement, [ NS['SODIPODI'], NS['INKSCAPE'] ] ) > 0 :
+	pass
 
 bContinueLooping = True
 while bContinueLooping:
@@ -191,4 +240,5 @@ output.close()
 # output some statistics if we are not using stdout
 if( bOutputReport):
 	print "Number of unreferenced id attributes removed:", numIDsRemoved 
-	print "Number of unreferenced elements removed:", numElemsRemoved
+	print "Number of elements removed:", numElemsRemoved
+	print "Number of attributes removed:", numAttrsRemoved
