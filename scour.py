@@ -121,8 +121,9 @@ def findReferencedElements(node,ids={}):
 	# now get all style properties and the fill, stroke, filter attributes
 	styles = string.split(node.getAttribute('style'),';')
 	# TODO: can i reuse this list below in the if/or check?
-	for attr in ['fill', 'stroke', 'filter', 'clip-path', 'mask', 
-				 'marker-start', 'marker-end', 'marker-mid']:
+	referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
+						'marker-end', 'marker-mid']
+	for attr in referencingProps:
 		styles.append( string.join([attr,node.getAttribute(attr)],':') )
 			
 	for style in styles:
@@ -130,9 +131,7 @@ def findReferencedElements(node,ids={}):
 		if(len(propval) == 2):
 			prop = propval[0].strip()
 			val = propval[1].strip()
-			if( (prop=='fill' or prop=='stroke' or prop=='filter' or prop=='clip-path' 
-				 or prop=='mask' or prop=='marker-start' or prop=='marker-end' or prop=='marker-mid') 
-				 and val != '' and val[0:5] == 'url(#' ):
+			if( prop in referencingProps and val != '' and val[0:5] == 'url(#' ):
 				id = val[5:val.find(')')]
 				if( ids.has_key(id) ):
 					ids[id] += 1
@@ -158,7 +157,8 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 		if( referencedIDs.has_key(id) == False ):
 			node.removeAttribute('id')
 			# now remove the element from our list of elements with ids
-			del identifiedElements[id]
+			# not necessary if we're calculating the array again every time
+#			del identifiedElements[id]
 			numIDsRemoved += 1
 			num += 1
 	return num
