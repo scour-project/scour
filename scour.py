@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 #  Scour
-#  Version 0.01
+#  Version 0.03
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -17,7 +17,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Carve.  If not, see http://www.gnu.org/licenses/ .
+#  along with Scour.  If not, see http://www.gnu.org/licenses/ .
 #
 
 import sys
@@ -208,7 +208,6 @@ def removeNamespacedElements(node, namespaces):
 	
 def repairStyle(node):
 	num = 0
-
 	if node.nodeType == 1 :	
 		# get all style properties and stuff them into a dictionary
 		styleMap = { }
@@ -227,6 +226,11 @@ def repairStyle(node):
 					styleMap[prop] = chunk[0] + ')'
 					num += 1
 
+		# TODO: here is where we can weed out unnecessary styles like:
+		#  opacity:1
+		#  if stroke:none, then remove all stroke properties (stroke-width, etc)
+		#  TODO: what else?
+					
 		# sew our style back together
 		fixedStyle = ''
 		for prop in styleMap.keys() :
@@ -263,7 +267,7 @@ input.close()
 output.close()
 
 # output some statistics if we are not using stdout
-if( bOutputReport):
+if bOutputReport :
 	print "Number of unreferenced id attributes removed:", numIDsRemoved 
 	print "Number of elements removed:", numElemsRemoved
 	print "Number of attributes removed:", numAttrsRemoved
