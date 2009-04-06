@@ -20,6 +20,8 @@
 #  along with Scour.  If not, see http://www.gnu.org/licenses/ .
 #
 
+# Notes:
+
 # Path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
 # (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
 
@@ -30,6 +32,7 @@
 # - Remove Adobe namespace elements, attributes
 # _ Remove inkscape/sodipodi/adobe namespace declarations
 # - Convert style to attributes
+# - Properly nest stuff inside an object so that the module namespace isn't polluted?
 
 import sys
 import string
@@ -255,10 +258,12 @@ def repairStyle(node):
 			del styleMap['stop-opacity']
 		
 		#  fill-opacity: 1
+		#  TODO: This is actually a problem is a parent element has a fill-opacity != 1
 		if styleMap.has_key('fill-opacity') and string.atof(styleMap['fill-opacity']) == 1.0 :
 			del styleMap['fill-opacity']
 		
 		#  stroke-opacity: 1
+		#  TODO: This is actually a problem is a parent element has a stroke-opacity != 1
 		if styleMap.has_key('stroke-opacity') and string.atof(styleMap['stroke-opacity']) == 1.0 :
 			del styleMap['stroke-opacity']
 		
@@ -282,10 +287,11 @@ def repairStyle(node):
 # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
 # on the first pass, so we do it multiple times
 # does it have to do with removal of children affecting the childlist?
-while removeNamespacedElements( doc.documentElement, [ NS['SODIPODI'], NS['INKSCAPE'] ] ) > 0 :
+unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'] ] 
+while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
 	pass
 	
-while removeNamespacedAttributes( doc.documentElement, [ NS['SODIPODI'], NS['INKSCAPE'] ] ) > 0 :
+while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
 	pass
 
 bContinueLooping = True
