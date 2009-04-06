@@ -20,6 +20,17 @@
 #  along with Scour.  If not, see http://www.gnu.org/licenses/ .
 #
 
+# Path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
+# (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
+
+# Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
+
+# Next Up:
+# - Remove empty defs/elements elements (no children and no attributes)
+# - Remove Adobe namespace elements, attributes
+# _ Remove inkscape/sodipodi/adobe namespace declarations
+# - Convert style to attributes
+
 import sys
 import string
 import xml.dom.minidom
