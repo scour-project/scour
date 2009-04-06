@@ -20,19 +20,12 @@
 #  along with Carve.  If not, see http://www.gnu.org/licenses/ .
 #
 
-# TODOs:
-#
-# 10) Remove all inkscape/sodipodi namespaced elements
-# 11) Remove all inkscape/sodipodi namespaced attributes
-# 12) Command-line switches to enable/disable each option
-# 13) Look into automating the testing (how to do reftest?)
-
 import sys
 import string
 import xml.dom.minidom
 
 APP = 'scour'
-VER = '0.02'
+VER = '0.03'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -123,7 +116,6 @@ def findReferencedElements(node,ids={}):
 
 	# now get all style properties and the fill, stroke, filter attributes
 	styles = string.split(node.getAttribute('style'),';')
-	# TODO: can i reuse this list below in the if/or check?
 	referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
 						'marker-end', 'marker-mid']
 	for attr in referencingProps:
@@ -179,8 +171,6 @@ def vacuumDefs(doc):
 				num += 1
 	return num
 
-# TODO: check namespaceURI and remove
-# TODO: iterate through children
 def removeNamespacedAttributes(node, namespaces):
 	global numAttrsRemoved
 	num = 0
@@ -215,9 +205,42 @@ def removeNamespacedElements(node, namespaces):
 		for child in node.childNodes:
 			removeNamespacedElements(child, namespaces)
 	return num
+	
+def repairStyle(node):
+	num = 0
+
+	if node.nodeType == 1 :	
+		# get all style properties and stuff them into a dictionary
+		styleMap = { }
+		rawStyles = string.split(node.getAttribute('style'),';')
+		for style in rawStyles:
+			propval = string.split(style,':')
+			if len(propval) == 2 :
+				styleMap[propval[0].strip()] = propval[1].strip()
+
+		# I've seen this enough to know that I need to correct it:
+		# fill: url(#linearGradient4918) rgb(0, 0, 0);
+		for prop in ['fill', 'stroke'] :
+			if styleMap.has_key(prop) :
+				chunk = styleMap[prop].split(') ')
+				if len(chunk) == 2 and chunk[0][:5] == 'url(#' and chunk[1] == 'rgb(0, 0, 0)' :
+					styleMap[prop] = chunk[0] + ')'
+					num += 1
+
+		# sew our style back together
+		fixedStyle = ''
+		for prop in styleMap.keys() :
+			fixedStyle += prop + ':' + styleMap[prop] + ';'
+		node.setAttribute( 'style', fixedStyle )
+		
+		for child in node.childNodes :
+			num += repairStyle(child)
+			
+	return num
 
 # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
 # on the first pass, so we do it multiple times
+# does it have to do with removal of children affecting the childlist?
 while removeNamespacedElements( doc.documentElement, [ NS['SODIPODI'], NS['INKSCAPE'] ] ) > 0 :
 	pass
 	
@@ -229,6 +252,8 @@ while bContinueLooping:
 	identifiedElements = findElementsWithId(doc.documentElement, {})
 	referencedIDs = findReferencedElements(doc.documentElement, {})
 	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
+
+numStylePropsFixed = repairStyle(doc.documentElement)
 
 # output the document
 doc.documentElement.writexml(output)
@@ -242,3 +267,4 @@ if( bOutputReport):
 	print "Number of unreferenced id attributes removed:", numIDsRemoved 
 	print "Number of elements removed:", numElemsRemoved
 	print "Number of attributes removed:", numAttrsRemoved
+	print "Number of style properties fixed:", numStylePropsFixed
