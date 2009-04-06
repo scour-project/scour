@@ -208,7 +208,7 @@ def removeNamespacedElements(node, namespaces):
 	
 def repairStyle(node):
 	num = 0
-	if node.nodeType == 1 :	
+	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
 		# get all style properties and stuff them into a dictionary
 		styleMap = { }
 		rawStyles = string.split(node.getAttribute('style'),';')
@@ -226,19 +226,45 @@ def repairStyle(node):
 					styleMap[prop] = chunk[0] + ')'
 					num += 1
 
-		# TODO: here is where we can weed out unnecessary styles like:
+		# Here is where we can weed out unnecessary styles like:
 		#  opacity:1
+		if styleMap.has_key('opacity') and string.atof(styleMap['opacity']) == 1.0 :
+			del styleMap['opacity']
+			
 		#  if stroke:none, then remove all stroke properties (stroke-width, etc)
+		if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
+			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit', 
+					'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
+				if styleMap.has_key(strokestyle) :
+					del styleMap[strokestyle]
+					num += 1
+
+		#  stop-opacity: 1
+		if styleMap.has_key('stop-opacity') and string.atof(styleMap['stop-opacity']) == 1.0 :
+			del styleMap['stop-opacity']
+		
+		#  fill-opacity: 1
+		if styleMap.has_key('fill-opacity') and string.atof(styleMap['fill-opacity']) == 1.0 :
+			del styleMap['fill-opacity']
+		
+		#  stroke-opacity: 1
+		if styleMap.has_key('stroke-opacity') and string.atof(styleMap['stroke-opacity']) == 1.0 :
+			del styleMap['stroke-opacity']
+		
 		#  TODO: what else?
 					
 		# sew our style back together
 		fixedStyle = ''
 		for prop in styleMap.keys() :
 			fixedStyle += prop + ':' + styleMap[prop] + ';'
-		node.setAttribute( 'style', fixedStyle )
+			
+		if fixedStyle != '' :
+			node.setAttribute('style', fixedStyle)
+		else:
+			node.removeAttribute('style')
 		
-		for child in node.childNodes :
-			num += repairStyle(child)
+	for child in node.childNodes :
+		num += repairStyle(child)
 			
 	return num
 
