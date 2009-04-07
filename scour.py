@@ -26,7 +26,6 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 
 # Next Up:
-# - Remove empty defs/elements elements (no children and no attributes)
 # - Remove Adobe namespace elements, attributes
 # _ Remove inkscape/sodipodi/adobe namespace declarations
 # - Convert style to attributes
@@ -43,7 +42,10 @@ COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
 		'XLINK': 	'http://www.w3.org/1999/xlink', 
 		'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
-		'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape'
+		'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape',
+		'ADOBE_ILLUSTRATOR': 'http://ns.adobe.com/AdobeIllustrator/10.0/',
+		'ADOBE_GRAPHS': 'http://ns.adobe.com/Graphs/1.0/',
+		'ADOBE_SVG_VIEWER': 'http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/'
 		}
 
 def printHeader():
@@ -285,7 +287,8 @@ def repairStyle(node):
 # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
 # on the first pass, so we do it multiple times
 # does it have to do with removal of children affecting the childlist?
-unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'] ] 
+unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
+				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'] ] 
 while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
 	pass
 	
@@ -308,7 +311,6 @@ for tag in ['defs', 'metadata', 'g'] :
 		removeElem = not elem.hasChildNodes()
 		if removeElem == False :
 			for child in elem.childNodes :
-				print child.nodeType,
 				if child.nodeType in [1, 4, 8] :
 					break
 			else:
