@@ -26,8 +26,9 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 
 # Next Up:
-# - Remove Adobe namespace elements, attributes
-# _ Remove inkscape/sodipodi/adobe namespace declarations
+# + Remove empty defs, metadata, g
+# + Remove Adobe namespace'd elements and attributes
+# + Remove inkscape/sodipodi/adobe namespace declarations (xmlns:...)
 # - Convert style to attributes
 # - Properly nest stuff inside an object so that the module namespace isn't polluted?
 
@@ -36,7 +37,7 @@ import string
 import xml.dom.minidom
 
 APP = 'scour'
-VER = '0.03'
+VER = '0.04'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -45,7 +46,10 @@ NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
 		'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape',
 		'ADOBE_ILLUSTRATOR': 'http://ns.adobe.com/AdobeIllustrator/10.0/',
 		'ADOBE_GRAPHS': 'http://ns.adobe.com/Graphs/1.0/',
-		'ADOBE_SVG_VIEWER': 'http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/'
+		'ADOBE_SVG_VIEWER': 'http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/',
+		'ADOBE_VARIABLES': 'http://ns.adobe.com/Variables/1.0/',
+		'ADOBE_SFW': 'http://ns.adobe.com/SaveForWeb/1.0/',
+		'ADOBE_EXTENSIBILITY': 'http://ns.adobe.com/Extensibility/1.0/'
 		}
 
 def printHeader():
@@ -288,12 +292,24 @@ def repairStyle(node):
 # on the first pass, so we do it multiple times
 # does it have to do with removal of children affecting the childlist?
 unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
-				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'] ] 
+				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
+				NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'] ] 
 while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
 	pass
 	
 while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
 	pass
+	
+# remove the xmlns: declarations now
+xmlnsDeclsToRemove = []
+attrList = doc.documentElement.attributes
+for num in range(attrList.length) :
+	if attrList.item(num).nodeValue in unwanted_ns :
+		xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
+
+for attr in xmlnsDeclsToRemove :
+	doc.documentElement.removeAttribute(attr)
+	numAttrsRemoved += 1
 
 bContinueLooping = True
 while bContinueLooping:
