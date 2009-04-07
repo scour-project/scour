@@ -26,18 +26,15 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 
 # Next Up:
-# + Remove empty defs, metadata, g
-# + Remove Adobe namespace'd elements and attributes
-# + Remove inkscape/sodipodi/adobe namespace declarations (xmlns:...)
-# - Convert style to attributes
-# - Properly nest stuff inside an object so that the module namespace isn't polluted?
+# - Convert style to recognized XML attributes
+# - Convert all colors to #RRGGBB format
 
 import sys
 import string
 import xml.dom.minidom
 
 APP = 'scour'
-VER = '0.04'
+VER = '0.05'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -52,6 +49,10 @@ NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
 		'ADOBE_EXTENSIBILITY': 'http://ns.adobe.com/Extensibility/1.0/'
 		}
 
+unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
+				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
+				NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'] ] 
+
 def printHeader():
 	print APP , VER
 	print COPYRIGHT
@@ -62,46 +63,6 @@ def printSyntaxAndQuit():
 	print 'If the input file is not specified, stdin is used.'
 	print 'If the output file is not specified, stdout is used.'
 	quit()	
-
-# parse command-line arguments
-args = sys.argv[1:]
-
-# by default the input and output are the standard streams
-input = sys.stdin
-output = sys.stdout
-
-# if -i or -o is supplied, switch the stream to the file
-if len(args) == 2:
-	if args[0] == '-i' :
-		input = open(args[1], 'r')
-	elif args[0] == '-o' :
-		output = open(args[1], 'w')
-	else:
-		printSyntaxAndQuit()
-
-# if both -o and -o are supplied, switch streams to the files
-elif len(args) == 4 :
-	if args[0] == '-i' and args[2] == '-o' :
-		input = open(args[1], 'r')
-		output = open(args[3], 'w')
-	elif args[0] == '-o' and args[2] == 'i' :
-		output = open(args[1], 'w')
-		input = open(args[3], 'r')
-	else:
-		printSyntaxAndQuit()
-
-# else invalid syntax
-elif len(args) != 0 :
-	printSyntaxAndQuit()
-
-# if we are not sending to stdout, then print out app information
-bOutputReport = False
-if output != sys.stdout :
-	bOutputReport = True
-	printHeader()
-
-# build DOM in memory
-doc = xml.dom.minidom.parse(input)
 
 # returns all elements with id attributes
 def findElementsWithId(node,elems={}):
@@ -288,15 +249,51 @@ def repairStyle(node):
 			
 	return num
 
+# parse command-line arguments
+args = sys.argv[1:]
+
+# by default the input and output are the standard streams
+input = sys.stdin
+output = sys.stdout
+
+# if -i or -o is supplied, switch the stream to the file
+if len(args) == 2:
+	if args[0] == '-i' :
+		input = open(args[1], 'r')
+	elif args[0] == '-o' :
+		output = open(args[1], 'w')
+	else:
+		printSyntaxAndQuit()
+
+# if both -o and -o are supplied, switch streams to the files
+elif len(args) == 4 :
+	if args[0] == '-i' and args[2] == '-o' :
+		input = open(args[1], 'r')
+		output = open(args[3], 'w')
+	elif args[0] == '-o' and args[2] == 'i' :
+		output = open(args[1], 'w')
+		input = open(args[3], 'r')
+	else:
+		printSyntaxAndQuit()
+
+# else invalid syntax
+elif len(args) != 0 :
+	printSyntaxAndQuit()
+
+# if we are not sending to stdout, then print out app information
+bOutputReport = False
+if output != sys.stdout :
+	bOutputReport = True
+	printHeader()
+
+# build DOM in memory
+doc = xml.dom.minidom.parse(input)
+
 # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
 # on the first pass, so we do it multiple times
 # does it have to do with removal of children affecting the childlist?
-unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
-				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
-				NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'] ] 
 while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
-	pass
-	
+	pass	
 while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
 	pass
 	
