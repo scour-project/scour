@@ -300,6 +300,23 @@ while bContinueLooping:
 
 numStylePropsFixed = repairStyle(doc.documentElement)
 
+# remove empty defs, metadata, g
+# NOTE: these elements will be removed even if they have (invalid) text nodes
+elemsToRemove = []
+for tag in ['defs', 'metadata', 'g'] :
+	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag) :
+		removeElem = not elem.hasChildNodes()
+		if removeElem == False :
+			for child in elem.childNodes :
+				print child.nodeType,
+				if child.nodeType in [1, 4, 8] :
+					break
+			else:
+				removeElem = True
+		if removeElem :
+			elem.parentNode.removeChild(elem)
+			numElemsRemoved += 1
+
 # output the document
 doc.documentElement.writexml(output)
 
