@@ -49,9 +49,6 @@
 #  * Use viewPort instead of document width/height
 
 # Next Up:
-# + Convert style to recognized XML attributes
-# + Remove any fill-X styles when fill="none" or fill-opacity="0"
-# + Remove any stroke-X styles when stroke-opacity="0" or stroke-width="0"
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 # - Convert all referenced rasters into base64 encoded URLs if the files can be found
