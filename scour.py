@@ -24,9 +24,33 @@
 # (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
 
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
+# * Specify a limit to the precision of all positional elements.
+# * Clean up XML Elements
+#  * Collapse multiple redundent groups
+# * Clean up Definitions
+#  * Remove duplicate gradient stops
+#  * Collapse duplicate gradient definitions
+#  * Remove gradients that are only referenced by one other gradient
+# * Clean up CSS
+#  * Remove Default values, i.e. opacity: 1;
+#  * Remove Not applicable  values, i.e. opacity: 0; fill-color: #00000;
+#  * Convert RGB colours from RGB(r,g,b) to #RRGGBB format
+#  * Convert RGB colours from #RRGGBB to #RGB if possible
+# * Clean up paths
+#  * Detect vertical/horizontal lines and replace.
+#  * Eliminate empty path segments
+#  * Eliminate last segment in a polygon
+#  * Collapse straight curves.
+#  * Convert absolute path segments to relative ones.
+# * Process Transformations
+#  * Process quadratic Bezier curves
+#  * Collapse all group based transformations
+# * Output Standard SVG
+#  * Use viewPort instead of document width/height
 
 # Next Up:
 # + Convert style to recognized XML attributes
+# - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 
 import sys
