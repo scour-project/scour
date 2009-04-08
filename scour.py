@@ -53,6 +53,31 @@ unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
 				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
 				NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'] ] 
 
+svgAttributes = [
+				'clip-rule',
+				'fill',
+				'fill-opacity',
+				'fill-rule',
+				'filter',
+				'font-family',
+				'font-size',
+				'font-stretch',
+				'font-style',
+				'font-variant',
+				'font-weight',
+				'line-height',
+				'opacity',
+				'stop-color',
+				'stop-opacity',
+				'stroke',
+				'stroke-dashoffset',
+				'stroke-linecap',
+				'stroke-linejoin',
+				'stroke-miterlimit',
+				'stroke-opacity',
+				'stroke-width',
+				]
+
 def printHeader():
 	print APP , VER
 	print COPYRIGHT
@@ -156,12 +181,15 @@ def removeNamespacedAttributes(node, namespaces):
 	if node.nodeType == 1 :
 		# remove all namespace'd attributes from this element
 		attrList = node.attributes
+		attrsToRemove = []
 		for attrNum in range(attrList.length):
 			attr = attrList.item(attrNum)
 			if attr != None and attr.namespaceURI in namespaces:
-				num += 1
-				numAttrsRemoved += 1
-				node.removeAttribute(attr.nodeName)
+				attrsToRemove.append(attr.nodeName)
+		for attrName in attrsToRemove :
+			num += 1
+			numAttrsRemoved += 1
+			node.removeAttribute(attrName)
 		
 		# now recurse for children
 		for child in node.childNodes:
@@ -174,11 +202,14 @@ def removeNamespacedElements(node, namespaces):
 	if node.nodeType == 1 :
 		# remove all namespace'd child nodes from this element
 		childList = node.childNodes
+		childrenToRemove = []
 		for child in childList:
 			if child != None and child.namespaceURI in namespaces:
-				num += 1
-				numElemsRemoved += 1
-				node.removeChild(child)
+				childrenToRemove.append(child)
+		for child in childrenToRemove :
+			num += 1
+			numElemsRemoved += 1
+			node.removeChild(child)
 		
 		# now recurse for children
 		for child in node.childNodes:
@@ -248,6 +279,10 @@ def repairStyle(node):
 		num += repairStyle(child)
 			
 	return num
+
+# does nothing at the moment but waste time
+def cleanPath(element) :
+	path = element.getAttribute('d')
 
 # parse command-line arguments
 args = sys.argv[1:]
@@ -331,6 +366,10 @@ for tag in ['defs', 'metadata', 'g'] :
 		if removeElem :
 			elem.parentNode.removeChild(elem)
 			numElemsRemoved += 1
+
+# clean path data
+for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
+	cleanPath(elem)
 
 # output the document
 doc.documentElement.writexml(output)
