@@ -34,8 +34,6 @@
 #  * Collapse duplicate gradient definitions
 #  * Remove gradients that are only referenced by one other gradient
 # * Clean up CSS
-#  * Remove Default values, i.e. opacity: 1;
-#  * Remove Not applicable  values, i.e. opacity: 0; fill-color: #00000;
 #  * Convert RGB colours from RGB(r,g,b) to #RRGGBB format
 #  * Convert RGB colours from #RRGGBB to #RGB if possible
 # * Clean up paths
@@ -56,6 +54,7 @@
 # + Remove any stroke-X styles when stroke-opacity="0" or stroke-width="0"
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
+# - Convert all referenced rasters into base64 encoded URLs if the files can be found
 
 import sys
 import string
