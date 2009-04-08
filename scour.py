@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 #  Scour
-#  Version 0.03
+#  Version 0.05
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -20,10 +20,12 @@
 
 # Notes:
 
-# Path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
+# rubys path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
 # (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
 
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
+# TODO: Adapt this script into an Inkscape python plugin
+#
 # * Specify a limit to the precision of all positional elements.
 # * Clean up XML Elements
 #  * Collapse multiple redundent groups
@@ -50,6 +52,8 @@
 
 # Next Up:
 # + Convert style to recognized XML attributes
+# + Remove any fill-X styles when fill="none" or fill-opacity="0"
+# + Remove any stroke-X styles when stroke-opacity="0" or stroke-width="0"
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 
@@ -262,10 +266,22 @@ def repairStyle(node):
 
 		# Here is where we can weed out unnecessary styles like:
 		#  opacity:1
-		if styleMap.has_key('opacity') and string.atof(styleMap['opacity']) == 1.0 :
-			del styleMap['opacity']
-			
-		#  if stroke:none, then remove all stroke properties (stroke-width, etc)
+		if styleMap.has_key('opacity') :
+			# opacity='1.0' is useless, remove it
+			if string.atof(styleMap['opacity']) == 1.0 :
+				del styleMap['opacity']
+				
+			# if opacity='0' then all fill and stroke properties are useless, remove them
+			elif string.atof(styleMap['opacity']) == 0.0 :
+				for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
+					'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
+					'stroke-dashoffset', 'stroke-opacity'] :
+					del styleMap[uselessStyle]
+					num += 1
+
+		#  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
+		#  TODO: should also detect if the computed value of this element is fill="none"
+		#  TODO: should also detect if stroke-width=0 or stroke-opacity=0
 		if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
 			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit', 
 					'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
@@ -273,22 +289,53 @@ def repairStyle(node):
 					del styleMap[strokestyle]
 					num += 1
 
+		#  if fill:none, then remove all fill-related properties (fill-rule, etc)
+		#  TODO: should also detect if fill-opacity=0
+		if styleMap.has_key('fill') and styleMap['fill'] == 'none' :
+			for fillstyle in [ 'fill-rule', 'fill-opacity' ] :
+				if styleMap.has_key(fillstyle) :
+					del styleMap[fillstyle]
+					num += 1
+					
 		#  stop-opacity: 1
-		if styleMap.has_key('stop-opacity') and string.atof(styleMap['stop-opacity']) == 1.0 :
-			del styleMap['stop-opacity']
-			num += 1
+		if styleMap.has_key('stop-opacity') :
+			if string.atof(styleMap['stop-opacity']) == 1.0 :
+				del styleMap['stop-opacity']
+				num += 1
 		
-		#  fill-opacity: 1
-		#  TODO: This is actually a problem is a parent element has a fill-opacity != 1
-		if styleMap.has_key('fill-opacity') and string.atof(styleMap['fill-opacity']) == 1.0 :
-			del styleMap['fill-opacity']
-			num += 1
+		#  fill-opacity: 1 or 0
+		if styleMap.has_key('fill-opacity') :
+			fillOpacity = string.atof(styleMap['fill-opacity'])
+			#  TODO: This is actually a problem is the parent element does not have fill-opacity = 1
+			if fillOpacity == 1.0 :
+				del styleMap['fill-opacity']
+				num += 1
+			elif fillOpacity == 0.0 :
+				for uselessFillStyle in [ 'fill', 'fill-rule' ] :
+					del styleMap[uselessFillStyle]
+					num += 1
 		
-		#  stroke-opacity: 1
-		#  TODO: This is actually a problem is a parent element has a stroke-opacity != 1
-		if styleMap.has_key('stroke-opacity') and string.atof(styleMap['stroke-opacity']) == 1.0 :
-			del styleMap['stroke-opacity']
-			num += 1
+		#  stroke-opacity: 1 or 0
+		if styleMap.has_key('stroke-opacity') :
+			strokeOpacity = string.atof(styleMap['stroke-opacity']) 
+			#  TODO: This is actually a problem is the parent element does not have stroke-opacity = 1
+			if strokeOpacity == 1.0 :
+				del styleMap['stroke-opacity']
+				num += 1
+			elif strokeOpacity == 0.0 :
+				for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap', 
+							'stroke-dasharray', 'stroke-dashoffset' ] :
+					del styleMap[uselessStrokeStyle]
+					num += 1
+
+		# stroke-width: 0
+		if styleMap.has_key('stroke-width') :
+			strokeWidth = string.atof(styleMap['stroke-width']) 
+			if strokeWidth == 0.0 :
+				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap', 
+							'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
+					del styleMap[uselessStrokeStyle]
+					num += 1
 		
 		#  TODO: what else?
 		
