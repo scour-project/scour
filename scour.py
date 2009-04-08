@@ -26,7 +26,7 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 
 # Next Up:
-# - Convert style to recognized XML attributes
+# + Convert style to recognized XML attributes
 # - Convert all colors to #RRGGBB format
 
 import sys
@@ -252,19 +252,29 @@ def repairStyle(node):
 		#  stop-opacity: 1
 		if styleMap.has_key('stop-opacity') and string.atof(styleMap['stop-opacity']) == 1.0 :
 			del styleMap['stop-opacity']
+			num += 1
 		
 		#  fill-opacity: 1
 		#  TODO: This is actually a problem is a parent element has a fill-opacity != 1
 		if styleMap.has_key('fill-opacity') and string.atof(styleMap['fill-opacity']) == 1.0 :
 			del styleMap['fill-opacity']
+			num += 1
 		
 		#  stroke-opacity: 1
 		#  TODO: This is actually a problem is a parent element has a stroke-opacity != 1
 		if styleMap.has_key('stroke-opacity') and string.atof(styleMap['stroke-opacity']) == 1.0 :
 			del styleMap['stroke-opacity']
+			num += 1
 		
 		#  TODO: what else?
-					
+		
+		# now if any of the properties match known SVG attributes we prefer attributes 
+		# over style so emit them and remove them from the style map
+		for propName in styleMap.keys() :
+			if propName in svgAttributes :
+				node.setAttribute(propName, styleMap[propName])
+				del styleMap[propName]
+
 		# sew our style back together
 		fixedStyle = ''
 		for prop in styleMap.keys() :
