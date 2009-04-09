@@ -58,7 +58,7 @@ import string
 import xml.dom.minidom
 
 APP = 'scour'
-VER = '0.05'
+VER = '0.06'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
