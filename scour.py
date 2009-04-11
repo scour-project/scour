@@ -239,6 +239,18 @@ def removeNamespacedElements(node, namespaces):
 		for child in node.childNodes:
 			removeNamespacedElements(child, namespaces)
 	return num
+
+# returns the length of a property
+def getSVGLength(value):
+	# QRegExp coord("\\-?\\d+\\.?\\d*");
+	# QRegExp pct("(\\-?\\d+\\.?\\d*)\\%");
+	# QRegExp unit("(em|ex|px|pt|pc|cm|mm|in|\\%){1}");
+	try:
+		v = string.atof(value)
+	except ValueError:
+		# TODO: do unit parsing here
+		v = value
+	return value
 	
 def repairStyle(node):
 	num = 0
@@ -264,7 +276,7 @@ def repairStyle(node):
 		#  opacity:1
 		if styleMap.has_key('opacity') :
 			# opacity='1.0' is useless, remove it
-			if string.atof(styleMap['opacity']) == 1.0 :
+			if getSVGLength(styleMap['opacity']) == 1.0 :
 				del styleMap['opacity']
 				
 			# if opacity='0' then all fill and stroke properties are useless, remove them
@@ -326,7 +338,7 @@ def repairStyle(node):
 
 		# stroke-width: 0
 		if styleMap.has_key('stroke-width') :
-			strokeWidth = string.atof(styleMap['stroke-width']) 
+			strokeWidth = getSVGLength(styleMap['stroke-width']) 
 			if strokeWidth == 0.0 :
 				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap', 
 							'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
@@ -360,6 +372,11 @@ def repairStyle(node):
 # does nothing at the moment but waste time
 def cleanPath(element) :
 	path = element.getAttribute('d')
+
+def properlySizeDoc(docElement):
+	w = docElement.getAttribute('width')
+	h = docElement.getAttribute('height')
+	vb = docElement.getAttribute('viewBox')	
 
 # parse command-line arguments
 args = sys.argv[1:]
@@ -426,6 +443,9 @@ while bContinueLooping:
 	referencedIDs = findReferencedElements(doc.documentElement, {})
 	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
 
+
+
+# repair style (remove unnecessary style properties and change them into XML attributes)
 numStylePropsFixed = repairStyle(doc.documentElement)
 
 # remove empty defs, metadata, g
