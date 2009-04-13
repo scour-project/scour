@@ -49,6 +49,7 @@
 #  * Use viewPort instead of document width/height
 
 # Next Up:
+# + Prevent error when stroke-width property value has a unit
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 # - Convert all referenced rasters into base64 encoded URLs if the files can be found
@@ -56,6 +57,7 @@
 import sys
 import string
 import xml.dom.minidom
+import re
 
 APP = 'scour'
 VER = '0.06'
@@ -240,17 +242,84 @@ def removeNamespacedElements(node, namespaces):
 			removeNamespacedElements(child, namespaces)
 	return num
 
+# TODO: create a class for a SVGLength type (including value and unit)
+
+coord = re.compile("\\-?\\d+\\.?\\d*")
+number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
+scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
+unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
+
+# QRegExp coorde("[\\-\\+]?\\d+\\.?\\d*([eE][\\-\\+]?\\d+)?");
+# QRegExp separateExp("([\\-\\+\\d\\.]+)[eE]([\\-\\+\\d\\.]+)");
+
+class Unit:
+	INVALID = -1
+	NONE = 0
+	PCT = 1
+	PX = 2
+	PT = 3
+	PC = 4
+	EM = 5
+	EX = 6
+	CM = 7
+	MM = 8
+	IN = 9
+	
+	@staticmethod
+	def get(str):
+		if str == None or str == '': return Unit.NONE
+		elif str == '%': return Unit.PCT
+		elif str == 'px': return Unit.PX
+		elif str == 'pt': return Unit.PT
+		elif str == 'pc': return Unit.PC
+		elif str == 'em': return Unit.EM
+		elif str == 'ex': return Unit.EX
+		elif str == 'cm': return Unit.CM
+		elif str == 'mm': return Unit.MM
+		elif str == 'in': return Unit.IN
+		return Unit.INVALID
+	
+class SVGLength:
+	def __init__(self, str):
+		try: # simple unitless and no scientific notation
+			self.value = string.atof(str)
+			self.units = Unit.NONE
+		except ValueError:
+			# we know that the length string has an exponent, a unit, both or is invalid
+
+			# TODO: parse out number, exponent and unit
+			exponent = 0
+			scinum = scinumber.match(str)
+			if scinum != None:
+				print 'Scientific Notation'
+				pass
+
+			# unit or invalid
+			numMatch = number.match(str)
+			if numMatch != None:
+				unitMatch = unit.search(str, numMatch.start(0))
+				if unitMatch != None:
+					self.units = Unit.get(unitMatch.group(0))
+			# invalid
+			else:
+				# TODO: this needs to set the default for the given attribute (how?)
+				self.value = 0 
+				self.units = INVALID
+
 # returns the length of a property
+# TODO: eventually use the above class once it is complete
 def getSVGLength(value):
-	# QRegExp coord("\\-?\\d+\\.?\\d*");
-	# QRegExp pct("(\\-?\\d+\\.?\\d*)\\%");
-	# QRegExp unit("(em|ex|px|pt|pc|cm|mm|in|\\%){1}");
 	try:
 		v = string.atof(value)
 	except ValueError:
-		# TODO: do unit parsing here
+		coordMatch = coord.match(value)
+		if coordMatch != None:
+			print "Coord found:", coordMatch.group(0)
+			unitMatch = unit.search(value, coordMatch.start(0))
+			if unitMatch != None:
+				print "Unit found:", unitMatch.group(0)			
 		v = value
-	return value
+	return v
 	
 def repairStyle(node):
 	num = 0
@@ -275,12 +344,13 @@ def repairStyle(node):
 		# Here is where we can weed out unnecessary styles like:
 		#  opacity:1
 		if styleMap.has_key('opacity') :
+			opacity = string.atof(styleMap['opacity'])
 			# opacity='1.0' is useless, remove it
-			if getSVGLength(styleMap['opacity']) == 1.0 :
+			if opacity == 1.0 :
 				del styleMap['opacity']
 				
 			# if opacity='0' then all fill and stroke properties are useless, remove them
-			elif string.atof(styleMap['opacity']) == 0.0 :
+			elif opacity == 0.0 :
 				for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
 					'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
 					'stroke-dashoffset', 'stroke-opacity'] :
@@ -289,7 +359,6 @@ def repairStyle(node):
 
 		#  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
 		#  TODO: should also detect if the computed value of this element is fill="none"
-		#  TODO: should also detect if stroke-width=0 or stroke-opacity=0
 		if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
 			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit', 
 					'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
