@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 #  Scour
-#  Version 0.06
+#  Version 0.07
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -20,7 +20,7 @@
 
 # Notes:
 
-# rubys path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
+# rubys' path-crunching ideas here: http://intertwingly.net/code/svgtidy/spec.rb
 # (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
 
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
@@ -45,13 +45,10 @@
 # * Process Transformations
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
-# * Output Standard SVG
-#  * Use viewPort instead of document width/height
 
 # Next Up:
-# + Prevent error when stroke-width property value has a unit
-# + Convert width/height into a viewBox where possible
-# + Convert all referenced rasters into base64 encoded URLs if the files can be found
+# + move all functionality into a module level function named 'scour' and only call it
+#   when being run as main (prepare for unit testing)
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 # - 
@@ -70,7 +67,7 @@ import os.path
 import urllib
 
 APP = 'scour'
-VER = '0.06'
+VER = '0.07'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -550,117 +547,131 @@ def properlySizeDoc(docElement):
 	docElement.removeAttribute('width')
 	docElement.removeAttribute('height')
 
-# parse command-line arguments
-args = sys.argv[1:]
+# this is the main method
+# input is a string representation of the input XML
+# returns a string representation of the output XML
+def scour(in_string):
+	global numAttrsRemoved
+	global numStylePropsFixed
+	global numElemsRemoved
+	doc = xml.dom.minidom.parseString(in_string)
 
-# by default the input and output are the standard streams
-input = sys.stdin
-output = sys.stdout
-
-# if -i or -o is supplied, switch the stream to the file
-if len(args) == 2:
-	if args[0] == '-i' :
-		input = open(args[1], 'r')
-	elif args[0] == '-o' :
-		output = open(args[1], 'w')
-	else:
-		printSyntaxAndQuit()
-
-# if both -o and -o are supplied, switch streams to the files
-elif len(args) == 4 :
-	if args[0] == '-i' and args[2] == '-o' :
-		input = open(args[1], 'r')
-		output = open(args[3], 'w')
-	elif args[0] == '-o' and args[2] == 'i' :
-		output = open(args[1], 'w')
-		input = open(args[3], 'r')
-	else:
-		printSyntaxAndQuit()
-
-# else invalid syntax
-elif len(args) != 0 :
-	printSyntaxAndQuit()
-
-# if we are not sending to stdout, then print out app information
-bOutputReport = False
-if output != sys.stdout :
-	bOutputReport = True
-	printHeader()
-
-# build DOM in memory
-doc = xml.dom.minidom.parse(input)
-
-# for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
-# on the first pass, so we do it multiple times
-# does it have to do with removal of children affecting the childlist?
-while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
-	pass	
-while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
-	pass
+	# for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
+	# on the first pass, so we do it multiple times
+	# does it have to do with removal of children affecting the childlist?
+	while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
+		pass	
+	while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
+		pass
 	
-# remove the xmlns: declarations now
-xmlnsDeclsToRemove = []
-attrList = doc.documentElement.attributes
-for num in range(attrList.length) :
-	if attrList.item(num).nodeValue in unwanted_ns :
-		xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
+	# remove the xmlns: declarations now
+	xmlnsDeclsToRemove = []
+	attrList = doc.documentElement.attributes
+	for num in range(attrList.length) :
+		if attrList.item(num).nodeValue in unwanted_ns :
+			xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
 
-for attr in xmlnsDeclsToRemove :
-	doc.documentElement.removeAttribute(attr)
-	numAttrsRemoved += 1
+	for attr in xmlnsDeclsToRemove :
+		doc.documentElement.removeAttribute(attr)
+		numAttrsRemoved += 1
 
-bContinueLooping = True
-while bContinueLooping:
-	identifiedElements = findElementsWithId(doc.documentElement, {})
-	referencedIDs = findReferencedElements(doc.documentElement, {})
-	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
+	bContinueLooping = True
+	while bContinueLooping:
+		identifiedElements = findElementsWithId(doc.documentElement, {})
+		referencedIDs = findReferencedElements(doc.documentElement, {})
+		bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
 
-# repair style (remove unnecessary style properties and change them into XML attributes)
-numStylePropsFixed = repairStyle(doc.documentElement)
+	# repair style (remove unnecessary style properties and change them into XML attributes)
+	numStylePropsFixed = repairStyle(doc.documentElement)
 
-# remove empty defs, metadata, g
-# NOTE: these elements will be removed even if they have (invalid) text nodes
-elemsToRemove = []
-for tag in ['defs', 'metadata', 'g'] :
-	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag) :
-		removeElem = not elem.hasChildNodes()
-		if removeElem == False :
-			for child in elem.childNodes :
-				if child.nodeType in [1, 4, 8] :
-					break
-			else:
-				removeElem = True
-		if removeElem :
-			elem.parentNode.removeChild(elem)
-			numElemsRemoved += 1
+	# remove empty defs, metadata, g
+	# NOTE: these elements will be removed even if they have (invalid) text nodes
+	elemsToRemove = []
+	for tag in ['defs', 'metadata', 'g'] :
+		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag) :
+			removeElem = not elem.hasChildNodes()
+			if removeElem == False :
+				for child in elem.childNodes :
+					if child.nodeType in [1, 4, 8] :
+						break
+				else:
+					removeElem = True
+			if removeElem :
+				elem.parentNode.removeChild(elem)
+				numElemsRemoved += 1
 
-# clean path data
-for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
-	cleanPath(elem)
+	# clean path data
+	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
+		cleanPath(elem)
 
-# convert rasters refereces to base64-encoded strings 
-for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
-	embedRasters(elem)		
+	# convert rasters refereces to base64-encoded strings 
+	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
+		embedRasters(elem)		
 
-# properly size the SVG document (ideally width/height should be 100% with a viewBox)
-properlySizeDoc(doc.documentElement)
+	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
+	properlySizeDoc(doc.documentElement)
 
-# output the document
-doc.documentElement.writexml(output)
+	# output the document
+	out_string = doc.documentElement.toxml()
+	return out_string
+	
+if __name__ == '__main__':
 
-# Close input and output files
-input.close()
-output.close()
+	# parse command-line arguments
+	args = sys.argv[1:]
 
-# output some statistics if we are not using stdout
-if bOutputReport :
-	print " Number of unreferenced id attributes removed:", numIDsRemoved 
-	print " Number of elements removed:", numElemsRemoved
-	print " Number of attributes removed:", numAttrsRemoved
-	print " Number of style properties fixed:", numStylePropsFixed
-	print " Number of raster images embedded inline:", numRastersEmbedded
-	oldsize = os.path.getsize(input.name)
-	newsize = os.path.getsize(output.name)
-	#sizediff = (min(oldsize, newsize)  / max(oldsize, newsize)) * 100;
-	sizediff = (newsize / oldsize);
-	print " Original file size:", oldsize, "kb; new file size:", newsize, "kb (" + str(sizediff)[:5] + "x)"
+	# by default the input and output are the standard streams
+	input = sys.stdin
+	output = sys.stdout
+
+	# if -i or -o is supplied, switch the stream to the file
+	if len(args) == 2:
+		if args[0] == '-i' :
+			input = open(args[1], 'r')
+		elif args[0] == '-o' :
+			output = open(args[1], 'w')
+		else:
+			printSyntaxAndQuit()
+
+	# if both -o and -o are supplied, switch streams to the files
+	elif len(args) == 4 :
+		if args[0] == '-i' and args[2] == '-o' :
+			input = open(args[1], 'r')
+			output = open(args[3], 'w')
+		elif args[0] == '-o' and args[2] == 'i' :
+			output = open(args[1], 'w')
+			input = open(args[3], 'r')
+		else:
+			printSyntaxAndQuit()
+
+	# else invalid syntax
+	elif len(args) != 0 :
+		printSyntaxAndQuit()
+
+	# if we are not sending to stdout, then print out app information
+	bOutputReport = False
+	if output != sys.stdout :
+		bOutputReport = True
+		printHeader()
+
+	# do the work
+	in_string = input.read()
+	out_string = scour(in_string)
+	output.write(out_string)
+
+	# Close input and output files
+	input.close()
+	output.close()
+
+	# output some statistics if we are not using stdout
+	if bOutputReport :
+		print " Number of unreferenced id attributes removed:", numIDsRemoved 
+		print " Number of elements removed:", numElemsRemoved
+		print " Number of attributes removed:", numAttrsRemoved
+		print " Number of style properties fixed:", numStylePropsFixed
+		print " Number of raster images embedded inline:", numRastersEmbedded
+		oldsize = os.path.getsize(input.name)
+		newsize = os.path.getsize(output.name)
+		#sizediff = (min(oldsize, newsize)  / max(oldsize, newsize)) * 100;
+		sizediff = (newsize / oldsize);
+		print " Original file size:", oldsize, "kb; new file size:", newsize, "kb (" + str(sizediff)[:5] + "x)"
