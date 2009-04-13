@@ -19,5 +19,24 @@
 
 import unittest
 import scour
+import xml.dom.minidom
+
+# performs a test on a given node
+# func must return either True or False
+def walkTree(elem, func):
+	if func(elem) == False:  return False
+	for child in elem.childNodes:
+		if walkTree(child, func) == False: return False
+	return True
+
+class NoInkscapeElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/inkscape.svg')
+		self.assertNotEquals( walkTree( doc.documentElement, 
+			lambda e: e.namespaceURI != "http://www.inkscape.org/namespaces/inkscape" ), False,
+			'Found Inkscape elements' )
+
+if __name__ == '__main__':
+    unittest.main()
 
 print "done"

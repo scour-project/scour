@@ -550,7 +550,7 @@ def properlySizeDoc(docElement):
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
-def scour(in_string):
+def scourString(in_string):
 	global numAttrsRemoved
 	global numStylePropsFixed
 	global numElemsRemoved
@@ -614,7 +614,15 @@ def scour(in_string):
 	# output the document
 	out_string = doc.documentElement.toxml()
 	return out_string
-	
+
+# used mostly by unit tests
+# input is a filename
+# returns the minidom doc representation of the SVG
+def scourXmlFile(filename):
+	in_string = open(filename).read()
+	out_string = scourString(in_string)
+	return xml.dom.minidom.parseString(out_string)
+
 if __name__ == '__main__':
 
 	# parse command-line arguments
@@ -656,7 +664,7 @@ if __name__ == '__main__':
 
 	# do the work
 	in_string = input.read()
-	out_string = scour(in_string)
+	out_string = scourString(in_string)
 	output.write(out_string)
 
 	# Close input and output files
