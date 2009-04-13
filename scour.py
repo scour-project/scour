@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 #  Scour
-#  Version 0.05
+#  Version 0.06
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -50,15 +50,24 @@
 
 # Next Up:
 # + Prevent error when stroke-width property value has a unit
+# + Convert width/height into a viewBox where possible
+# + Convert all referenced rasters into base64 encoded URLs if the files can be found
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
-# - Convert all referenced rasters into base64 encoded URLs if the files can be found
+# - 
 
+# necessary to get true division
+from __future__ import division
+
+import os
 import sys
 import string
 import xml.dom.minidom
 import re
 import math
+import base64
+import os.path
+import urllib
 
 APP = 'scour'
 VER = '0.06'
@@ -173,6 +182,7 @@ def findReferencedElements(node,ids={}):
 numIDsRemoved = 0
 numElemsRemoved = 0
 numAttrsRemoved = 0
+numRastersEmbedded = 0
 
 # removes the unreferenced ID attributes
 # returns the number of ID attributes removed
@@ -301,7 +311,7 @@ class SVGLength:
 				# unit or invalid
 				numMatch = number.match(str)
 				if numMatch != None:
-					self.value = numMatch.group(0)
+					self.value = string.atof(numMatch.group(0))
 					unitBegin = numMatch.end(0)
 
 			if unitBegin != 0 :
@@ -451,25 +461,94 @@ def repairStyle(node):
 def cleanPath(element) :
 	path = element.getAttribute('d')
 
+# converts raster references to inline images
+# NOTE: there are size limits to base64-encoding handling in browsers 
+def embedRasters(element) :
+	global numRastersEmbedded
+
+	href = element.getAttributeNS(NS['XLINK'],'href')
+	
+	# if xlink:href is set, then grab the id
+	if href != '' and len(href) > 1:
+		# find if href value has filename ext		
+		ext = os.path.splitext(os.path.basename(href))[1].lower()[1:]
+				
+		# look for 'png', 'jpg', and 'gif' extensions 
+		if ext == 'png' or ext == 'jpg' or ext == 'gif':
+
+			# check if href resolves to an existing file
+			if os.path.isfile(href) == False :
+				if href[:7] != 'http://' and os.path.isfile(href) == False :
+						# if this is not an absolute path, set path relative
+						# to script file based on input arg 
+						href = os.path.join(os.path.dirname(args[1]), href)				
+				
+			rasterdata = ''
+			# test if file exists locally
+			if os.path.isfile(href) == True :
+				# open raster file as raw binary
+				raster = open( href, "rb")
+				rasterdata = raster.read()
+
+			elif href[:7] == 'http://':
+				# raster = open( href, "rb")
+				webFile = urllib.urlopen( href )
+				rasterdata = webFile.read()
+				webFile.close()
+			
+			# ... should we remove all images which don't resolve?	
+			if rasterdata != '' :
+				# base64-encode raster
+				b64eRaster = base64.b64encode( rasterdata )
+
+				# set href attribute to base64-encoded equivalent
+				if b64eRaster != '':
+					# PNG and GIF both have MIME Type 'image/[ext]', but 
+					# JPEG has MIME Type 'image/jpeg'
+					if ext == 'jpg':
+						ext = 'jpeg'
+
+					element.setAttributeNS(NS['XLINK'], 'href', 'data:image/' + ext + ';base64,' + b64eRaster)
+					numRastersEmbedded += 1
+					del b64eRaster				
+
 def properlySizeDoc(docElement):
 	# get doc width and height
 	w = SVGLength(docElement.getAttribute('width'))
 	h = SVGLength(docElement.getAttribute('height'))
-	
-	if ((w.units == Unit.PCT or w.units == Unit.INVALID) and
-	    (h.units == Unit.PCT or h.units == Unit.INVALID)):
+
+	# if width/height are not unitless or px then it is not ok to rewrite them into a viewBox	
+	if ((w.units != Unit.NONE and w.units != Unit.PX) or
+		(w.units != Unit.NONE and w.units != Unit.PX)):
 	    return
 
 	# else we have a statically sized image and we should try to remedy that	
 
 	# parse viewBox attribute
 	vbSep = re.split("\\s*\\,?\\s*", docElement.getAttribute('viewBox'), 3)
-	# if we have a valid viewBox we probably shouldn't change anything unless
-	# the viewbox width/height matches the doc width/height
-#	if len(vbSep) == 4:
-#		vbWidth = 
+	# if we have a valid viewBox we need to check it
+	vbWidth,vbHeight = 0,0
+	if len(vbSep) == 4:
+		try:
+			# if x or y are specified and non-zero then it is not ok to overwrite it
+			vbX = string.atof(vbSep[0])
+			vbY = string.atof(vbSep[1])
+			if vbX != 0 or vbY != 0:
+				return
+				
+			# if width or height are not equal to doc width/height then it is not ok to overwrite it
+			vbWidth = string.atof(vbSep[2])
+			vbHeight = string.atof(vbSep[3])
+			if vbWidth != w.value or vbHeight != h.value:
+				return
+		# if the viewBox did not parse properly it is invalid and ok to overwrite it
+		except ValueError:
+			pass
 	
-	
+	# at this point it's safe to set the viewBox and remove width/height
+	docElement.setAttribute('viewBox', '0 0 %s %s' % (w.value, h.value))
+	docElement.removeAttribute('width')
+	docElement.removeAttribute('height')
 
 # parse command-line arguments
 args = sys.argv[1:]
@@ -555,12 +634,16 @@ for tag in ['defs', 'metadata', 'g'] :
 			elem.parentNode.removeChild(elem)
 			numElemsRemoved += 1
 
-# properly size the SVG document (width/height should be 100% with a viewBox)
-properlySizeDoc(doc.documentElement)
-
 # clean path data
 for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
 	cleanPath(elem)
+
+# convert rasters refereces to base64-encoded strings 
+for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
+	embedRasters(elem)		
+
+# properly size the SVG document (ideally width/height should be 100% with a viewBox)
+properlySizeDoc(doc.documentElement)
 
 # output the document
 doc.documentElement.writexml(output)
@@ -571,7 +654,13 @@ output.close()
 
 # output some statistics if we are not using stdout
 if bOutputReport :
-	print "Number of unreferenced id attributes removed:", numIDsRemoved 
-	print "Number of elements removed:", numElemsRemoved
-	print "Number of attributes removed:", numAttrsRemoved
-	print "Number of style properties fixed:", numStylePropsFixed
+	print " Number of unreferenced id attributes removed:", numIDsRemoved 
+	print " Number of elements removed:", numElemsRemoved
+	print " Number of attributes removed:", numAttrsRemoved
+	print " Number of style properties fixed:", numStylePropsFixed
+	print " Number of raster images embedded inline:", numRastersEmbedded
+	oldsize = os.path.getsize(input.name)
+	newsize = os.path.getsize(output.name)
+	#sizediff = (min(oldsize, newsize)  / max(oldsize, newsize)) * 100;
+	sizediff = (newsize / oldsize);
+	print " Original file size:", oldsize, "kb; new file size:", newsize, "kb (" + str(sizediff)[:5] + "x)"
