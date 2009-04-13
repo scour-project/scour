@@ -21,8 +21,8 @@ import unittest
 import scour
 import xml.dom.minidom
 
-# performs a test on a given node
-# func must return either True or False
+# helper function that performs a test on a given node and all its children
+# func must return either True (if pass) or False (if fail)
 def walkTree(elem, func):
 	if func(elem) == False:  return False
 	for child in elem.childNodes:
@@ -31,12 +31,15 @@ def walkTree(elem, func):
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/inkscape.svg')
-		self.assertNotEquals( walkTree( doc.documentElement, 
+		self.assertNotEquals(walkTree( scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
 			lambda e: e.namespaceURI != "http://www.inkscape.org/namespaces/inkscape" ), False,
 			'Found Inkscape elements' )
 
+class NoSodipodiElements(unittest.TestCase):
+	def runTest(self):
+		self.assertNotEquals(walkTree( scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
+			lambda e: e.namespaceURI != "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" ), False,
+			'Found Sodipodi elements' )
+
 if __name__ == '__main__':
     unittest.main()
-
-print "done"
