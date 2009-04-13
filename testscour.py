@@ -34,15 +34,36 @@ def walkTree(elem, func):
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
-		self.assertNotEquals(walkTree( scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
-			lambda e: e.namespaceURI != "http://www.inkscape.org/namespaces/inkscape" ), False,
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://www.inkscape.org/namespaces/inkscape'), False,
 			'Found Inkscape elements' )
 
 class NoSodipodiElements(unittest.TestCase):
 	def runTest(self):
-		self.assertNotEquals(walkTree( scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
-			lambda e: e.namespaceURI != "http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" ), False,
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd'), False,
 			'Found Sodipodi elements' )
 
+class NoAdobeElements(unittest.TestCase):
+	def runTest(self):
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/AdobeIllustrator/10.0/'), False,
+			'Found Adobe Illustrator elements' )
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/Graphs/1.0/'), False,
+			'Found Adobe Graphs elements' )
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/'), False,
+			'Found Adobe SVG Viewer elements' )
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/Variables/1.0/'), False,
+			'Found Adobe Variables elements' )
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/SaveForWeb/1.0/'), False,
+			'Found Adobe Save For Web elements' )
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement, 
+			lambda e: e.namespaceURI != 'http://ns.adobe.com/Extensibility/1.0/'), False,
+			'Found Adobe Extensibility elements' )
+		
 if __name__ == '__main__':
     unittest.main()
