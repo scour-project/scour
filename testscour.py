@@ -21,7 +21,10 @@ import unittest
 import scour
 import xml.dom.minidom
 
-# helper function that performs a test on a given node and all its children
+# I couldn't figure out how to get ElementTree to work with the following XPath 
+# "//*[namespace-uri()='http://example.com']"
+# so I decided to use minidom and this helper function that performs a test on a given node 
+# and all its children
 # func must return either True (if pass) or False (if fail)
 def walkTree(elem, func):
 	if func(elem) == False:  return False
