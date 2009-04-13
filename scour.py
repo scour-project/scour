@@ -58,6 +58,7 @@ import sys
 import string
 import xml.dom.minidom
 import re
+import math
 
 APP = 'scour'
 VER = '0.06'
@@ -245,12 +246,10 @@ def removeNamespacedElements(node, namespaces):
 # TODO: create a class for a SVGLength type (including value and unit)
 
 coord = re.compile("\\-?\\d+\\.?\\d*")
-number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
 scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
+number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
+sciExponent = re.compile("[eE]([\\-\\+]?\\d+)")
 unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
-
-# QRegExp coorde("[\\-\\+]?\\d+\\.?\\d*([eE][\\-\\+]?\\d+)?");
-# QRegExp separateExp("([\\-\\+\\d\\.]+)[eE]([\\-\\+\\d\\.]+)");
 
 class Unit:
 	INVALID = -1
@@ -281,30 +280,43 @@ class Unit:
 	
 class SVGLength:
 	def __init__(self, str):
+#		print "Parsing '%s'" % str
 		try: # simple unitless and no scientific notation
 			self.value = string.atof(str)
 			self.units = Unit.NONE
+#			print "  Value =", self.value
 		except ValueError:
 			# we know that the length string has an exponent, a unit, both or is invalid
 
 			# TODO: parse out number, exponent and unit
-			exponent = 0
+			unitBegin = 0
 			scinum = scinumber.match(str)
 			if scinum != None:
-				print 'Scientific Notation'
-				pass
+				# this will always match, no need to check it
+				numMatch = number.match(str)
+				expMatch = sciExponent.search(str, numMatch.start(0))
+				self.value = string.atof(numMatch.group(0)) * math.pow(10, string.atof(expMatch.group(1)))
+				unitBegin = expMatch.end(1)
+			else:
+				# unit or invalid
+				numMatch = number.match(str)
+				if numMatch != None:
+					self.value = numMatch.group(0)
+					unitBegin = numMatch.end(0)
 
-			# unit or invalid
-			numMatch = number.match(str)
-			if numMatch != None:
-				unitMatch = unit.search(str, numMatch.start(0))
-				if unitMatch != None:
+			if unitBegin != 0 :
+#				print "  Value =", self.value
+				unitMatch = unit.search(str, unitBegin)
+				if unitMatch != None :
 					self.units = Unit.get(unitMatch.group(0))
+#					print "  Units =", self.units
+				
 			# invalid
 			else:
 				# TODO: this needs to set the default for the given attribute (how?)
+#				print "  Invalid: ", str
 				self.value = 0 
-				self.units = INVALID
+				self.units = Unit.INVALID
 
 # returns the length of a property
 # TODO: eventually use the above class once it is complete
@@ -314,10 +326,7 @@ def getSVGLength(value):
 	except ValueError:
 		coordMatch = coord.match(value)
 		if coordMatch != None:
-			print "Coord found:", coordMatch.group(0)
 			unitMatch = unit.search(value, coordMatch.start(0))
-			if unitMatch != None:
-				print "Unit found:", unitMatch.group(0)			
 		v = value
 	return v
 	
@@ -443,9 +452,24 @@ def cleanPath(element) :
 	path = element.getAttribute('d')
 
 def properlySizeDoc(docElement):
-	w = docElement.getAttribute('width')
-	h = docElement.getAttribute('height')
-	vb = docElement.getAttribute('viewBox')	
+	# get doc width and height
+	w = SVGLength(docElement.getAttribute('width'))
+	h = SVGLength(docElement.getAttribute('height'))
+	
+	if ((w.units == Unit.PCT or w.units == Unit.INVALID) and
+	    (h.units == Unit.PCT or h.units == Unit.INVALID)):
+	    return
+
+	# else we have a statically sized image and we should try to remedy that	
+
+	# parse viewBox attribute
+	vbSep = re.split("\\s*\\,?\\s*", docElement.getAttribute('viewBox'), 3)
+	# if we have a valid viewBox we probably shouldn't change anything unless
+	# the viewbox width/height matches the doc width/height
+#	if len(vbSep) == 4:
+#		vbWidth = 
+	
+	
 
 # parse command-line arguments
 args = sys.argv[1:]
@@ -512,8 +536,6 @@ while bContinueLooping:
 	referencedIDs = findReferencedElements(doc.documentElement, {})
 	bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
 
-
-
 # repair style (remove unnecessary style properties and change them into XML attributes)
 numStylePropsFixed = repairStyle(doc.documentElement)
 
@@ -532,6 +554,9 @@ for tag in ['defs', 'metadata', 'g'] :
 		if removeElem :
 			elem.parentNode.removeChild(elem)
 			numElemsRemoved += 1
+
+# properly size the SVG document (width/height should be 100% with a viewBox)
+properlySizeDoc(doc.documentElement)
 
 # clean path data
 for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
