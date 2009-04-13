@@ -47,8 +47,8 @@
 #  * Collapse all group based transformations
 
 # Next Up:
-# + move all functionality into a module level function named 'scour' and only call it
-#   when being run as main (prepare for unit testing)
+# + moved all functionality into a module level function named 'scour' and only call it
+#   when being run as main (for unit testing)
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 # - 

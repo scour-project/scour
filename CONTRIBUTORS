@@ -1,0 +1,7 @@
+Thanks to the following contributors to scour:
+
+* Doug Schepers (W3C SVG WG)
+	- function to embed rasters as base64 data: URLs
+	- report file size reduction
+	- prettied up the report
+	
