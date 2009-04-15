@@ -49,9 +49,10 @@
 # Next Up:
 # + moved all functionality into a module level function named 'scour' and only call it
 #   when being run as main (for unit testing)
-# - Removed duplicate gradient stops
+# + prevent metadata from being removed if they contain only text nodes
+# - Remove unreferenced pattern elements
+# - Remove duplicate gradient stops
 # - Convert all colors to #RRGGBB format
-# - prevent metadata from being removed if they contain only text nodes
 # - rework command-line argument processing so that options are configurable
 # - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
 
@@ -205,18 +206,39 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 			num += 1
 	return num
 
+# returns the number of unreferenced children removed from defs elements
 def vacuumDefs(doc):
 	global numElemsRemoved
 	num = 0
 	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
 	for aDef in defs:
+		elemsToRemove = []
 		for elem in aDef.childNodes:
 			if elem.nodeType == 1 and elem.getAttribute('id') == '' :
-				aDef.removeChild(elem)
-				numElemsRemoved += 1
-				num += 1
+				elemsToRemove.append(elem)
+		for elem in elemsToRemove:
+			aDef.removeChild(elem)
+			numElemsRemoved += 1
+			num += 1
 	return num
 
+# returns the number of unreferenced gradients or patterns removed from the document
+# (this relies on the ids being removed first)
+def removeUnreferencedElements(doc):
+	global numElemsRemoved
+	num = 0
+	for tag in ['pattern', 'linearGradient', 'radialGradient'] :
+		elems = doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag)
+		elemsToRemove = []
+		for elem in elems:
+			if elem.getAttribute('id') == '' :
+				elemsToRemove.append(elem)
+		for elem in elemsToRemove:
+			elem.parentNode.removeChild(elem)
+			numElemsRemoved += 1
+			num += 1
+	return num
+	
 def removeNamespacedAttributes(node, namespaces):
 	global numAttrsRemoved
 	num = 0
@@ -608,6 +630,9 @@ def scourString(in_string):
 				elem.parentNode.removeChild(elem)
 				numElemsRemoved += 1
 
+	# remove unreferenced gradients/patterns outside of defs
+	removeUnreferencedElements(doc)
+	
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
 		cleanPath(elem)

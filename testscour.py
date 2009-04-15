@@ -120,5 +120,16 @@ class RemoveEmptyGElements(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'g')), 1,
 			'Did not remove empty g element' )
 
+class RemoveUnreferencedPattern(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-pattern.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'pattern')), 0,
+			'Unreferenced pattern not removed' )
+
+# These tests will fail at present
+#class RemoveDuplicateGradientStops(unittest.TestCase):
+#	def runTest(self):
+#		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
+
 if __name__ == '__main__':
     unittest.main()
