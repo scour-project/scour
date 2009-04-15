@@ -47,11 +47,9 @@
 #  * Collapse all group based transformations
 
 # Next Up:
-# + moved all functionality into a module level function named 'scour' and only call it
-#   when being run as main (for unit testing)
-# + prevent metadata from being removed if they contain only text nodes
-# - Remove unreferenced pattern elements
 # - Remove duplicate gradient stops
+# - Remove unnecessary nested <g> elements
+# - Pretty up whitespace nodes on output
 # - Convert all colors to #RRGGBB format
 # - rework command-line argument processing so that options are configurable
 # - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -644,9 +642,18 @@ def scourString(in_string):
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
 	properlySizeDoc(doc.documentElement)
 
-	# output the document
-	out_string = doc.documentElement.toxml()
-	return out_string
+	# output the document as a pretty string with a single space for indent
+	out_string = doc.documentElement.toprettyxml(' ')
+	
+	# now strip out empty lines
+	lines = []
+	# Get rid of empty lines
+	for line in out_string.splitlines(True):
+		if line.strip():
+			lines.append(line)
+
+	# return the string stripped of empty lines
+	return "".join(lines)
 
 # used mostly by unit tests
 # input is a filename

@@ -126,6 +126,19 @@ class RemoveUnreferencedPattern(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'pattern')), 0,
 			'Unreferenced pattern not removed' )
 
+class RemoveUnreferencedLinearGradient(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-linearGradient.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'linearGradient')), 0,
+			'Unreferenced linearGradient not removed' )
+
+class RemoveUnreferencedRadialGradient(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-radialGradient.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'radialradient')), 0,
+			'Unreferenced radialGradient not removed' )
+
+
 # These tests will fail at present
 #class RemoveDuplicateGradientStops(unittest.TestCase):
 #	def runTest(self):
