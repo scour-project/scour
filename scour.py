@@ -51,7 +51,10 @@
 #   when being run as main (for unit testing)
 # - Removed duplicate gradient stops
 # - Convert all colors to #RRGGBB format
-# - 
+# - prevent metadata from being removed if they contain only text nodes
+# - rework command-line argument processing so that options are configurable
+# - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
+
 
 # necessary to get true division
 from __future__ import division
@@ -597,7 +600,7 @@ def scourString(in_string):
 			removeElem = not elem.hasChildNodes()
 			if removeElem == False :
 				for child in elem.childNodes :
-					if child.nodeType in [1, 4, 8] :
+					if child.nodeType in [1, 3, 4, 8] :
 						break
 				else:
 					removeElem = True

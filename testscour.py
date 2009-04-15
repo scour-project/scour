@@ -95,6 +95,30 @@ class NoAdobeXPathElements(unittest.TestCase):
 			lambda e: e.namespaceURI != 'http://ns.adobe.com/XPath/1.0/'), False,
 			'Found Adobe XPath elements' )
 
+#class NoInkscapeAttributes(unittest.TestCase):
+#	def runTest(self):
+#		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement,
+#			lambda e: for a in e.attributes: a.namespaceURI 
+#			False, 
+#			'Found Inkscape attributes')
+
+class DoNotRemoveMetadataWithOnlyText(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/metadata-with-text.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'metadata')), 1,
+			'Removed metadata element with only text child' )
+
+class RemoveEmptyMetadataElement(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-metadata.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'metadata')), 0,
+			'Did not remove empty metadata element' )
+
+class RemoveEmptyGElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-g.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'g')), 1,
+			'Did not remove empty g element' )
 
 if __name__ == '__main__':
     unittest.main()
