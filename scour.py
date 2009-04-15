@@ -1,6 +1,7 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
+
 #  Scour
-#  Version 0.07
+#  Version 0.08
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -47,9 +48,8 @@
 #  * Collapse all group based transformations
 
 # Next Up:
-# - Remove duplicate gradient stops
 # - Remove unnecessary nested <g> elements
-# - Pretty up whitespace nodes on output
+# - Remove duplicate gradient stops
 # - Convert all colors to #RRGGBB format
 # - rework command-line argument processing so that options are configurable
 # - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -69,7 +69,7 @@ import os.path
 import urllib
 
 APP = 'scour'
-VER = '0.07'
+VER = '0.08'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 

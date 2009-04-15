@@ -138,11 +138,18 @@ class RemoveUnreferencedRadialGradient(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'radialradient')), 0,
 			'Unreferenced radialGradient not removed' )
 
-
 # These tests will fail at present
-#class RemoveDuplicateGradientStops(unittest.TestCase):
-#	def runTest(self):
-#		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
+class RemoveUselessNestedGroups(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://wwww.w3.org/2000/svg', 'g')), 1,
+			'Useless nested groups not removed' )
+
+class RemoveDuplicateGradientStops(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'stop')), 3,
+			'Duplicate gradient stops not removed' )
 
 if __name__ == '__main__':
     unittest.main()
