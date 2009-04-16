@@ -28,8 +28,6 @@
 # TODO: Adapt this script into an Inkscape python plugin
 #
 # * Specify a limit to the precision of all positional elements.
-# * Clean up XML Elements
-#  * Collapse multiple redundent groups
 # * Clean up Definitions
 #  * Remove duplicate gradient stops
 #  * Collapse duplicate gradient definitions
@@ -48,11 +46,22 @@
 #  * Collapse all group based transformations
 
 # Next Up:
-# - Remove unnecessary nested <g> elements
-# - Remove duplicate gradient stops
+# + Remove unnecessary nested <g> elements
+# - Remove duplicate gradient stops (same offset, stop-color, stop-opacity)
 # - Convert all colors to #RRGGBB format
+# - Reduce #RRGGBB format to #RGB format when possible
 # - rework command-line argument processing so that options are configurable
 # - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
+
+# Some notes to not forget:
+# - removing unreferenced IDs loses some semantic information
+# - removing empty nested groups also potentially loses some semantic information
+#   (i.e. the following button:
+#     <g>
+#       <rect .../>
+#       <text .../>
+#     </g>
+#   will be flattened)
 
 
 # necessary to get true division
@@ -255,7 +264,7 @@ def removeNamespacedAttributes(node, namespaces):
 		
 		# now recurse for children
 		for child in node.childNodes:
-			removeNamespacedAttributes(child, namespaces)
+			num += removeNamespacedAttributes(child, namespaces)
 	return num
 	
 def removeNamespacedElements(node, namespaces):
@@ -275,10 +284,34 @@ def removeNamespacedElements(node, namespaces):
 		
 		# now recurse for children
 		for child in node.childNodes:
-			removeNamespacedElements(child, namespaces)
+			num += removeNamespacedElements(child, namespaces)
 	return num
 
-# TODO: create a class for a SVGLength type (including value and unit)
+# this walks further and further down the tree, removing groups
+# which do not have any attributes and promoting their children
+# up one level
+def removeNestedGroups(node):
+	global numElemsRemoved
+	num = 0
+	
+	groupsToRemove = []
+	for child in node.childNodes:
+		if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
+			groupsToRemove.append(child)
+
+	for g in groupsToRemove:
+		while g.childNodes.length > 0:
+			g.parentNode.insertBefore(g.firstChild, g)
+		g.parentNode.removeChild(g)
+		numElemsRemoved += 1
+		num += 1
+
+	# now recurse for children
+	for child in node.childNodes:
+		if child.nodeType == 1:
+			num += removeNestedGroups(child)
+		
+	return num
 
 coord = re.compile("\\-?\\d+\\.?\\d*")
 scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
@@ -629,13 +662,17 @@ def scourString(in_string):
 				numElemsRemoved += 1
 
 	# remove unreferenced gradients/patterns outside of defs
-	removeUnreferencedElements(doc)
+	while removeUnreferencedElements(doc) > 0:
+		pass
 	
+	while removeNestedGroups(doc.documentElement) > 0:
+		pass
+
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
 		cleanPath(elem)
 
-	# convert rasters refereces to base64-encoded strings 
+	# convert rasters references to base64-encoded strings 
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
 		embedRasters(elem)		
 

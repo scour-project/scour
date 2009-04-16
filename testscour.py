@@ -21,6 +21,8 @@ import unittest
 import scour
 import xml.dom.minidom
 
+SVGNS = 'http://www.w3.org/2000/svg'
+
 # I couldn't figure out how to get ElementTree to work with the following XPath 
 # "//*[namespace-uri()='http://example.com']"
 # so I decided to use minidom and this helper function that performs a test on a given node 
@@ -95,6 +97,55 @@ class NoAdobeXPathElements(unittest.TestCase):
 			lambda e: e.namespaceURI != 'http://ns.adobe.com/XPath/1.0/'), False,
 			'Found Adobe XPath elements' )
 
+class DoNotRemoveMetadataWithOnlyText(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/metadata-with-text.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 1,
+			'Removed metadata element with only text child' )
+
+class RemoveEmptyMetadataElement(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-metadata.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 0,
+			'Did not remove empty metadata element' )
+
+class RemoveEmptyGElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-g.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 1,
+			'Did not remove empty g element' )
+
+class RemoveUnreferencedPattern(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-pattern.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'pattern')), 0,
+			'Unreferenced pattern not removed' )
+
+class RemoveUnreferencedLinearGradient(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-linearGradient.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 0,
+			'Unreferenced linearGradient not removed' )
+
+class RemoveUnreferencedRadialGradient(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-radialGradient.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'radialradient')), 0,
+			'Unreferenced radialGradient not removed' )
+
+class RemoveUselessNestedGroups(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 1,
+			'Useless nested groups not removed' )
+
+# These tests will fail at present
+class RemoveDuplicateGradientStops(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'stop')), 3,
+			'Duplicate gradient stops not removed' )
+
 #class NoInkscapeAttributes(unittest.TestCase):
 #	def runTest(self):
 #		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement,
@@ -102,54 +153,6 @@ class NoAdobeXPathElements(unittest.TestCase):
 #			False, 
 #			'Found Inkscape attributes')
 
-class DoNotRemoveMetadataWithOnlyText(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/metadata-with-text.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'metadata')), 1,
-			'Removed metadata element with only text child' )
-
-class RemoveEmptyMetadataElement(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/empty-metadata.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'metadata')), 0,
-			'Did not remove empty metadata element' )
-
-class RemoveEmptyGElements(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/empty-g.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'g')), 1,
-			'Did not remove empty g element' )
-
-class RemoveUnreferencedPattern(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/unreferenced-pattern.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'pattern')), 0,
-			'Unreferenced pattern not removed' )
-
-class RemoveUnreferencedLinearGradient(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/unreferenced-linearGradient.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'linearGradient')), 0,
-			'Unreferenced linearGradient not removed' )
-
-class RemoveUnreferencedRadialGradient(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/unreferenced-radialGradient.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'radialradient')), 0,
-			'Unreferenced radialGradient not removed' )
-
-# These tests will fail at present
-class RemoveUselessNestedGroups(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://wwww.w3.org/2000/svg', 'g')), 1,
-			'Useless nested groups not removed' )
-
-class RemoveDuplicateGradientStops(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'stop')), 3,
-			'Duplicate gradient stops not removed' )
 
 if __name__ == '__main__':
     unittest.main()
