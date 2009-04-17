@@ -29,7 +29,6 @@
 #
 # * Specify a limit to the precision of all positional elements.
 # * Clean up Definitions
-#  * Remove duplicate gradient stops
 #  * Collapse duplicate gradient definitions
 #  * Remove gradients that are only referenced by one other gradient
 # * Clean up CSS
@@ -47,11 +46,11 @@
 
 # Next Up:
 # + Remove unnecessary nested <g> elements
-# - Remove duplicate gradient stops (same offset, stop-color, stop-opacity)
+# + Remove duplicate gradient stops (same offset, stop-color, stop-opacity)
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # - rework command-line argument processing so that options are configurable
-# - remove unreferenced patterns? https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
+https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
 
 # Some notes to not forget:
 # - removing unreferenced IDs loses some semantic information
@@ -309,8 +308,33 @@ def removeNestedGroups(node):
 	# now recurse for children
 	for child in node.childNodes:
 		if child.nodeType == 1:
-			num += removeNestedGroups(child)
-		
+			num += removeNestedGroups(child)		
+	return num
+
+def removeDuplicateGradientStops(doc):
+	global numElemsRemoved
+	num = 0
+	
+	for gradType in ['linearGradient', 'radialGradient']:
+		for grad in doc.getElementsByTagNameNS(NS['SVG'], gradType):
+			stops = {}
+			stopsToRemove = []
+			for stop in grad.getElementsByTagNameNS(NS['SVG'], 'stop'):
+				offset = string.atof(stop.getAttribute('offset'))
+				color = stop.getAttribute('stop-color')
+				opacity = stop.getAttribute('stop-opacity')
+				if stops.has_key(offset) :
+					oldStop = stops[offset]
+					if oldStop[0] == color and oldStop[1] == opacity:
+						stopsToRemove.append(stop)
+				stops[offset] = [color, opacity]
+				
+			for stop in stopsToRemove:
+				stop.parentNode.removeChild(stop)
+				num += 1
+				numElemsRemoved += 1
+	
+	# linear gradients
 	return num
 
 coord = re.compile("\\-?\\d+\\.?\\d*")
@@ -668,6 +692,9 @@ def scourString(in_string):
 	while removeNestedGroups(doc.documentElement) > 0:
 		pass
 
+	while removeDuplicateGradientStops(doc) > 0:
+		pass
+	
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
 		cleanPath(elem)

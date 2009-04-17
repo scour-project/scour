@@ -139,13 +139,21 @@ class RemoveUselessNestedGroups(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 1,
 			'Useless nested groups not removed' )
 
-# These tests will fail at present
-class RemoveDuplicateGradientStops(unittest.TestCase):
+class RemoveDuplicateLinearGradientStops(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
-		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'stop')), 3,
-			'Duplicate gradient stops not removed' )
+		grad = doc.getElementsByTagNameNS(SVGNS, 'linearGradient')
+		self.assertEquals(len(grad[0].getElementsByTagNameNS(SVGNS, 'stop')), 3,
+			'Duplicate linear gradient stops not removed' )
 
+class RemoveDuplicateRadialGradientStops(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
+		grad = doc.getElementsByTagNameNS(SVGNS, 'radialGradient')
+		self.assertEquals(len(grad[0].getElementsByTagNameNS(SVGNS, 'stop')), 3,
+			'Duplicate radial gradient stops not removed' )
+
+# These tests will fail at present
 #class NoInkscapeAttributes(unittest.TestCase):
 #	def runTest(self):
 #		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement,
