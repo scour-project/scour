@@ -153,13 +153,47 @@ class RemoveDuplicateRadialGradientStops(unittest.TestCase):
 		self.assertEquals(len(grad[0].getElementsByTagNameNS(SVGNS, 'stop')), 3,
 			'Duplicate radial gradient stops not removed' )
 
-# These tests will fail at present
-#class NoInkscapeAttributes(unittest.TestCase):
-#	def runTest(self):
-#		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement,
-#			lambda e: for a in e.attributes: a.namespaceURI 
-#			False, 
-#			'Found Inkscape attributes')
+class NoSodipodiNamespaceDecl(unittest.TestCase):
+	def runTest(self):
+		attrs = scour.scourXmlFile('unittests/sodipodi.svg').documentElement.attributes
+		for i in range(len(attrs)):
+			self.assertNotEquals(attrs.item(i).nodeValue,
+				'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
+				'Sodipodi namespace declaration found' )
+
+class NoInkscapeNamespaceDecl(unittest.TestCase):
+	def runTest(self):
+		attrs = scour.scourXmlFile('unittests/inkscape.svg').documentElement.attributes
+		for i in range(len(attrs)):
+			self.assertNotEquals(attrs.item(i).nodeValue,
+				'http://www.inkscape.org/namespaces/inkscape',
+				'Inkscape namespace declaration found' )
+		
+class NoSodipodiAttributes(unittest.TestCase):
+	def runTest(self):	
+		def findSodipodiAttr(elem):
+			attrs = elem.attributes
+			if attrs == None: return True
+			for i in range(len(attrs)):
+				if attrs.item(i).namespaceURI == 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd':
+					return False
+			return True
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
+			findSodipodiAttr), False,
+			'Found Sodipodi attributes' )
+			
+class NoInkscapeAttributes(unittest.TestCase):
+	def runTest(self):	
+		def findInkscapeAttr(elem):
+			attrs = elem.attributes
+			if attrs == None: return True
+			for i in range(len(attrs)):
+				if attrs.item(i).namespaceURI == 'http://www.inkscape.org/namespaces/inkscape':
+					return False
+			return True
+		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement, 
+			findInkscapeAttr), False,
+			'Found Inkscape attributes' )
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # - rework command-line argument processing so that options are configurable
-https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
+# https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
 
 # Some notes to not forget:
 # - removing unreferenced IDs loses some semantic information
