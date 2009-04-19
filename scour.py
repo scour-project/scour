@@ -215,12 +215,13 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 # returns the number of unreferenced children removed from defs elements
 def vacuumDefs(doc):
 	global numElemsRemoved
+	keepTags = ['font', 'style', 'metadata' ]
 	num = 0
 	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
 	for aDef in defs:
 		elemsToRemove = []
 		for elem in aDef.childNodes:
-			if elem.nodeType == 1 and elem.getAttribute('id') == '' :
+			if elem.nodeType == 1 and elem.getAttribute('id') == '' and not elem.nodeName in keepTags:
 				elemsToRemove.append(elem)
 		for elem in elemsToRemove:
 			aDef.removeChild(elem)
