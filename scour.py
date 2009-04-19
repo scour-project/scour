@@ -47,7 +47,7 @@
 # Next Up:
 # + Remove unnecessary nested <g> elements
 # + Remove duplicate gradient stops (same offset, stop-color, stop-opacity)
-# + Always keep fonts inside <defs>
+# + Always keep fonts inside <defs>, always keep ids on fonts
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # - rework command-line argument processing so that options are configurable
@@ -786,4 +786,4 @@ if __name__ == '__main__':
 		newsize = os.path.getsize(output.name)
 		#sizediff = (min(oldsize, newsize)  / max(oldsize, newsize)) * 100;
 		sizediff = (newsize / oldsize);
-		print " Original file size:", oldsize, "kb; new file size:", newsize, "kb (" + str(sizediff)[:5] + "x)"
+		print " Original file size:", oldsize, "bytes; new file size:", newsize, "bytes (" + str(sizediff)[:5] + "x)"
