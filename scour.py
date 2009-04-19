@@ -201,14 +201,12 @@ numRastersEmbedded = 0
 # returns the number of ID attributes removed
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
 	global numIDsRemoved
+	keepTags = ['font']
 	num = 0;
 	for id in identifiedElements.keys():
 		node = identifiedElements[id]
-		if referencedIDs.has_key(id) == False :
+		if referencedIDs.has_key(id) == False and not node.nodeName in keepTags:
 			node.removeAttribute('id')
-			# now remove the element from our list of elements with ids
-			# not necessary if we're calculating the array again every time
-#			del identifiedElements[id]
 			numIDsRemoved += 1
 			num += 1
 	return num
