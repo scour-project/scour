@@ -47,6 +47,7 @@
 # Next Up:
 # + Remove unnecessary nested <g> elements
 # + Remove duplicate gradient stops (same offset, stop-color, stop-opacity)
+# + Always keep fonts inside <defs>
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # - rework command-line argument processing so that options are configurable

@@ -202,12 +202,12 @@ class KeepReferencedFonts(unittest.TestCase):
 		self.assertEquals(len(fonts), 1,
 			"Font wrongly removed from <defs>" )
 
-class RemoveUnreferencedFonts(unittest.TestCase):
-	def runTest(self):
-		doc = scour.scourXmlFile('unittests/unreferenced-font.svg')
-		fonts = doc.documentElement.getElementsByTagNameNS('http://www.w3.org/2000/svg','font')
-		self.assertEquals(len(fonts), 0,
-			"Font was not removed from <defs>" )
+#class RemoveUnreferencedFonts(unittest.TestCase):
+#	def runTest(self):
+#		doc = scour.scourXmlFile('unittests/unreferenced-font.svg')
+#		fonts = doc.documentElement.getElementsByTagNameNS('http://www.w3.org/2000/svg','font')
+#		self.assertEquals(len(fonts), 0,
+#			"Font was not removed from <defs>" )
 		
 if __name__ == '__main__':
     unittest.main()
