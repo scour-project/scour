@@ -127,16 +127,13 @@ svgAttributes = [
 				'stroke-width',
 				]
 
-def printHeader():
-	print APP , VER
-	print COPYRIGHT
-
-def printSyntaxAndQuit():
-	printHeader()
-	print 'usage: scour.py [-i input.svg] [-o output.svg]\n'
-	print 'If the input file is not specified, stdin is used.'
-	print 'If the output file is not specified, stdout is used.'
-	quit()	
+def findElementById(node, id):
+	if node == None or node.nodeType != 1: return None
+	if node.getAttribute('id') == id: return node
+	for child in node.childNodes :
+		e = findElementById(child,id)
+		if e != None: return e
+	return None
 
 # returns all elements with id attributes
 def findElementsWithId(node,elems={}):
@@ -197,6 +194,47 @@ numElemsRemoved = 0
 numAttrsRemoved = 0
 numRastersEmbedded = 0
 
+# removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>
+# also vacuums the defs of any non-referenced renderable elements
+# returns the number of unreferenced elements removed from the document
+def removeUnreferencedElements(doc):
+	global numElemsRemoved
+	num = 0
+	removeTags = ['linearGradient', 'radialGradient', 'pattern']
+
+	identifiedElements = findElementsWithId(doc.documentElement, {})
+	referencedIDs = findReferencedElements(doc.documentElement, {})
+
+	for id in identifiedElements:
+		if not id in referencedIDs:
+			goner = findElementById(doc.documentElement, id)
+			if goner != None and goner.parentNode != None and goner.nodeName in removeTags:
+				goner.parentNode.removeChild(goner)
+				num += 1
+				numElemsRemoved += 1
+
+	# TODO: should also go through defs and vacuum it
+	identifiedElements = findElementsWithId(doc.documentElement, {})
+	referencedIDs = findReferencedElements(doc.documentElement, {})
+	
+	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
+	num = 0
+	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
+	for aDef in defs:
+		elemsToRemove = []
+		for elem in aDef.childNodes:
+			if elem.nodeType == 1 and (elem.getAttribute('id') == '' or \
+					(not elem.getAttribute('id') in referencedIDs)) and \
+					not elem.nodeName in keepTags:
+				elemsToRemove.append(elem)
+		for elem in elemsToRemove:
+			aDef.removeChild(elem)
+			numElemsRemoved += 1
+			num += 1
+	return num
+	
+	return num
+
 # removes the unreferenced ID attributes
 # returns the number of ID attributes removed
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
@@ -208,40 +246,6 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 		if referencedIDs.has_key(id) == False and not node.nodeName in keepTags:
 			node.removeAttribute('id')
 			numIDsRemoved += 1
-			num += 1
-	return num
-
-# returns the number of unreferenced children removed from defs elements
-def vacuumDefs(doc):
-	global numElemsRemoved
-	keepTags = ['font', 'style', 'metadata' ]
-	num = 0
-	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
-	for aDef in defs:
-		elemsToRemove = []
-		for elem in aDef.childNodes:
-			if elem.nodeType == 1 and elem.getAttribute('id') == '' and not elem.nodeName in keepTags:
-				elemsToRemove.append(elem)
-		for elem in elemsToRemove:
-			aDef.removeChild(elem)
-			numElemsRemoved += 1
-			num += 1
-	return num
-
-# returns the number of unreferenced gradients or patterns removed from the document
-# (this relies on the ids being removed first)
-def removeUnreferencedElements(doc):
-	global numElemsRemoved
-	num = 0
-	for tag in ['pattern', 'linearGradient', 'radialGradient'] :
-		elems = doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag)
-		elemsToRemove = []
-		for elem in elems:
-			if elem.getAttribute('id') == '' :
-				elemsToRemove.append(elem)
-		for elem in elemsToRemove:
-			elem.parentNode.removeChild(elem)
-			numElemsRemoved += 1
 			num += 1
 	return num
 	
@@ -635,7 +639,7 @@ def properlySizeDoc(docElement):
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
-def scourString(in_string):
+def scourString(in_string, options=[]):
 	global numAttrsRemoved
 	global numStylePropsFixed
 	global numElemsRemoved
@@ -660,12 +664,6 @@ def scourString(in_string):
 		doc.documentElement.removeAttribute(attr)
 		numAttrsRemoved += 1
 
-	bContinueLooping = True
-	while bContinueLooping:
-		identifiedElements = findElementsWithId(doc.documentElement, {})
-		referencedIDs = findReferencedElements(doc.documentElement, {})
-		bContinueLooping = ((removeUnreferencedIDs(referencedIDs, identifiedElements) + vacuumDefs(doc)) > 0)
-
 	# repair style (remove unnecessary style properties and change them into XML attributes)
 	numStylePropsFixed = repairStyle(doc.documentElement)
 
@@ -688,6 +686,13 @@ def scourString(in_string):
 	# remove unreferenced gradients/patterns outside of defs
 	while removeUnreferencedElements(doc) > 0:
 		pass
+
+	if '--enable-id-stripping' in options:
+		bContinueLooping = True
+		while bContinueLooping:
+			identifiedElements = findElementsWithId(doc.documentElement, {})
+			referencedIDs = findReferencedElements(doc.documentElement, {})
+			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
 	
 	while removeNestedGroups(doc.documentElement) > 0:
 		pass
@@ -722,44 +727,69 @@ def scourString(in_string):
 # used mostly by unit tests
 # input is a filename
 # returns the minidom doc representation of the SVG
-def scourXmlFile(filename):
+def scourXmlFile(filename, options=[]):
 	in_string = open(filename).read()
-	out_string = scourString(in_string)
+	out_string = scourString(in_string, options)
 	return xml.dom.minidom.parseString(out_string)
 
-if __name__ == '__main__':
+def printHeader():
+	print APP , VER
+	print COPYRIGHT
 
-	# parse command-line arguments
+def printSyntaxAndQuit():
+	printHeader()
+	print 'usage: scour.py [-i input.svg] [-o output.svg] [OPTIONS]\n'
+	print 'If the input file is not specified, stdin is used.'
+	print 'If the output file is not specified, stdout is used.\n'
+	print 'If an option is not available below that means it occurs automatically'
+	print 'when scour is invoked.  Available OPTIONS:\n'
+	print '  --enable-id-stripping : Scour will remove all un-referenced ID attributes'
+	print ''
+	quit()	
+
+# returns a tuple with:
+# input stream, output stream, and a list of options specified on the command-line
+def parseCLA():
 	args = sys.argv[1:]
 
 	# by default the input and output are the standard streams
 	input = sys.stdin
 	output = sys.stdout
-
-	# if -i or -o is supplied, switch the stream to the file
-	if len(args) == 2:
-		if args[0] == '-i' :
-			input = open(args[1], 'r')
-		elif args[0] == '-o' :
-			output = open(args[1], 'w')
-		else:
+	options = []
+	validOptions = [
+					'--enable-id-stripping',
+					]
+					
+	i = 0
+	while i < len(args):
+		arg = args[i]
+		i += 1
+		if arg == '-i' :
+			if i < len(args) :
+				input = open(args[i], 'r')
+				i += 1
+				continue
+			else:
+				printSyntaxAndQuit()
+		elif arg == '-o' :
+			if i < len(args) :
+				output = open(args[i], 'w')
+				i += 1
+				continue
+			else:
+				printSyntaxAndQuit()
+		elif arg in validOptions :
+			options.append(arg)
+		else :
+			print 'Error!  Invalid argument:', arg
 			printSyntaxAndQuit()
+			
+	return (input, output, options)
 
-	# if both -o and -o are supplied, switch streams to the files
-	elif len(args) == 4 :
-		if args[0] == '-i' and args[2] == '-o' :
-			input = open(args[1], 'r')
-			output = open(args[3], 'w')
-		elif args[0] == '-o' and args[2] == 'i' :
-			output = open(args[1], 'w')
-			input = open(args[3], 'r')
-		else:
-			printSyntaxAndQuit()
+if __name__ == '__main__':
 
-	# else invalid syntax
-	elif len(args) != 0 :
-		printSyntaxAndQuit()
-
+	(input, output, options) = parseCLA()
+	
 	# if we are not sending to stdout, then print out app information
 	bOutputReport = False
 	if output != sys.stdout :
@@ -768,7 +798,7 @@ if __name__ == '__main__':
 
 	# do the work
 	in_string = input.read()
-	out_string = scourString(in_string)
+	out_string = scourString(in_string, options)
 	output.write(out_string)
 
 	# Close input and output files

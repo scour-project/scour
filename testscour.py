@@ -133,6 +133,30 @@ class RemoveUnreferencedRadialGradient(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'radialradient')), 0,
 			'Unreferenced radialGradient not removed' )
 
+class RemoveUnreferencedElementInDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/referenced-elements-1.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+			'Unreferenced rect left in defs' )
+
+class KeepTitleInDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/referenced-elements-1.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 1,
+			'Title removed from in defs' )
+
+class KeepUnreferencedIDsWhenEnabled(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/ids-to-strip.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'svg')[0].getAttribute('id'), 'boo',
+			'<svg> ID stripped when it should be disabled' )
+			
+class RemoveUnreferencedIDsWhenEnabled(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/ids-to-strip.svg', ['--enable-id-stripping'])
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'svg')[0].getAttribute('id'), '',
+			'<svg> ID not stripped' )
+
 class RemoveUselessNestedGroups(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg')
