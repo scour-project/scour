@@ -455,8 +455,9 @@ def repairStyle(node):
 				for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
 					'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
 					'stroke-dashoffset', 'stroke-opacity'] :
-					del styleMap[uselessStyle]
-					num += 1
+					if styleMap.has_key(uselessStyle):
+						del styleMap[uselessStyle]
+						num += 1
 
 		#  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
 		#  TODO: should also detect if the computed value of this element is fill="none"
@@ -490,8 +491,9 @@ def repairStyle(node):
 				num += 1
 			elif fillOpacity == 0.0 :
 				for uselessFillStyle in [ 'fill', 'fill-rule' ] :
-					del styleMap[uselessFillStyle]
-					num += 1
+					if styleMap.has_key(uselessFillStyle):
+						del styleMap[uselessFillStyle]
+						num += 1
 		
 		#  stroke-opacity: 1 or 0
 		if styleMap.has_key('stroke-opacity') :
