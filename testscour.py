@@ -228,48 +228,117 @@ class KeepReferencedFonts(unittest.TestCase):
 			
 class ConvertStyleToAttrs(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('style'), '',
 			"style attribute not emptied" )
 			
 class RemoveStrokeWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke'), '',
-			"stroke attribute not emptied" )
+			"stroke attribute not emptied when stroke opacity zero" )
 
 class RemoveStrokeWidthWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-width'), '',
-			"stroke-width attribute not emptied" )
+			"stroke-width attribute not emptied when stroke opacity zero" )
 
 class RemoveStrokeLinecapWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linecap'), '',
-			"stroke-linecap attribute not emptied" )
+			"stroke-linecap attribute not emptied when stroke opacity zero" )
 
 class RemoveStrokeLinejoinWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linejoin'), '',
-			"stroke-linejoin attribute not emptied" )
+			"stroke-linejoin attribute not emptied when stroke opacity zero" )
 
 class RemoveStrokeDasharrayWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dasharray'), '',
-			"stroke-dasharray attribute not emptied" )
+			"stroke-dasharray attribute not emptied when stroke opacity zero" )
 
 class RemoveStrokeDashoffsetWhenStrokeTransparent(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		doc = scour.scourXmlFile('unittests/stroke-transparent.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dashoffset'), '',
-			"stroke-dashoffset attribute not emptied" )
+			"stroke-dashoffset attribute not emptied when stroke opacity zero" )
 
-# TODO : add in duplicate tests for when the stroke-width is 0
-# TODO : add in duplicate tests for when the stroke is none
+class RemoveStrokeWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke'), '',
+			"stroke attribute not emptied when width zero" )
+
+class RemoveStrokeOpacityWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-opacity'), '',
+			"stroke-opacity attribute not emptied when width zero" )
+
+class RemoveStrokeLinecapWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linecap'), '',
+			"stroke-linecap attribute not emptied when width zero" )
+
+class RemoveStrokeLinejoinWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linejoin'), '',
+			"stroke-linejoin attribute not emptied when width zero" )
+
+class RemoveStrokeDasharrayWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dasharray'), '',
+			"stroke-dasharray attribute not emptied when width zero" )
+
+class RemoveStrokeDashoffsetWhenStrokeWidthZero(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dashoffset'), '',
+			"stroke-dashoffset attribute not emptied when width zero" )
+			
+class RemoveStrokeWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-width'), '',
+			"stroke-width attribute not emptied when no stroke" )
+
+class RemoveStrokeOpacityWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-opacity'), '',
+			"stroke-opacity attribute not emptied when no stroke" )
+
+class RemoveStrokeLinecapWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linecap'), '',
+			"stroke-linecap attribute not emptied when no stroke" )
+
+class RemoveStrokeLinejoinWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linejoin'), '',
+			"stroke-linejoin attribute not emptied when no stroke" )
+
+class RemoveStrokeDasharrayWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dasharray'), '',
+			"stroke-dasharray attribute not emptied when no stroke" )
+
+class RemoveStrokeDashoffsetWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dashoffset'), '',
+			"stroke-dashoffset attribute not emptied when no stroke" )
 
 #class RemoveUnreferencedFonts(unittest.TestCase):
 #	def runTest(self):
@@ -277,6 +346,6 @@ class RemoveStrokeDashoffsetWhenStrokeTransparent(unittest.TestCase):
 #		fonts = doc.documentElement.getElementsByTagNameNS('http://www.w3.org/2000/svg','font')
 #		self.assertEquals(len(fonts), 0,
 #			"Font was not removed from <defs>" )
-		
+
 if __name__ == '__main__':
     unittest.main()
