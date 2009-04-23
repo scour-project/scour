@@ -222,9 +222,39 @@ class NoInkscapeAttributes(unittest.TestCase):
 class KeepReferencedFonts(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/referenced-font.svg')
-		fonts = doc.documentElement.getElementsByTagNameNS('http://www.w3.org/2000/svg','font')
+		fonts = doc.documentElement.getElementsByTagNameNS(SVGNS,'font')
 		self.assertEquals(len(fonts), 1,
 			"Font wrongly removed from <defs>" )
+			
+class ConvertStyleToAttrs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('style'), '',
+			"style attribute not emptied" )
+			
+class RemoveStrokeWhenStrokeTransparent(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke'), '',
+			"stroke attribute not emptied" )
+
+class RemoveStrokeWidthWhenStrokeTransparent(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-width'), '',
+			"stroke-width attribute not emptied" )
+
+class RemoveStrokeLinecapWhenStrokeTransparent(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linecap'), '',
+			"stroke-linecap attribute not emptied" )
+
+class RemoveStrokeLinejoinWhenStrokeTransparent(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-linejoin.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-linejoin'), '',
+			"stroke-linejoin attribute not emptied" )
 
 #class RemoveUnreferencedFonts(unittest.TestCase):
 #	def runTest(self):

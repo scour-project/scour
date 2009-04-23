@@ -45,6 +45,7 @@
 #  * Collapse all group based transformations
 
 # Next Up:
+# + fix bug when removing stroke styles
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -502,8 +503,9 @@ def repairStyle(node):
 			elif strokeOpacity == 0.0 :
 				for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap', 
 							'stroke-dasharray', 'stroke-dashoffset' ] :
-					del styleMap[uselessStrokeStyle]
-					num += 1
+					if styleMap.has_key(uselessStrokeStyle): 
+						del styleMap[uselessStrokeStyle]
+						num += 1
 
 		# stroke-width: 0
 		if styleMap.has_key('stroke-width') :
@@ -511,8 +513,9 @@ def repairStyle(node):
 			if strokeWidth == 0.0 :
 				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap', 
 							'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
-					del styleMap[uselessStrokeStyle]
-					num += 1
+					if styleMap.has_key(uselessStrokeStyle): 
+						del styleMap[uselessStrokeStyle]
+						num += 1
 		
 		#  TODO: what else?
 		
