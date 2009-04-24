@@ -340,6 +340,18 @@ class RemoveStrokeDashoffsetWhenStrokeNone(unittest.TestCase):
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dashoffset'), '',
 			"stroke-dashoffset attribute not emptied when no stroke" )
 
+class RemoveFillRuleWhenFillNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/fill-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('fill-rule'), '',
+			"fill-rule attribute not emptied when no fill" )
+			
+class RemoveFillOpacityWhenFillNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/fill-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('fill-opacity'), '',
+			"fill-opacity attribute not emptied when no fill" )
+			
 #class RemoveUnreferencedFonts(unittest.TestCase):
 #	def runTest(self):
 #		doc = scour.scourXmlFile('unittests/unreferenced-font.svg')

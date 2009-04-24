@@ -44,6 +44,9 @@
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
 
+# Suggestion from Richard Hutch:
+#  * Put id attributes first in the serialization (or make the d attribute last)
+
 # Next Up:
 # + fix bug when removing stroke styles
 # - Convert all colors to #RRGGBB format
