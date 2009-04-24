@@ -370,7 +370,34 @@ class ConvertFillRuleOpacityPropertyToAttr(unittest.TestCase):
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill-rule'), 'nonzero',
 			'fill-rule property not converted to XML attribute' )
 			
-			
+class CollapseSinglyReferencedGradients(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/collapse-gradients.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 0,
+			'Singly-referenced linear gradient not collapsed' )
+
+class InheritGradientUnitsUponCollapsing(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/collapse-gradients.svg')
+#		print doc.toprettyxml(' ')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')[0].getAttribute('gradientUnits'), 
+			'userSpaceOnUse',
+			'gradientUnits not properly inherited when collapsing gradients' )
+
+class OverrideGradientUnitsUponCollapsing(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/collapse-gradients-gradientUnits.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')[0].getAttribute('gradientUnits'), 
+			'objectBoundingBox',
+			'gradientUnits not properly overrode when collapsing gradients' )
+
+class DoNotCollapseMultiplyReferencedGradients(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/dont-collapse-gradients.svg')
+		self.assertNotEquals(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 0,
+			'Multiply-referenced linear gradient collapsed' )
+
+
 #class RemoveUnreferencedFonts(unittest.TestCase):
 #	def runTest(self):
 #		doc = scour.scourXmlFile('unittests/unreferenced-font.svg')

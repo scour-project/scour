@@ -49,6 +49,9 @@
 
 # Next Up:
 # + fix bug when removing stroke styles
+# + Remove gradients that are only referenced by one other gradient
+# - Remove unnecessary units of precision on attributes
+# - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -147,8 +150,8 @@ def findElementsWithId(node,elems={}):
 				findElementsWithId(child, elems)
 	return elems
 
-# returns the number of times an id is referenced
-# currently looks at fill, stroke and xlink:href attributes
+# returns the number of times an id is referenced as well as all elements that reference it
+# currently looks at fill, stroke, clip-path, mask, marker and xlink:href attributes
 def findReferencedElements(node,ids={}):
 	# TODO: error here (ids is not cleared upon next invocation), the
 	# input argument ids is clunky here (see below how it is called)
@@ -159,9 +162,10 @@ def findReferencedElements(node,ids={}):
 		# we remove the hash mark from the beginning of the id
 		id = href[1:]
 		if ids.has_key(id) :
-			ids[id] += 1
+			ids[id][0] += 1
+			ids[id][1].append(node)
 		else:
-			ids[id] = 1
+			ids[id] = [1,[node]]
 
 	# now get all style properties and the fill, stroke, filter attributes
 	styles = string.split(node.getAttribute('style'),';')
@@ -178,9 +182,10 @@ def findReferencedElements(node,ids={}):
 			if prop in referencingProps and val != '' and val[0:5] == 'url(#' :
 				id = val[5:val.find(')')]
 				if ids.has_key(id) :
-					ids[id] += 1
+					ids[id][0] += 1
+					ids[id][1].append(node)
 				else:
-					ids[id] = 1
+					ids[id] = [1,[node]]
 					
 	if node.hasChildNodes() :
 		for child in node.childNodes:
@@ -338,6 +343,61 @@ def removeDuplicateGradientStops(doc):
 				numElemsRemoved += 1
 	
 	# linear gradients
+	return num
+
+def collapseSinglyReferencedGradients(doc):
+	global numElemsRemoved
+	num = 0
+	
+	# make sure to reset the ref'ed ids for when we are running this in testscour
+	for rid,nodeCount in findReferencedElements(doc.documentElement, {}).iteritems():
+		count = nodeCount[0]
+		nodes = nodeCount[1]
+		if count == 1:
+			elem = findElementById(doc.documentElement,rid)
+			if elem != None and elem.nodeType == 1 and elem.nodeName in ['linearGradient', 'radialGradient'] \
+					and elem.namespaceURI == NS['SVG']:
+				# found a gradient that is referenced by only 1 other element
+				refElem = nodes[0]
+				if refElem.nodeType == 1 and refElem.nodeName in ['linearGradient', 'radialGradient'] \
+						and refElem.namespaceURI == NS['SVG']:
+					# elem is a gradient referenced by only one other gradient (refElem)
+					# TODO: update elem with properties and stops from refElem
+					
+					# add the stops to the referencing gradient (this removes them from elem)
+					if len(refElem.getElementsByTagNameNS(NS['SVG'], 'stop')) == 0:
+						stopsToAdd = elem.getElementsByTagNameNS(NS['SVG'], 'stop')
+						for stop in stopsToAdd:
+							refElem.appendChild(stop)
+							
+					# adopt the gradientUnits, spreadMethod,  gradientTransform attributess if
+					# they are unspecified on refElem
+					for attr in ['gradientUnits','spreadMethod','gradientTransform']:
+						if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
+							refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
+							
+					# if both are radialGradients, adopt elem's fx,fy,cx,cy,r attributes if
+					# they are unspecified on refElem
+					if elem.nodeName == 'radialGradient' and refElem.nodeName == 'radialGradient':
+						for attr in ['fx','fy','cx','cy','r']:
+							if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
+								refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
+					
+					# if both are linearGradients, adopt elem's x1,y1,x2,y2 attributes if 
+					# they are unspecified on refElem
+					if elem.nodeName == 'linearGradient' and refElem.nodeName == 'linearGradient':
+						for attr in ['x1','y1','x2','y2']:
+							if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
+								refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
+								
+					# now remove the xlink:href from refElem
+					refElem.removeAttributeNS(NS['XLINK'], 'href')
+					
+					# now delete elem
+					elem.parentNode.removeChild(elem)
+					numElemsRemoved += 1
+					num += 1
+					
 	return num
 
 coord = re.compile("\\-?\\d+\\.?\\d*")
@@ -703,6 +763,10 @@ def scourString(in_string, options=[]):
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
 	
+	# remove gradients that are only referenced by one other gradient
+	while collapseSinglyReferencedGradients(doc) > 0:
+		pass
+	
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
 		cleanPath(elem)
@@ -732,7 +796,9 @@ def scourString(in_string, options=[]):
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=[]):
 	in_string = open(filename).read()
+#	print 'IN=',in_string
 	out_string = scourString(in_string, options)
+#	print 'OUT=',out_string
 	return xml.dom.minidom.parseString(out_string)
 
 def printHeader():
