@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #  Scour
-#  Version 0.08
+#  Version 0.09
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -30,7 +30,6 @@
 # * Specify a limit to the precision of all positional elements.
 # * Clean up Definitions
 #  * Collapse duplicate gradient definitions
-#  * Remove gradients that are only referenced by one other gradient
 # * Clean up CSS
 #  * Convert RGB colours from RGB(r,g,b) to #RRGGBB format
 #  * Convert RGB colours from #RRGGBB to #RGB if possible
@@ -50,6 +49,9 @@
 # Next Up:
 # + fix bug when removing stroke styles
 # + Remove gradients that are only referenced by one other gradient
+# + added option to prevent group collapsing
+# + prevent groups with title/desc children from being collapsed
+# + remove stroke=none attribute
 # - Remove unnecessary units of precision on attributes
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
@@ -295,8 +297,8 @@ def removeNamespacedElements(node, namespaces):
 	return num
 
 # this walks further and further down the tree, removing groups
-# which do not have any attributes and promoting their children
-# up one level
+# which do not have any attributes or a title/desc child and 
+# promoting their children up one level
 def removeNestedGroups(node):
 	global numElemsRemoved
 	num = 0
@@ -304,7 +306,13 @@ def removeNestedGroups(node):
 	groupsToRemove = []
 	for child in node.childNodes:
 		if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
-			groupsToRemove.append(child)
+			# only collapse group if it does not have a title or desc as a direct descendant
+			for grandchild in child.childNodes:
+				if grandchild.nodeType == 1 and grandchild.namespaceURI == NS['SVG'] and \
+						grandchild.nodeName in ['title','desc']:
+					break
+			else:
+				groupsToRemove.append(child)
 
 	for g in groupsToRemove:
 		while g.childNodes.length > 0:
@@ -530,6 +538,7 @@ def repairStyle(node):
 				if styleMap.has_key(strokestyle) :
 					del styleMap[strokestyle]
 					num += 1
+			del styleMap['stroke']
 
 		#  if fill:none, then remove all fill-related properties (fill-rule, etc)
 		#  TODO: should also detect if fill-opacity=0
@@ -757,8 +766,9 @@ def scourString(in_string, options=[]):
 			referencedIDs = findReferencedElements(doc.documentElement, {})
 			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
 	
-	while removeNestedGroups(doc.documentElement) > 0:
-		pass
+	if not '--disable-group-collapsing' in options:
+		while removeNestedGroups(doc.documentElement) > 0:
+			pass
 
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
@@ -812,7 +822,8 @@ def printSyntaxAndQuit():
 	print 'If the output file is not specified, stdout is used.\n'
 	print 'If an option is not available below that means it occurs automatically'
 	print 'when scour is invoked.  Available OPTIONS:\n'
-	print '  --enable-id-stripping : Scour will remove all un-referenced ID attributes'
+	print '  --enable-id-stripping      : Scour will remove all un-referenced ID attributes'
+	print '  --disable-group-collapsing : Scour will not collapse <g> elements'
 	print ''
 	quit()	
 
@@ -826,6 +837,7 @@ def parseCLA():
 	output = sys.stdout
 	options = []
 	validOptions = [
+					'--disable-group-collapsing',
 					'--enable-id-stripping',
 					]
 					

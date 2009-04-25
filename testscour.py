@@ -163,6 +163,24 @@ class RemoveUselessNestedGroups(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 1,
 			'Useless nested groups not removed' )
 
+class DoNotRemoveUselessNestedGroups(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg', ['--disable-group-collapsing'])
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 2,
+			'Useless nested groups were removed despite --disable-group-collapsing' )
+
+class DoNotRemoveNestedGroupsWithTitle(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/groups-with-title-desc.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 2,
+			'Nested groups with title was removed' )
+
+class DoNotRemoveNestedGroupsWithDesc(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/groups-with-title-desc.svg')
+		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 2,
+			'Nested groups with desc was removed' )
+
 class RemoveDuplicateLinearGradientStops(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')
@@ -303,8 +321,14 @@ class RemoveStrokeDashoffsetWhenStrokeWidthZero(unittest.TestCase):
 		doc = scour.scourXmlFile('unittests/stroke-nowidth.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-dashoffset'), '',
 			'stroke-dashoffset attribute not emptied when width zero' )
-			
+
 class RemoveStrokeWhenStrokeNone(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke'), '',
+			'stroke attribute not emptied when no stroke' )
+			
+class RemoveStrokeWidthWhenStrokeNone(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/stroke-none.svg')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-width'), '',

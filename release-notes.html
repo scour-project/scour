@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scour Release Notes</title>
+</head>
+<body>
+
+<section id="0.09">
+	<header>
+		<h3><a href="#0.09">Version 0.09</a></h3>
+	</header>
+
+	<ul>
+		<li>Fix bug when removing stroke styles</li>
+		<li>Remove gradients that are only referenced by one other gradient</li>
+		<li>Added option to prevent group collapsing</li>
+		<li>Prevent groups with title/desc children from being collapsed</li>
+		<li>Remove stroke="none"</li>
+	</ul>
+	
+</section>
+
+<section id="0.08">
+	<header>
+		<h3><a href="#0.08">Version 0.08</a></h3>
+	</header>
+
+	<ul>
+		<li>Remove unnecessary nested &lt;g&gt; elements</li>
+		<li>Remove duplicate gradient stops (same offset, stop-color, stop-opacity)</li>
+		<li>Always keep fonts inside &lt;defs&gt;, always keep ids on fonts</li>
+		<li>made ID stripping optional (disabled by default)</li>	  
+	</ul>
+</section>
+
+<section id="0.07">
+	<header>
+		<h3><a href="#0.07">Version 0.07</a></h3>
+	</header>
+
+	<ul>
+		<li>moved all functionality into a module level function named 'scour' and began adding unit tests</li>
+		<li>prevent metadata from being removed if they contain only text nodes</li>
+		<li>Remove unreferenced pattern and gradient elements outside of defs</li>
+		<li>Removal of extra whitespace, pretty printing of XML</li>
+	</ul>
+</section>
+
+<section id="0.06">
+	<header>
+		<h3><a href="#0.06">Version 0.06</a></h3>
+	</header>
+
+	<ul>
+		<li>Prevent error when stroke-width property value has a unit</li>
+		<li>Convert width/height into a viewBox where possible</li>
+		<li>Convert all referenced rasters into base64 encoded URLs if the files can be found</li>
+	</ul>
+</section>
+
+<section id="0.05">
+	<header>
+		<h3><a href="#0.05">Version 0.05 and earlier</a></h3>
+	</header>
+
+	<ul>
+		<li>Removes unreferenced elements in a &lt;defs&gt;</li>
+		<li>Removes all inkscape, sodipodi, adobe elements</li>
+		<li>Removes all inkscape, sodipodi, adobe attributes</li>
+		<li>Remove all unused namespace declarations on the document element</li>
+		<li>Removes any empty &lt;defs&gt;, &lt;metadata&gt;, or &lt;g&gt; elements</li>
+		<li>Style fix-ups:
+			<ul><li>Fixes any style properties like this: <code>style="fill: url(#linearGradient1000) rgb(0, 0, 0);"</code></li>
+			<li>Removes any style property of: <code>opacity: 1;</code></li>
+			<li>Removes any stroke properties when stroke=none or stroke-opacity=0 or stroke-width=0</li>
+			<li>Removes any fill properties when fill=none or fill-opacity=0</li>
+			<li>Removes all fill/stroke properties when opacity=0</li>
+			<li>Removes any <code>stop-opacity: 1</code></li>
+			<li>Removes any <code>fill-opacity: 1</code></li>
+			<li>Removes any <code>stroke-opacity: 1</code></li>
+		</ul></li>
+		<li>Convert style properties into SVG attributes</li>
+	</ul>
+	
+</section>
+
+</body>
+</html>
