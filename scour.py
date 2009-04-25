@@ -46,7 +46,7 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# - Remove unnecessary units of precision on attributes
+# - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
@@ -532,6 +532,7 @@ def repairStyle(node):
 				if styleMap.has_key(strokestyle) :
 					del styleMap[strokestyle]
 					num += 1
+			# TODO: This is actually a problem if a parent element has a specified stroke
 			del styleMap['stroke']
 
 		#  if fill:none, then remove all fill-related properties (fill-rule, etc)
@@ -889,5 +890,5 @@ if __name__ == '__main__':
 		print " Number of raster images embedded inline:", numRastersEmbedded
 		oldsize = os.path.getsize(input.name)
 		newsize = os.path.getsize(output.name)
-t		sizediff = (newsize / oldsize);
+		sizediff = (newsize / oldsize);
 		print " Original file size:", oldsize, "bytes; new file size:", newsize, "bytes (" + str(sizediff)[:5] + "x)"
