@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 #  Scour
-#  Version 0.09
 #
 #  Copyright 2009 Jeff Schiller
 #
@@ -47,11 +46,6 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# + fix bug when removing stroke styles
-# + Remove gradients that are only referenced by one other gradient
-# + added option to prevent group collapsing
-# + prevent groups with title/desc children from being collapsed
-# + remove stroke=none attribute
 # - Remove unnecessary units of precision on attributes
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
@@ -82,7 +76,7 @@ import os.path
 import urllib
 
 APP = 'scour'
-VER = '0.09'
+VER = '0.10'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -895,6 +889,5 @@ if __name__ == '__main__':
 		print " Number of raster images embedded inline:", numRastersEmbedded
 		oldsize = os.path.getsize(input.name)
 		newsize = os.path.getsize(output.name)
-		#sizediff = (min(oldsize, newsize)  / max(oldsize, newsize)) * 100;
-		sizediff = (newsize / oldsize);
+t		sizediff = (newsize / oldsize);
 		print " Original file size:", oldsize, "bytes; new file size:", newsize, "bytes (" + str(sizediff)[:5] + "x)"
