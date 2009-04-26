@@ -52,16 +52,6 @@
 # - Reduce #RRGGBB format to #RGB format when possible
 # https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
 
-# Some notes to not forget:
-# - removing empty nested groups also potentially loses some semantic information
-#   (i.e. the following button:
-#     <g>
-#       <rect .../>
-#       <text .../>
-#     </g>
-#   will be flattened)
-
-
 # necessary to get true division
 from __future__ import division
 
@@ -74,6 +64,8 @@ import math
 import base64
 import os.path
 import urllib
+import svg_regex
+from svg_regex import svg_parser
 
 APP = 'scour'
 VER = '0.10'
@@ -610,9 +602,41 @@ def repairStyle(node):
 			
 	return num
 
-# does nothing at the moment but waste time
+# This method will do the following:
+# - parse the path data and reserialize
 def cleanPath(element) :
-	path = element.getAttribute('d')
+	path = svg_parser.parse(element.getAttribute('d'))
+	for (cmd,dataset) in path:
+		if not dataset == None:
+			for data in dataset:
+				pass
+	element.setAttribute('d', serializePath(path))
+
+# - reserialize the path data with some cleanups:
+#   - removes scientific notation (exponents)
+#   - removes trailing zeros after the decimal
+#   - removes extraneous whitespace
+#   - adds commas between all values in a subcommand
+def serializePath(pathObj):
+	pathStr = ""
+#	print pathObj
+	for (cmd,dataset) in pathObj:
+		pathStr += cmd 
+		if not dataset == None:
+			for data in dataset:
+				try:
+					c = 0
+					for coord in data:
+						# if coord can be an integer without loss of precision, go for it
+						if int(coord) == coord: pathStr += str(int(coord))
+						else: pathStr += str(coord)
+						if c < len(data)-1:
+							pathStr += ','
+						c += 1
+				except TypeError:
+					pathStr += str(data)
+				pathStr += ' '				
+	return pathStr
 
 # converts raster references to inline images
 # NOTE: there are size limits to base64-encoding handling in browsers 
