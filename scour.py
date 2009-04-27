@@ -46,6 +46,10 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
+# + Remove path with empty d attributes
+# + Sanitize path data (remove unnecessary whitespace
+# + Move from absolute to relative path data
+# + Remove trailing zeroes from path data
 # - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
@@ -604,7 +608,11 @@ def repairStyle(node):
 # This method will do the following:
 # - parse the path data and reserialize
 def cleanPath(element) :
+	# this gets the parser object from svg_regex.py
 	pathObj = svg_parser.parse(element.getAttribute('d'))
+	
+	# however, this parser object has some ugliness in it (lists of tuples of tuples of 
+	# numbers and booleans).  we just need a list of (cmd,[numbers]):
 	path = []
 	for (cmd,dataset) in pathObj:
 		if cmd in ['M','m','L','l','T','t']:
@@ -662,10 +670,73 @@ def cleanPath(element) :
 		elif cmd in ['Z','z']:
 			path.append( (cmd, []) )
 
-#	for (cmd,dataset) in path:
-#		if not dataset == None:
-#			for data in dataset:
-#				pass
+	# TODO: convert to fixed point values
+	
+	# convert absolute coordinates into relative ones (start with the second subcommand
+	# and leave the first M as absolute)
+	(x,y) = path[0][1]
+	
+	i = 1
+	for (cmd,data) in path[1:]:
+		# adjust abs to rel
+		# only the A command has some values that we don't want to adjust (radii, rotation, flags)
+		if cmd == 'A':
+			path[i] = ('a', [data[0], data[1], data[2], data[3], data[4], (data[5]-x), (data[6]-y)])
+		elif cmd == 'H':
+			for j in range(len(data)):
+				data[j] -= x
+			path[i] = ('h', data)
+		elif cmd == 'V':
+			for j in range(len(data)):
+				data[j] -= y
+			path[i] = ('v', data)
+		elif cmd in ['M','L','C','S','Q','T']:
+			j = 0
+			while j < len(data):
+				data[j] -= x
+				data[j+1] -= y
+				j += 2
+			path[i] = (cmd.lower(), data)
+		
+		cmd = path[i][0]
+		data = path[i][1]
+		i += 1
+		
+		# now adjust the current point
+		xind = 0
+		yind = 1		
+		k = 0
+		if cmd == 'a':
+			while k < len(data):
+				x += data[k+5]
+				y += data[k+6]
+				k += 7
+		elif cmd == 'h':
+			while k < len(data):
+				x += data[k]
+				k += 1
+		elif cmd == 'v':
+			while k < len(data):
+				y += data[k]
+				k += 1
+		elif cmd in ['m','l','t']:
+			while k < len(data):
+				x += data[k]
+				y += data[k+1]
+				k += 2
+		elif cmd == 'c':
+			while k < len(data):
+				x += data[k+4]
+				y += data[k+5]
+				k += 6
+		elif cmd in ['s','q']:
+			while k < len(data):
+				x += data[k+2]
+				y += data[k+3]
+				k += 4
+
+	# TODO: collapse adjacent H or V segments that have coords in the same direction
+
 	element.setAttribute('d', serializePath(path))
 
 # - reserialize the path data with some cleanups:
@@ -688,6 +759,7 @@ def serializePath(pathObj):
 				if c < len(data)-1 and data[c+1] >= 0:
 					pathStr += ','
 				c += 1
+#       we do not even bother with spaces to separate commands
 #		pathStr += ' '
 	return pathStr
 
@@ -851,7 +923,10 @@ def scourString(in_string, options=[]):
 	
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
-		cleanPath(elem)
+		if elem.getAttribute('d') == '':
+			elem.parentNode.removeChild(elem)
+		else:
+			cleanPath(elem)
 
 	# convert rasters references to base64-encoded strings 
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
