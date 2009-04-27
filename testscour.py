@@ -443,6 +443,22 @@ class ConvertAbsoluteToRelativePathCommands(unittest.TestCase):
 			'Absolute V command not converted to relative v command')
 		self.assertEquals(path[1][1][0], -20.0,
 			'Absolute V value not converted to relative v value')
-		
+
+class RoundPathData(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-precision.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[0][1][0][0], 100.0,
+			'Not rounding down' )
+		self.assertEquals(path[0][1][0][1], 100.0,
+			'Not rounding up' )
+			
+class LimitPrecisionInPathData(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-precision.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[1][1][0], 100.001,
+			'Not correctly limiting precision on path data' )
+			
 if __name__ == '__main__':
     unittest.main()

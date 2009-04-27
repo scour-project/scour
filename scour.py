@@ -37,7 +37,6 @@
 #  * Eliminate empty path segments
 #  * Eliminate last segment in a polygon
 #  * Collapse straight curves.
-#  * Convert absolute path segments to relative ones.
 # * Process Transformations
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
@@ -50,6 +49,7 @@
 # + Sanitize path data (remove unnecessary whitespace
 # + Move from absolute to relative path data
 # + Remove trailing zeroes from path data
+# + Limit to no more than 6 digits of precision
 # - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
@@ -69,6 +69,10 @@ import base64
 import os.path
 import urllib
 from svg_regex import svg_parser
+from decimal import *
+
+# set precision to 6 decimal places
+getcontext().prec = 6
 
 APP = 'scour'
 VER = '0.10'
@@ -619,15 +623,16 @@ def cleanPath(element) :
 			# one or more tuples, each containing two numbers
 			nums = []
 			for t in dataset:
-				nums.append(t[0])
-				nums.append(t[1])
+				# convert to a Decimal and ensure precision
+				nums.append(Decimal(str(t[0])) * Decimal(1))
+				nums.append(Decimal(str(t[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
 		elif cmd in ['V','v','H','h']:
 			# one or more numbers
 			nums = []
 			for n in dataset:
-				nums.append(n)
+				nums.append(Decimal(str(n)))
 			path.append( (cmd, nums) )
 			
 		elif cmd in ['C','c']:
@@ -635,8 +640,8 @@ def cleanPath(element) :
 			nums = []
 			for t in dataset:
 				for pair in t:
-					nums.append(pair[0])
-					nums.append(pair[1])
+					nums.append(Decimal(str(pair[0])) * Decimal(1))
+					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
 		elif cmd in ['S','s','Q','q']:
@@ -644,8 +649,8 @@ def cleanPath(element) :
 			nums = []
 			for t in dataset:
 				for pair in t:
-					nums.append(pair[0])
-					nums.append(pair[1])
+					nums.append(Decimal(str(pair[0])) * Decimal(1))
+					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
 		elif cmd in ['A','a']:
@@ -653,18 +658,18 @@ def cleanPath(element) :
 			# another boolean, and a tuple of two numbers
 			nums = []
 			for t in dataset:
-				nums.append( t[0][0] )
-				nums.append( t[0][1] )
-				nums.append( t[1] )
+				nums.append( Decimal(str(t[0][0])) * Decimal(1) )
+				nums.append( Decimal(str(t[0][1])) * Decimal(1) )
+				nums.append( Decimal(str(t[1])) * Decimal(1))
 				
-				if t[2]: nums.append( 1 )
-				else: nums.append( 0 )
+				if t[2]: nums.append( Decimal(1) )
+				else: nums.append( Decimal(0) )
 
-				if t[3]: nums.append( 1 )
-				else: nums.append( 0 )
+				if t[3]: nums.append( Decimal(1) )
+				else: nums.append( Decimal(0) )
 				
-				nums.append( t[4][0] )
-				nums.append( t[4][1] )
+				nums.append( Decimal(str(t[4][0])) * Decimal(1) )
+				nums.append( Decimal(str(t[4][1])) * Decimal(1) )
 			path.append( (cmd, nums) )
 		
 		elif cmd in ['Z','z']:
@@ -741,7 +746,7 @@ def cleanPath(element) :
 
 # - reserialize the path data with some cleanups:
 #   - removes scientific notation (exponents)
-#   - removes trailing zeros after the decimal
+#   - removes all trailing zeros after the decimal
 #   - removes extraneous whitespace
 #   - adds commas between all values in a subcommand
 def serializePath(pathObj):
