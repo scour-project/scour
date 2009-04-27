@@ -1,3 +1,3 @@
 <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" version="1.1">
-  <path d="M 100.0000001 99.9999999 h100.001 v100 h-100 z" fill="red" />
+  <path d="M 100.0000001 99.9999999 h100.001 v123456789.123456789 h-100 z" fill="red" />
 </svg>

@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400px" height="300px">
-  <rect width="200" height="100" fill="blue" style="stroke-width:1px" />
-  <rect width="200" height="100" fill="blue" style="stroke-width:100.00e-2pt" />
-  <rect width="200" height="100" fill="blue" style="stroke-width:-0.000000000006e+14em" />
-  <rect width="200" height="100" fill="blue" style="stroke-width:4%" />
-</svg>

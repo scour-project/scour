@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<defs>
-  <linearGradient id="g1" />
-  <linearGradient id="g2" xlink:href="#g1" />
-  <linearGradient id="g3" xlink:href="#g2" />
-</defs>
-  <circle cx="50" cy="50" r="20" fill='blue' />
-</svg>

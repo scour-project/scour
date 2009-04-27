@@ -192,6 +192,7 @@ numIDsRemoved = 0
 numElemsRemoved = 0
 numAttrsRemoved = 0
 numRastersEmbedded = 0
+numBytesSavedInPathData = 0
 
 # removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>
 # also vacuums the defs of any non-referenced renderable elements
@@ -612,8 +613,11 @@ def repairStyle(node):
 # This method will do the following:
 # - parse the path data and reserialize
 def cleanPath(element) :
+	global numBytesSavedInPathData
+	
 	# this gets the parser object from svg_regex.py
-	pathObj = svg_parser.parse(element.getAttribute('d'))
+	oldPathStr = element.getAttribute('d')
+	pathObj = svg_parser.parse(oldPathStr)
 	
 	# however, this parser object has some ugliness in it (lists of tuples of tuples of 
 	# numbers and booleans).  we just need a list of (cmd,[numbers]):
@@ -742,7 +746,10 @@ def cleanPath(element) :
 
 	# TODO: collapse adjacent H or V segments that have coords in the same direction
 
-	element.setAttribute('d', serializePath(path))
+	newPathStr = serializePath(path)
+	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
+	element.setAttribute('d', newPathStr)
+	
 
 # - reserialize the path data with some cleanups:
 #   - removes scientific notation (exponents)
@@ -985,6 +992,7 @@ def parseCLA():
 	args = sys.argv[1:]
 
 	# by default the input and output are the standard streams
+	inputfilename = ''
 	input = sys.stdin
 	output = sys.stdout
 	options = []
@@ -999,6 +1007,7 @@ def parseCLA():
 		i += 1
 		if arg == '-i' :
 			if i < len(args) :
+				inputfilename = args[i]
 				input = open(args[i], 'r')
 				i += 1
 				continue
@@ -1017,11 +1026,11 @@ def parseCLA():
 			print 'Error!  Invalid argument:', arg
 			printSyntaxAndQuit()
 			
-	return (input, output, options)
+	return (input, output, options, inputfilename)
 
 if __name__ == '__main__':
 
-	(input, output, options) = parseCLA()
+	(input, output, options, inputfilename) = parseCLA()
 	
 	# if we are not sending to stdout, then print out app information
 	bOutputReport = False
@@ -1040,12 +1049,15 @@ if __name__ == '__main__':
 
 	# output some statistics if we are not using stdout
 	if bOutputReport :
-		print " Number of unreferenced id attributes removed:", numIDsRemoved 
-		print " Number of elements removed:", numElemsRemoved
-		print " Number of attributes removed:", numAttrsRemoved
-		print " Number of style properties fixed:", numStylePropsFixed
-		print " Number of raster images embedded inline:", numRastersEmbedded
+	    if inputfilename != '': 
+	    	print ' File:', inputfilename
+		print ' Number of unreferenced id attributes removed:', numIDsRemoved 
+		print ' Number of elements removed:', numElemsRemoved
+		print ' Number of attributes removed:', numAttrsRemoved
+		print ' Number of style properties fixed:', numStylePropsFixed
+		print ' Number of raster images embedded inline:', numRastersEmbedded
+		print ' Number of bytes saved in path data:', numBytesSavedInPathData
 		oldsize = os.path.getsize(input.name)
 		newsize = os.path.getsize(output.name)
 		sizediff = (newsize / oldsize);
-		print " Original file size:", oldsize, "bytes; new file size:", newsize, "bytes (" + str(sizediff)[:5] + "x)"
+		print ' Original file size:', oldsize, 'bytes; new file size:', newsize, 'bytes (' + str(sizediff)[:5] + 'x)'
