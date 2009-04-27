@@ -20,6 +20,7 @@
 import unittest
 import scour
 import xml.dom.minidom
+from svg_regex import svg_parser
 
 SVGNS = 'http://www.w3.org/2000/svg'
 
@@ -421,6 +422,19 @@ class DoNotCollapseMultiplyReferencedGradients(unittest.TestCase):
 		self.assertNotEquals(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 0,
 			'Multiply-referenced linear gradient collapsed' )
 
+class RemoveTrailingZeroesFromPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-truncate-zeroes.svg')
+		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
+		self.assertEquals(path[:4] == 'M300' and path[4] != '.', True,
+			'Trailing zeros not removed from path data' )
+
+class RemoveDelimiterBeforeNegativeCoordsInPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-truncate-zeroes.svg')
+		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
+		self.assertEquals(path[4], '-', 
+			'Delimiters not removed before negative coordinate in path data' )
 
 #class RemoveUnreferencedFonts(unittest.TestCase):
 #	def runTest(self):

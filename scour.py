@@ -64,7 +64,6 @@ import math
 import base64
 import os.path
 import urllib
-import svg_regex
 from svg_regex import svg_parser
 
 APP = 'scour'
@@ -630,7 +629,8 @@ def serializePath(pathObj):
 						# if coord can be an integer without loss of precision, go for it
 						if int(coord) == coord: pathStr += str(int(coord))
 						else: pathStr += str(coord)
-						if c < len(data)-1:
+						# only need the comma if the next number if non-negative
+						if c < len(data)-1 and data[c+1] >= 0:
 							pathStr += ','
 						c += 1
 				except TypeError:
