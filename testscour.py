@@ -459,6 +459,32 @@ class LimitPrecisionInPathData(unittest.TestCase):
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
 		self.assertEquals(path[1][1][0], 100.001,
 			'Not correctly limiting precision on path data' )
-			
+
+class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-line-optimize.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[4][0], 'z',
+			'Did not remove an empty line segment from path' )
+
+class ChangeLineToHorizontalLineSegmentInPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-line-optimize.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[1][0], 'h',
+			'Did not change line to horizontal line segment in path' )
+		self.assertEquals(path[1][1][0], 200.0,
+			'Did not calculate horizontal line segment in path correctly' )
+
+class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-line-optimize.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[2][0], 'v',
+			'Did not change line to vertical line segment in path' )
+		self.assertEquals(path[2][1][0], 100.0,
+			'Did not calculate vertical line segment in path correctly' )
+
+
 if __name__ == '__main__':
     unittest.main()

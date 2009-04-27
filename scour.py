@@ -45,8 +45,8 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
+# - implement command-line option to output svgz
 # - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
-# - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -96,6 +96,7 @@ unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
 
 svgAttributes = [
 				'clip-rule',
+				'display',
 				'fill',
 				'fill-opacity',
 				'fill-rule',
@@ -107,7 +108,9 @@ svgAttributes = [
 				'font-variant',
 				'font-weight',
 				'line-height',
+				'marker',
 				'opacity',
+				'overflow',
 				'stop-color',
 				'stop-opacity',
 				'stroke',
@@ -117,6 +120,7 @@ svgAttributes = [
 				'stroke-miterlimit',
 				'stroke-opacity',
 				'stroke-width',
+				'visibility'
 				]
 
 def findElementById(node, id):
@@ -187,6 +191,7 @@ numIDsRemoved = 0
 numElemsRemoved = 0
 numAttrsRemoved = 0
 numRastersEmbedded = 0
+numPathSegmentsReduced = 0
 numBytesSavedInPathData = 0
 
 # removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>
@@ -583,6 +588,30 @@ def repairStyle(node):
 		
 		#  TODO: what else?
 		
+		# visibility: visible
+		if styleMap.has_key('visibility') :
+			if styleMap['visibility'] == 'visible':
+				del styleMap['visibility']
+				num += 1
+		
+		# display: inline
+		if styleMap.has_key('display') :
+			if styleMap['display'] == 'inline':
+				del styleMap['display']
+				num += 1
+				
+		# overflow: visible or overflow specified on element other than svg, marker, pattern
+		if styleMap.has_key('overflow') :
+			if styleMap['overflow'] == 'visible' or node.nodeName in ['svg','marker','pattern']:
+				del styleMap['overflow']
+				num += 1
+				
+		# marker: none
+		if styleMap.has_key('marker') :
+			if styleMap['marker'] == 'none':
+				del styleMap['marker']
+				num += 1
+		
 		# now if any of the properties match known SVG attributes we prefer attributes 
 		# over style so emit them and remove them from the style map
 		for propName in styleMap.keys() :
@@ -609,6 +638,7 @@ def repairStyle(node):
 # - parse the path data and reserialize
 def cleanPath(element) :
 	global numBytesSavedInPathData
+	global numPathSegmentsReduced
 	
 	# this gets the parser object from svg_regex.py
 	oldPathStr = element.getAttribute('d')
@@ -616,24 +646,37 @@ def cleanPath(element) :
 	
 	# however, this parser object has some ugliness in it (lists of tuples of tuples of 
 	# numbers and booleans).  we just need a list of (cmd,[numbers]):
+	# TODO: remove empty path segments	
 	path = []
 	for (cmd,dataset) in pathObj:
 		if cmd in ['M','m','L','l','T','t']:
 			# one or more tuples, each containing two numbers
 			nums = []
 			for t in dataset:
-				# convert to a Decimal and ensure precision
-				nums.append(Decimal(str(t[0])) * Decimal(1))
-				nums.append(Decimal(str(t[1])) * Decimal(1))
-			path.append( (cmd, nums) )
+				# only create this coord pair if it is non-zero or is an absolute Move (first cmd)
+				if cmd == 'M' or (t[0] != 0 or t[1] != 0):
+					# convert to a Decimal and ensure precision
+					nums.append(Decimal(str(t[0])) * Decimal(1))
+					nums.append(Decimal(str(t[1])) * Decimal(1))
+				else:
+					numPathSegmentsReduced += 1
+					
+			# only create this segment if it is not empty
+			if nums:
+				path.append( (cmd, nums) )
 			
 		elif cmd in ['V','v','H','h']:
 			# one or more numbers
 			nums = []
 			for n in dataset:
-				nums.append(Decimal(str(n)))
-			path.append( (cmd, nums) )
+				if n != 0:
+					nums.append(Decimal(str(n)))
+				else:
+					numPathSegmentsRemoved += 1
+			if nums:
+				path.append( (cmd, nums) )
 			
+		# TODO: remove empty curve segments
 		elif cmd in ['C','c']:
 			# one or more tuples, each containing three tuples of two numbers each
 			nums = []
@@ -643,6 +686,7 @@ def cleanPath(element) :
 					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
+		# TODO: remove empty curve segments
 		elif cmd in ['S','s','Q','q']:
 			# one or more tuples, each containing two tuples of two numbers each
 			nums = []
@@ -652,6 +696,7 @@ def cleanPath(element) :
 					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
+		# TODO: remove empty curve segments
 		elif cmd in ['A','a']:
 			# one or more tuples, each containing a tuple of two numbers, a number, a boolean,
 			# another boolean, and a tuple of two numbers
@@ -674,12 +719,9 @@ def cleanPath(element) :
 		elif cmd in ['Z','z']:
 			path.append( (cmd, []) )
 
-	# TODO: convert to fixed point values
-	
 	# convert absolute coordinates into relative ones (start with the second subcommand
 	# and leave the first M as absolute)
 	(x,y) = path[0][1]
-	
 	i = 1
 	for (cmd,data) in path[1:]:
 		# adjust abs to rel
@@ -738,8 +780,36 @@ def cleanPath(element) :
 				x += data[k+2]
 				y += data[k+3]
 				k += 4
-
-	# TODO: collapse adjacent H or V segments that have coords in the same direction
+	
+	# collapse adjacent H or V segments that have coords in the same direction
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		if cmd == 'l':
+			i = 0
+			lineTuples = []
+			while i < len(data):
+				if data[i] == 0:
+					# vertical
+					if lineTuples:
+						# change the line command, then append the v and then the remaining line coords
+						if lineTuples: newPath.append( ('l', lineTuples) )
+						lineTuples = []
+					newPath.append( ('v', [data[i+1]]) )
+					numPathSegmentsReduced += 1
+				elif data[i+1] == 0:
+					if lineTuples:
+						# change the line command, then append the h and then the remaining line coords
+						if lineTuples: newPath.append( ('l', lineTuples) )
+						lineTuples = []
+					newPath.append( ('h', [data[i]]) )
+					numPathSegmentsReduced += 1
+				else:
+					lineTuples.append(data[i])
+					lineTuples.append(data[i+1])
+				i += 2
+		else:
+			newPath.append( (cmd, data) )
+	path = newPath
 
 	newPathStr = serializePath(path)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
@@ -1051,6 +1121,7 @@ if __name__ == '__main__':
 		print ' Number of attributes removed:', numAttrsRemoved
 		print ' Number of style properties fixed:', numStylePropsFixed
 		print ' Number of raster images embedded inline:', numRastersEmbedded
+		print ' Number of path segments reduced/removed:', numPathSegmentsReduced
 		print ' Number of bytes saved in path data:', numBytesSavedInPathData
 		oldsize = os.path.getsize(input.name)
 		newsize = os.path.getsize(output.name)
