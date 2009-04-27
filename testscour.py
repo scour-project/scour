@@ -404,7 +404,6 @@ class CollapseSinglyReferencedGradients(unittest.TestCase):
 class InheritGradientUnitsUponCollapsing(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/collapse-gradients.svg')
-#		print doc.toprettyxml(' ')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')[0].getAttribute('gradientUnits'), 
 			'userSpaceOnUse',
 			'gradientUnits not properly inherited when collapsing gradients' )
@@ -436,5 +435,14 @@ class RemoveDelimiterBeforeNegativeCoordsInPath(unittest.TestCase):
 		self.assertEquals(path[4], '-', 
 			'Delimiters not removed before negative coordinates in path data' )
 
+class ConvertAbsoluteToRelativePathCommands(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-abs-to-rel.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(path[1][0], 'v',
+			'Absolute V command not converted to relative v command')
+		self.assertEquals(path[1][1][0], -20.0,
+			'Absolute V value not converted to relative v value')
+		
 if __name__ == '__main__':
     unittest.main()
