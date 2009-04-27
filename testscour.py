@@ -434,14 +434,7 @@ class RemoveDelimiterBeforeNegativeCoordsInPath(unittest.TestCase):
 		doc = scour.scourXmlFile('unittests/path-truncate-zeroes.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
 		self.assertEquals(path[4], '-', 
-			'Delimiters not removed before negative coordinate in path data' )
-
-#class RemoveUnreferencedFonts(unittest.TestCase):
-#	def runTest(self):
-#		doc = scour.scourXmlFile('unittests/unreferenced-font.svg')
-#		fonts = doc.documentElement.getElementsByTagNameNS('http://www.w3.org/2000/svg','font')
-#		self.assertEquals(len(fonts), 0,
-#			"Font was not removed from <defs>" )
+			'Delimiters not removed before negative coordinates in path data' )
 
 if __name__ == '__main__':
     unittest.main()

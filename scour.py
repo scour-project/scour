@@ -604,11 +604,68 @@ def repairStyle(node):
 # This method will do the following:
 # - parse the path data and reserialize
 def cleanPath(element) :
-	path = svg_parser.parse(element.getAttribute('d'))
-	for (cmd,dataset) in path:
-		if not dataset == None:
-			for data in dataset:
-				pass
+	pathObj = svg_parser.parse(element.getAttribute('d'))
+	path = []
+	for (cmd,dataset) in pathObj:
+		if cmd in ['M','m','L','l','T','t']:
+			# one or more tuples, each containing two numbers
+			nums = []
+			for t in dataset:
+				nums.append(t[0])
+				nums.append(t[1])
+			path.append( (cmd, nums) )
+			
+		elif cmd in ['V','v','H','h']:
+			# one or more numbers
+			nums = []
+			for n in dataset:
+				nums.append(n)
+			path.append( (cmd, nums) )
+			
+		elif cmd in ['C','c']:
+			# one or more tuples, each containing three tuples of two numbers each
+			nums = []
+			for t in dataset:
+				for pair in t:
+					nums.append(pair[0])
+					nums.append(pair[1])
+			path.append( (cmd, nums) )
+			
+		elif cmd in ['S','s','Q','q']:
+			# one or more tuples, each containing two tuples of two numbers each
+			nums = []
+			for t in dataset:
+				for pair in t:
+					nums.append(pair[0])
+					nums.append(pair[1])
+			path.append( (cmd, nums) )
+			
+		elif cmd in ['A','a']:
+			# one or more tuples, each containing a tuple of two numbers, a number, a boolean,
+			# another boolean, and a tuple of two numbers
+			nums = []
+			for t in dataset:
+				nums.append( t[0][0] )
+				nums.append( t[0][1] )
+				nums.append( t[1] )
+				
+				if t[2]: nums.append( 1 )
+				else: nums.append( 0 )
+
+				if t[3]: nums.append( 1 )
+				else: nums.append( 0 )
+				
+				nums.append( t[4][0] )
+				nums.append( t[4][1] )
+			path.append( (cmd, nums) )
+		
+		elif cmd in ['Z','z']:
+			path.append( (cmd, []) )
+
+#	for (cmd,dataset) in path:
+#		if not dataset == None:
+#			for data in dataset:
+#				pass
 	element.setAttribute('d', serializePath(path))
 
 # - reserialize the path data with some cleanups:
@@ -618,24 +675,20 @@ def cleanPath(element) :
 #   - adds commas between all values in a subcommand
 def serializePath(pathObj):
 	pathStr = ""
-#	print pathObj
-	for (cmd,dataset) in pathObj:
-		pathStr += cmd 
-		if not dataset == None:
-			for data in dataset:
-				try:
-					c = 0
-					for coord in data:
-						# if coord can be an integer without loss of precision, go for it
-						if int(coord) == coord: pathStr += str(int(coord))
-						else: pathStr += str(coord)
-						# only need the comma if the next number if non-negative
-						if c < len(data)-1 and data[c+1] >= 0:
-							pathStr += ','
-						c += 1
-				except TypeError:
-					pathStr += str(data)
-				pathStr += ' '				
+	for (cmd,data) in pathObj:
+		pathStr += cmd
+		if data != None:
+			c = 0
+			for coord in data:
+				# if coord can be an integer without loss of precision, go for it
+				if int(coord) == coord: pathStr += str(int(coord))
+				else: pathStr += str(coord)
+				
+				# only need the comma if the next number if non-negative
+				if c < len(data)-1 and data[c+1] >= 0:
+					pathStr += ','
+				c += 1
+#		pathStr += ' '
 	return pathStr
 
 # converts raster references to inline images
