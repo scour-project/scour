@@ -45,11 +45,6 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# + Remove path with empty d attributes
-# + Sanitize path data (remove unnecessary whitespace
-# + Move from absolute to relative path data
-# + Remove trailing zeroes from path data
-# + Limit to no more than 6 digits of precision
 # - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
 # - Remove unnecessary units of precision on path coordinates
 # - Convert all colors to #RRGGBB format

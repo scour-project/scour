@@ -1,4 +1,6 @@
 #!/bin/bash
 SCOURVER="0.10"
-tar cvf scour-$SCOURVER.tar scour.py LICENSE NOTICE README.txt release-notes.html
-gzip scour-$SCOURVER.tar
+cd ..
+tar cvf scour/tarballs/scour-$SCOURVER.tar scour/scour.py scour/LICENSE scour/NOTICE scour/README.txt scour/release-notes.html
+gzip scour/tarballs/scour-$SCOURVER.tar
+cd scour
