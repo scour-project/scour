@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 #  Scour
 #
@@ -71,7 +72,7 @@ from decimal import *
 getcontext().prec = 6
 
 APP = 'scour'
-VER = '0.10'
+VER = '0.11'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -1046,7 +1047,7 @@ def scourXmlFile(filename, options=[]):
 #	print 'IN=',in_string
 	out_string = scourString(in_string, options)
 #	print 'OUT=',out_string
-	return xml.dom.minidom.parseString(out_string)
+	return xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
 def printHeader():
 	print APP , VER
@@ -1119,7 +1120,7 @@ if __name__ == '__main__':
 	# do the work
 	in_string = input.read()
 	out_string = scourString(in_string, options)
-	output.write(out_string)
+	output.write(out_string.encode("utf-8"))
 
 	# Close input and output files
 	input.close()

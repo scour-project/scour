@@ -1,4 +1,6 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 #  Test Harness for Scour
 #
 #  Copyright 2009 Jeff Schiller
@@ -492,6 +494,12 @@ class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
 		self.assertEquals(path[2][1][0], 100.0,
 			'Did not calculate vertical line segment in path correctly' )
 
+class HandleNonAsciiUtf8(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/utf8.svg')
+		desc = unicode(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+		self.assertEquals( desc, u'ú',
+			'Did not handle non-ASCII characters' )
 
 if __name__ == '__main__':
     unittest.main()
