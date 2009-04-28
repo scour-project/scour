@@ -34,8 +34,6 @@
 #  * Convert RGB colours from RGB(r,g,b) to #RRGGBB format
 #  * Convert RGB colours from #RRGGBB to #RGB if possible
 # * Clean up paths
-#  * Detect vertical/horizontal lines and replace.
-#  * Eliminate empty path segments
 #  * Eliminate last segment in a polygon
 #  * Collapse straight curves.
 # * Process Transformations
@@ -46,14 +44,7 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# + convert gradient stop offsets from percentages to float
-# + convert gradient stop offsets to integers if possible (0 or 1)
-# + fix bug in line-to-hz conversion
-# + handle non-ASCII characters (Unicode)
-# + remove empty line or curve segments from path
-# + added option to prevent style-to-xml conversion
-# + handle compressed svg (svgz) on the input and output
-# - display how long it took to scour the file in the report
+# - text elements are shoved over to the right
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove unnecessary units of precision on attributes (use decimal:
@@ -669,7 +660,6 @@ def cleanPath(element) :
 	
 	# however, this parser object has some ugliness in it (lists of tuples of tuples of 
 	# numbers and booleans).  we just need a list of (cmd,[numbers]):
-	# TODO: remove empty path segments	
 	path = []
 	for (cmd,dataset) in pathObj:
 		if cmd in ['M','m','L','l','T','t']:
@@ -688,10 +678,7 @@ def cleanPath(element) :
 			# one or more numbers
 			nums = []
 			for n in dataset:
-				if n != 0:
-					nums.append(Decimal(str(n)))
-				else:
-					numPathSegmentsRemoved += 1
+				nums.append(Decimal(str(n)))
 			if nums:
 				path.append( (cmd, nums) )
 			
@@ -1072,7 +1059,10 @@ def scourString(in_string, options=[]):
 	properlySizeDoc(doc.documentElement)
 
 	# output the document as a pretty string with a single space for indent
-	out_string = doc.documentElement.toprettyxml(' ')
+	# NOTE: removed pretty printing because of this problem:
+	# http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+#	out_string = doc.documentElement.toprettyxml(' ')
+	out_string = doc.documentElement.toxml()
 	
 	# now strip out empty lines
 	lines = []
@@ -1165,6 +1155,9 @@ def parseCLA():
 
 if __name__ == '__main__':
 
+	startTimes = os.times()
+#	print times[0], times[1]
+	
 	(input, output, options, inputfilename, outputfilename) = parseCLA()
 	
 	# if we are not sending to stdout, then print out app information
@@ -1182,10 +1175,13 @@ if __name__ == '__main__':
 	input.close()
 	output.close()
 
+	endTimes = os.times()
+
 	# output some statistics if we are not using stdout
 	if bOutputReport :
 	    if inputfilename != '': 
 	    	print ' File:', inputfilename
+		print ' Time taken:', str(endTimes[0]-startTimes[0]) + 's'
 		print ' Number of unreferenced id attributes removed:', numIDsRemoved 
 		print ' Number of elements removed:', numElemsRemoved
 		print ' Number of attributes removed:', numAttrsRemoved
