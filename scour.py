@@ -46,9 +46,18 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# - deal with gradient stops with offsets in percentages
-# - implement command-line option to output svgz
-# - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
+# + convert gradient stop offsets from percentages to float
+# + convert gradient stop offsets to integers if possible (0 or 1)
+# + fix bug in line-to-hz conversion
+# + handle non-ASCII characters (Unicode)
+# + remove empty line or curve segments from path
+# + added option to prevent style-to-xml conversion
+# + handle compressed svg (svgz) on the input and output
+# - display how long it took to scour the file in the report
+# - prevent elements from being stripped if they are referenced in a <style> element
+#   (for instance, filter, marker, pattern) - need a crude CSS parser
+# - Remove unnecessary units of precision on attributes (use decimal:
+#   http://docs.python.org/library/decimal.html)
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
 # https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
@@ -67,6 +76,7 @@ import os.path
 import urllib
 from svg_regex import svg_parser
 from decimal import *
+import gzip
 
 # set precision to 6 decimal places
 getcontext().prec = 6
@@ -501,7 +511,7 @@ def collapseSinglyReferencedGradients(doc):
 					
 	return num
 	
-def repairStyle(node):
+def repairStyle(node, options):
 	num = 0
 	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
 		# get all style properties and stuff them into a dictionary
@@ -628,10 +638,11 @@ def repairStyle(node):
 		
 		# now if any of the properties match known SVG attributes we prefer attributes 
 		# over style so emit them and remove them from the style map
-		for propName in styleMap.keys() :
-			if propName in svgAttributes :
-				node.setAttribute(propName, styleMap[propName])
-				del styleMap[propName]
+		if not '--disable-style-to-xml' in options:
+			for propName in styleMap.keys() :
+				if propName in svgAttributes :
+					node.setAttribute(propName, styleMap[propName])
+					del styleMap[propName]
 
 		# sew our style back together
 		fixedStyle = ''
@@ -644,12 +655,10 @@ def repairStyle(node):
 			node.removeAttribute('style')
 		
 	for child in node.childNodes :
-		num += repairStyle(child)
+		num += repairStyle(child,options)
 			
 	return num
 
-# This method will do the following:
-# - parse the path data and reserialize
 def cleanPath(element) :
 	global numBytesSavedInPathData
 	global numPathSegmentsReduced
@@ -667,13 +676,9 @@ def cleanPath(element) :
 			# one or more tuples, each containing two numbers
 			nums = []
 			for t in dataset:
-				# only create this coord pair if it is non-zero or is an absolute Move (first cmd)
-				if cmd == 'M' or (t[0] != 0 or t[1] != 0):
-					# convert to a Decimal and ensure precision
-					nums.append(Decimal(str(t[0])) * Decimal(1))
-					nums.append(Decimal(str(t[1])) * Decimal(1))
-				else:
-					numPathSegmentsReduced += 1
+				# convert to a Decimal and ensure precision
+				nums.append(Decimal(str(t[0])) * Decimal(1))
+				nums.append(Decimal(str(t[1])) * Decimal(1))
 					
 			# only create this segment if it is not empty
 			if nums:
@@ -690,7 +695,6 @@ def cleanPath(element) :
 			if nums:
 				path.append( (cmd, nums) )
 			
-		# TODO: remove empty curve segments
 		elif cmd in ['C','c']:
 			# one or more tuples, each containing three tuples of two numbers each
 			nums = []
@@ -700,7 +704,6 @@ def cleanPath(element) :
 					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
-		# TODO: remove empty curve segments
 		elif cmd in ['S','s','Q','q']:
 			# one or more tuples, each containing two tuples of two numbers each
 			nums = []
@@ -710,7 +713,6 @@ def cleanPath(element) :
 					nums.append(Decimal(str(pair[1])) * Decimal(1))
 			path.append( (cmd, nums) )
 			
-		# TODO: remove empty curve segments
 		elif cmd in ['A','a']:
 			# one or more tuples, each containing a tuple of two numbers, a number, a boolean,
 			# another boolean, and a tuple of two numbers
@@ -795,7 +797,45 @@ def cleanPath(element) :
 				y += data[k+3]
 				k += 4
 	
-	# collapse adjacent H or V segments that have coords in the same direction
+	# remove empty segments
+	# TODO: q, t, a
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		if cmd in ['m','l']:
+			newData = []
+			i = 0
+			while i < len(data):
+				if data[i] != 0 or data[i+1] != 0:
+					newData.append(data[i])
+					newData.append(data[i+1])
+				else:
+					numPathSegmentsReduced += 1
+				i += 2
+			if newData:
+				newPath.append( (cmd,newData) )
+		elif cmd == 'c':
+			newData = []
+			i = 0
+			while i < len(data):
+				if data[i] != 0 or data[i+1] != 0 or data[i+2] != 0 or \
+						data[i+3] != 0 or data[i+4] != 0 or data[i+5] != 0:
+					newData.append(data[i])
+					newData.append(data[i+1])
+					newData.append(data[i+2])
+					newData.append(data[i+3])
+					newData.append(data[i+4])
+					newData.append(data[i+5])
+				else:
+					numPathSegmentsReduced += 1
+				i += 6
+			if newData:
+				newPath.append( (cmd,newData) )			
+		else:
+			newPath.append( (cmd,data) )
+	
+	path = newPath
+
+	# convert line segments into h,v where possible	
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
 		if cmd == 'l':
@@ -805,15 +845,16 @@ def cleanPath(element) :
 				if data[i] == 0:
 					# vertical
 					if lineTuples:
-						# change the line command, then append the v and then the remaining line coords
-						if lineTuples: newPath.append( ('l', lineTuples) )
+						# append the line command
+						newPath.append( ('l', lineTuples) )
 						lineTuples = []
+					# append the v and then the remaining line coords						
 					newPath.append( ('v', [data[i+1]]) )
 					numPathSegmentsReduced += 1
 				elif data[i+1] == 0:
 					if lineTuples:
 						# change the line command, then append the h and then the remaining line coords
-						if lineTuples: newPath.append( ('l', lineTuples) )
+						newPath.append( ('l', lineTuples) )
 						lineTuples = []
 					newPath.append( ('h', [data[i]]) )
 					numPathSegmentsReduced += 1
@@ -821,9 +862,13 @@ def cleanPath(element) :
 					lineTuples.append(data[i])
 					lineTuples.append(data[i+1])
 				i += 2
+			if lineTuples:
+				newPath.append( ('l', lineTuples) )
 		else:
 			newPath.append( (cmd, data) )
 	path = newPath
+
+	# TODO: collapse adjacent H or V segments that have coords in the same direction
 
 	newPathStr = serializePath(path)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
@@ -972,7 +1017,7 @@ def scourString(in_string, options=[]):
 		numAttrsRemoved += 1
 
 	# repair style (remove unnecessary style properties and change them into XML attributes)
-	numStylePropsFixed = repairStyle(doc.documentElement)
+	numStylePropsFixed = repairStyle(doc.documentElement, options)
 
 	# remove empty defs, metadata, g
 	# NOTE: these elements will be removed even if they have (invalid) text nodes
@@ -1056,12 +1101,14 @@ def printHeader():
 def printSyntaxAndQuit():
 	printHeader()
 	print 'usage: scour.py [-i input.svg] [-o output.svg] [OPTIONS]\n'
+	print 'If the input/output files are specified with a svgz extension, then compressed SVG is assumed.\n'
 	print 'If the input file is not specified, stdin is used.'
-	print 'If the output file is not specified, stdout is used.\n'
+	print 'If the output file is not specified, stdout is used.'
 	print 'If an option is not available below that means it occurs automatically'
 	print 'when scour is invoked.  Available OPTIONS:\n'
-	print '  --enable-id-stripping      : Scour will remove all un-referenced ID attributes'
+	print '  --disable-style-to-xml     : Scour will not convert style properties into XML attributes'
 	print '  --disable-group-collapsing : Scour will not collapse <g> elements'
+	print '  --enable-id-stripping      : Scour will remove all un-referenced ID attributes'
 	print ''
 	quit()	
 
@@ -1072,10 +1119,12 @@ def parseCLA():
 
 	# by default the input and output are the standard streams
 	inputfilename = ''
+	outputfilename = ''
 	input = sys.stdin
 	output = sys.stdout
 	options = []
 	validOptions = [
+					'--disable-style-to-xml',
 					'--disable-group-collapsing',
 					'--enable-id-stripping',
 					]
@@ -1087,14 +1136,21 @@ def parseCLA():
 		if arg == '-i' :
 			if i < len(args) :
 				inputfilename = args[i]
-				input = open(args[i], 'r')
+				if args[i][-5:] == '.svgz':
+					input = gzip.open(args[i], 'rb')
+				else:
+					input = open(args[i], 'r')
 				i += 1
 				continue
 			else:
 				printSyntaxAndQuit()
 		elif arg == '-o' :
 			if i < len(args) :
-				output = open(args[i], 'w')
+				outputfilename = args[i]
+				if args[i][-5:] == '.svgz':
+					output = gzip.open(args[i], 'wb')
+				else:
+					output = open(args[i], 'w')
 				i += 1
 				continue
 			else:
@@ -1105,11 +1161,11 @@ def parseCLA():
 			print 'Error!  Invalid argument:', arg
 			printSyntaxAndQuit()
 			
-	return (input, output, options, inputfilename)
+	return (input, output, options, inputfilename, outputfilename)
 
 if __name__ == '__main__':
 
-	(input, output, options, inputfilename) = parseCLA()
+	(input, output, options, inputfilename, outputfilename) = parseCLA()
 	
 	# if we are not sending to stdout, then print out app information
 	bOutputReport = False
@@ -1137,7 +1193,7 @@ if __name__ == '__main__':
 		print ' Number of raster images embedded inline:', numRastersEmbedded
 		print ' Number of path segments reduced/removed:', numPathSegmentsReduced
 		print ' Number of bytes saved in path data:', numBytesSavedInPathData
-		oldsize = os.path.getsize(input.name)
-		newsize = os.path.getsize(output.name)
+		oldsize = os.path.getsize(inputfilename)
+		newsize = os.path.getsize(outputfilename)
 		sizediff = (newsize / oldsize);
 		print ' Original file size:', oldsize, 'bytes; new file size:', newsize, 'bytes (' + str(sizediff)[:5] + 'x)'
