@@ -44,14 +44,10 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# - text elements are shoved over to the right
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
-# - Remove unnecessary units of precision on attributes (use decimal:
-#   http://docs.python.org/library/decimal.html)
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
-# https://bugs.edge.launchpad.net/ubuntu/+source/human-icon-theme/+bug/361667/
 
 # necessary to get true division
 from __future__ import division
