@@ -189,6 +189,13 @@ class RemoveDuplicateLinearGradientStops(unittest.TestCase):
 		self.assertEquals(len(grad[0].getElementsByTagNameNS(SVGNS, 'stop')), 3,
 			'Duplicate linear gradient stops not removed' )
 
+class RemoveDuplicateLinearGradientStopsPct(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops-pct.svg')
+		grad = doc.getElementsByTagNameNS(SVGNS, 'linearGradient')
+		self.assertEquals(len(grad[0].getElementsByTagNameNS(SVGNS, 'stop')), 3,
+			'Duplicate linear gradient stops with percentages not removed' )
+
 class RemoveDuplicateRadialGradientStops(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradient-stops.svg')

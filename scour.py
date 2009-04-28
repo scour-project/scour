@@ -45,6 +45,7 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
+# - deal with gradient stops with offsets in percentages
 # - implement command-line option to output svgz
 # - Remove unnecessary units of precision on attributes (use decimal: http://docs.python.org/library/decimal.html)
 # - Convert all colors to #RRGGBB format
@@ -122,6 +123,92 @@ svgAttributes = [
 				'stroke-width',
 				'visibility'
 				]
+
+
+coord = re.compile("\\-?\\d+\\.?\\d*")
+scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
+number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
+sciExponent = re.compile("[eE]([\\-\\+]?\\d+)")
+unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
+
+class Unit:
+	INVALID = -1
+	NONE = 0
+	PCT = 1
+	PX = 2
+	PT = 3
+	PC = 4
+	EM = 5
+	EX = 6
+	CM = 7
+	MM = 8
+	IN = 9
+	
+	@staticmethod
+	def get(str):
+		if str == None or str == '': return Unit.NONE
+		elif str == '%': return Unit.PCT
+		elif str == 'px': return Unit.PX
+		elif str == 'pt': return Unit.PT
+		elif str == 'pc': return Unit.PC
+		elif str == 'em': return Unit.EM
+		elif str == 'ex': return Unit.EX
+		elif str == 'cm': return Unit.CM
+		elif str == 'mm': return Unit.MM
+		elif str == 'in': return Unit.IN
+		return Unit.INVALID
+	
+class SVGLength:
+	def __init__(self, str):
+#		print "Parsing '%s'" % str
+		try: # simple unitless and no scientific notation
+			self.value = string.atof(str)
+			self.units = Unit.NONE
+#			print "  Value =", self.value
+		except ValueError:
+			# we know that the length string has an exponent, a unit, both or is invalid
+
+			# TODO: parse out number, exponent and unit
+			unitBegin = 0
+			scinum = scinumber.match(str)
+			if scinum != None:
+				# this will always match, no need to check it
+				numMatch = number.match(str)
+				expMatch = sciExponent.search(str, numMatch.start(0))
+				self.value = string.atof(numMatch.group(0)) * math.pow(10, string.atof(expMatch.group(1)))
+				unitBegin = expMatch.end(1)
+			else:
+				# unit or invalid
+				numMatch = number.match(str)
+				if numMatch != None:
+					self.value = string.atof(numMatch.group(0))
+					unitBegin = numMatch.end(0)
+
+			if unitBegin != 0 :
+#				print "  Value =", self.value
+				unitMatch = unit.search(str, unitBegin)
+				if unitMatch != None :
+					self.units = Unit.get(unitMatch.group(0))
+#					print "  Units =", self.units
+				
+			# invalid
+			else:
+				# TODO: this needs to set the default for the given attribute (how?)
+#				print "  Invalid: ", str
+				self.value = 0 
+				self.units = Unit.INVALID
+
+# returns the length of a property
+# TODO: eventually use the above class once it is complete
+def getSVGLength(value):
+	try:
+		v = string.atof(value)
+	except ValueError:
+		coordMatch = coord.match(value)
+		if coordMatch != None:
+			unitMatch = unit.search(value, coordMatch.start(0))
+		v = value
+	return v
 
 def findElementById(node, id):
 	if node == None or node.nodeType != 1: return None
@@ -330,7 +417,18 @@ def removeDuplicateGradientStops(doc):
 			stops = {}
 			stopsToRemove = []
 			for stop in grad.getElementsByTagNameNS(NS['SVG'], 'stop'):
-				offset = string.atof(stop.getAttribute('offset'))
+				# convert percentages into a floating point number
+				offsetU = SVGLength(stop.getAttribute('offset'))
+				if offsetU.units == Unit.PCT:
+					offset = offsetU.value / 100.0
+				elif offsetU.units == Unit.NONE:
+					offset = offsetU.value
+				else:
+					offset = 0
+				# set the stop offset value to the integer or floating point equivalent
+				if int(offset) == offset: stop.setAttribute('offset', str(int(offset)))
+				else: stop.setAttribute('offset', str(offset))
+					
 				color = stop.getAttribute('stop-color')
 				opacity = stop.getAttribute('stop-opacity')
 				if stops.has_key(offset) :
@@ -401,91 +499,6 @@ def collapseSinglyReferencedGradients(doc):
 					num += 1
 					
 	return num
-
-coord = re.compile("\\-?\\d+\\.?\\d*")
-scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
-number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
-sciExponent = re.compile("[eE]([\\-\\+]?\\d+)")
-unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
-
-class Unit:
-	INVALID = -1
-	NONE = 0
-	PCT = 1
-	PX = 2
-	PT = 3
-	PC = 4
-	EM = 5
-	EX = 6
-	CM = 7
-	MM = 8
-	IN = 9
-	
-	@staticmethod
-	def get(str):
-		if str == None or str == '': return Unit.NONE
-		elif str == '%': return Unit.PCT
-		elif str == 'px': return Unit.PX
-		elif str == 'pt': return Unit.PT
-		elif str == 'pc': return Unit.PC
-		elif str == 'em': return Unit.EM
-		elif str == 'ex': return Unit.EX
-		elif str == 'cm': return Unit.CM
-		elif str == 'mm': return Unit.MM
-		elif str == 'in': return Unit.IN
-		return Unit.INVALID
-	
-class SVGLength:
-	def __init__(self, str):
-#		print "Parsing '%s'" % str
-		try: # simple unitless and no scientific notation
-			self.value = string.atof(str)
-			self.units = Unit.NONE
-#			print "  Value =", self.value
-		except ValueError:
-			# we know that the length string has an exponent, a unit, both or is invalid
-
-			# TODO: parse out number, exponent and unit
-			unitBegin = 0
-			scinum = scinumber.match(str)
-			if scinum != None:
-				# this will always match, no need to check it
-				numMatch = number.match(str)
-				expMatch = sciExponent.search(str, numMatch.start(0))
-				self.value = string.atof(numMatch.group(0)) * math.pow(10, string.atof(expMatch.group(1)))
-				unitBegin = expMatch.end(1)
-			else:
-				# unit or invalid
-				numMatch = number.match(str)
-				if numMatch != None:
-					self.value = string.atof(numMatch.group(0))
-					unitBegin = numMatch.end(0)
-
-			if unitBegin != 0 :
-#				print "  Value =", self.value
-				unitMatch = unit.search(str, unitBegin)
-				if unitMatch != None :
-					self.units = Unit.get(unitMatch.group(0))
-#					print "  Units =", self.units
-				
-			# invalid
-			else:
-				# TODO: this needs to set the default for the given attribute (how?)
-#				print "  Invalid: ", str
-				self.value = 0 
-				self.units = Unit.INVALID
-
-# returns the length of a property
-# TODO: eventually use the above class once it is complete
-def getSVGLength(value):
-	try:
-		v = string.atof(value)
-	except ValueError:
-		coordMatch = coord.match(value)
-		if coordMatch != None:
-			unitMatch = unit.search(value, coordMatch.start(0))
-		v = value
-	return v
 	
 def repairStyle(node):
 	num = 0
