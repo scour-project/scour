@@ -388,7 +388,7 @@ class RemoveFillOpacityWhenFillNone(unittest.TestCase):
 
 class ConvertFillPropertyToAttr(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/fill-none.svg')
+		doc = scour.scourXmlFile('unittests/fill-none.svg', '--disable-simplify-colors')
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill'), 'black',
 			'fill property not converted to XML attribute' )
 
@@ -510,32 +510,32 @@ class HandleSciNoInPathData(unittest.TestCase):
 class TranslateRGBIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
-		self.assertEquals( elem.getAttribute('fill'), '#010203',
+		self.assertEquals( elem.getAttribute('fill'), '#0F1011',
 			'Not converting rgb into hex')
 
 class TranslateRGBPctIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'stop')[0]
-		self.assertEquals( elem.getAttribute('stop-color'), '#FF0000',
+		self.assertEquals( elem.getAttribute('stop-color'), '#7F0000',
 			'Not converting rgb pct into hex')
 
 class TranslateColorNamesIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
-		self.assertEquals( elem.getAttribute('stroke'), '#FF0000',
+		self.assertEquals( elem.getAttribute('stroke'), '#A9A9A9',
 			'Not converting standard color names into hex')
 
 class TranslateExtendedColorNamesIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'solidColor')[0]
-		self.assertEquals( elem.getAttribute('solid-color'), '#00007F',
+		self.assertEquals( elem.getAttribute('solid-color'), '#800000',
 			'Not converting extended color names into hex')
 
 class TranslateLongHexColorIntoShortHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'ellipse')[0]
 		self.assertEquals( elem.getAttribute('fill'), '#FFF',
-			'Not converting extended color names into hex')
+			'Not converting long hex color into short hex')
 		
 		
 if __name__ == '__main__':
