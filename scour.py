@@ -41,10 +41,6 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
-# + Up-revved enthought's path parser for integer coords with sci notation:
-#   https://svn.enthought.com/enthought/changeset/23583?format=diff&new=23583
-# + Convert rgb() into #RRGGBB
-# + Convert #RRGGBB into #RGB where possible
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
