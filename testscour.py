@@ -501,5 +501,42 @@ class HandleNonAsciiUtf8(unittest.TestCase):
 		self.assertEquals( desc, u'ú',
 			'Did not handle non-ASCII characters' )
 
+class HandleSciNoInPathData(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-sn.svg')
+		self.assertEquals( len(doc.getElementsByTagNameNS(SVGNS, 'path')), 1,
+			'Did not handle scientific notation in path data' )
+			
+class TranslateRGBIntoHex(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+		self.assertEquals( elem.getAttribute('fill'), '#010203',
+			'Not converting rgb into hex')
+
+class TranslateRGBPctIntoHex(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'stop')[0]
+		self.assertEquals( elem.getAttribute('stop-color'), '#FF0000',
+			'Not converting rgb pct into hex')
+
+class TranslateColorNamesIntoHex(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+		self.assertEquals( elem.getAttribute('stroke'), '#FF0000',
+			'Not converting standard color names into hex')
+
+class TranslateExtendedColorNamesIntoHex(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'solidColor')[0]
+		self.assertEquals( elem.getAttribute('solid-color'), '#00007F',
+			'Not converting extended color names into hex')
+
+class TranslateLongHexColorIntoShortHex(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'ellipse')[0]
+		self.assertEquals( elem.getAttribute('fill'), '#FFF',
+			'Not converting extended color names into hex')
+		
+		
 if __name__ == '__main__':
     unittest.main()

@@ -44,10 +44,13 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
+# + Up-revved enthought's path parser for integer coords with sci notation:
+#   https://svn.enthought.com/enthought/changeset/23583?format=diff&new=23583
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Convert all colors to #RRGGBB format
 # - Reduce #RRGGBB format to #RGB format when possible
+# - Remove any unused glyphs from font elements?
 
 # necessary to get true division
 from __future__ import division
@@ -69,7 +72,7 @@ import gzip
 getcontext().prec = 6
 
 APP = 'scour'
-VER = '0.11'
+VER = '0.12'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -1002,6 +1005,9 @@ def scourString(in_string, options=[]):
 	# repair style (remove unnecessary style properties and change them into XML attributes)
 	numStylePropsFixed = repairStyle(doc.documentElement, options)
 
+	# TODO: change color properties to #RRGGBB format
+	# TODO: change color properties to #RGB where possible
+	
 	# remove empty defs, metadata, g
 	# NOTE: these elements will be removed even if they have (invalid) text nodes
 	elemsToRemove = []
