@@ -41,6 +41,7 @@
 #  * Put id attributes first in the serialization (or make the d attribute last)
 
 # Next Up:
+# + recognize that fill="url(&quot;#grd1&quot;)" is legal and do not remove grd1 gradient
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -65,7 +66,7 @@ import gzip
 getcontext().prec = 6
 
 APP = 'scour'
-VER = '0.12'
+VER = '0.13'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -403,13 +404,29 @@ def findReferencedElements(node,ids={}):
 		if len(propval) == 2 :
 			prop = propval[0].strip()
 			val = propval[1].strip()
-			if prop in referencingProps and val != '' and val[0:5] == 'url(#' :
-				id = val[5:val.find(')')]
-				if ids.has_key(id) :
-					ids[id][0] += 1
-					ids[id][1].append(node)
-				else:
-					ids[id] = [1,[node]]
+			if prop in referencingProps and val != '' :
+				if len(val) >= 7 and val[0:5] == 'url(#' :
+					id = val[5:val.find(')')]
+					if ids.has_key(id) :
+						ids[id][0] += 1
+						ids[id][1].append(node)
+					else:
+						ids[id] = [1,[node]]
+				# if the url has a quote in it, we need to compensate
+				elif len(val) >= 8 :
+					id = None
+					# double-quote
+					if val[0:6] == 'url("#' :
+						id = val[6:val.find('")')]
+					# single-quote
+					elif val[0:6] == "url('#" :
+						id = val[6:val.find("')")]
+					if id != None:
+						if ids.has_key(id) :
+							ids[id][0] += 1
+							ids[id][1].append(node)
+						else:
+							ids[id] = [1,[node]]
 					
 	if node.hasChildNodes() :
 		for child in node.childNodes:
@@ -823,7 +840,7 @@ def convertColor(value):
 		if len(b) == 1: b='0'+b
 		s = '#'+r+g+b
 	
-	if s[0] == '#' and s[1]==s[2] and s[3]==s[4] and s[5]==s[6]:
+	if s[0] == '#' and len(s)==7 and s[1]==s[2] and s[3]==s[4] and s[5]==s[6]:
 		s = s.upper()
 		s = '#'+s[1]+s[3]+s[5]
 
@@ -1397,9 +1414,9 @@ if __name__ == '__main__':
 	    if inputfilename != '': 
 	    	print ' File:', inputfilename
 		print ' Time taken:', str(endTimes[0]-startTimes[0]) + 's'
-		print ' Number of unreferenced id attributes removed:', numIDsRemoved 
 		print ' Number of elements removed:', numElemsRemoved
 		print ' Number of attributes removed:', numAttrsRemoved
+		print ' Number of unreferenced id attributes removed:', numIDsRemoved 
 		print ' Number of style properties fixed:', numStylePropsFixed
 		print ' Number of raster images embedded inline:', numRastersEmbedded
 		print ' Number of path segments reduced/removed:', numPathSegmentsReduced
@@ -1407,7 +1424,7 @@ if __name__ == '__main__':
 		print ' Number of bytes saved in colors:', numBytesSavedInColors
 		oldsize = os.path.getsize(inputfilename)
 		newsize = os.path.getsize(outputfilename)
-		sizediff = (newsize / oldsize);
-		print ' Original file size:', oldsize, 'bytes; new file size:', newsize, 'bytes (' + str(sizediff)[:5] + 'x)'
+		sizediff = (newsize / oldsize) * 100;
+		print ' Original file size:', oldsize, 'bytes; new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
 
 

@@ -537,6 +537,11 @@ class TranslateLongHexColorIntoShortHex(unittest.TestCase):
 		self.assertEquals( elem.getAttribute('fill'), '#FFF',
 			'Not converting long hex color into short hex')
 		
+class AllowQuotEntitiesInUrl(unittest.TestCase):
+	def runTest(self):
+		grads = scour.scourXmlFile('unittests/quot-in-url.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')
+		self.assertEquals( len(grads), 1,
+			'Removed referenced gradient when &quot; was in the url')
 		
 if __name__ == '__main__':
     unittest.main()
