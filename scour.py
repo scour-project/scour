@@ -51,7 +51,6 @@ from __future__ import division
 
 import os
 import sys
-import string
 import xml.dom.minidom
 import re
 import math
@@ -79,10 +78,10 @@ NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
 		'ADOBE_VARIABLES': 'http://ns.adobe.com/Variables/1.0/',
 		'ADOBE_SFW': 'http://ns.adobe.com/SaveForWeb/1.0/',
 		'ADOBE_EXTENSIBILITY': 'http://ns.adobe.com/Extensibility/1.0/',
-     	'ADOBE_FLOWS': 'http://ns.adobe.com/Flows/1.0/',
-     	'ADOBE_IMAGE_REPLACEMENT': 'http://ns.adobe.com/ImageReplacement/1.0/',     
-     	'ADOBE_CUSTOM': 'http://ns.adobe.com/GenericCustomNamespace/1.0/',
-     	'ADOBE_XPATH': 'http://ns.adobe.com/XPath/1.0/'
+		'ADOBE_FLOWS': 'http://ns.adobe.com/Flows/1.0/',
+		'ADOBE_IMAGE_REPLACEMENT': 'http://ns.adobe.com/ImageReplacement/1.0/',     
+		'ADOBE_CUSTOM': 'http://ns.adobe.com/GenericCustomNamespace/1.0/',
+		'ADOBE_XPATH': 'http://ns.adobe.com/XPath/1.0/'
 		}
 
 unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
@@ -275,7 +274,7 @@ number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
 sciExponent = re.compile("[eE]([\\-\\+]?\\d+)")
 unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
 
-class Unit:
+class Unit(object):
 	INVALID = -1
 	NONE = 0
 	PCT = 1
@@ -290,6 +289,8 @@ class Unit:
 	
 	@staticmethod
 	def get(str):
+		# GZ: shadowing builtins like 'str' is generally bad form
+		# GZ: encoding stuff like this in a dict makes for nicer code
 		if str == None or str == '': return Unit.NONE
 		elif str == '%': return Unit.PCT
 		elif str == 'px': return Unit.PX
@@ -302,11 +303,11 @@ class Unit:
 		elif str == 'in': return Unit.IN
 		return Unit.INVALID
 	
-class SVGLength:
+class SVGLength(object):
 	def __init__(self, str):
 #		print "Parsing '%s'" % str
 		try: # simple unitless and no scientific notation
-			self.value = string.atof(str)
+			self.value = float(str)
 			self.units = Unit.NONE
 #			print "  Value =", self.value
 		except ValueError:
@@ -319,13 +320,14 @@ class SVGLength:
 				# this will always match, no need to check it
 				numMatch = number.match(str)
 				expMatch = sciExponent.search(str, numMatch.start(0))
-				self.value = string.atof(numMatch.group(0)) * math.pow(10, string.atof(expMatch.group(1)))
+				self.value = (float(numMatch.group(0)) *
+					10 ** float(expMatch.group(1)))
 				unitBegin = expMatch.end(1)
 			else:
 				# unit or invalid
 				numMatch = number.match(str)
 				if numMatch != None:
-					self.value = string.atof(numMatch.group(0))
+					self.value = float(numMatch.group(0))
 					unitBegin = numMatch.end(0)
 
 			if unitBegin != 0 :
@@ -346,7 +348,7 @@ class SVGLength:
 # TODO: eventually use the above class once it is complete
 def getSVGLength(value):
 	try:
-		v = string.atof(value)
+		v = float(value)
 	except ValueError:
 		coordMatch = coord.match(value)
 		if coordMatch != None:
@@ -362,8 +364,12 @@ def findElementById(node, id):
 		if e != None: return e
 	return None
 
-# returns all elements with id attributes
-def findElementsWithId(node,elems={}):
+def findElementsWithId(node, elems=None):
+	"""
+	Returns all elements with id attributes
+	"""
+	if elems is None:
+		elems = {}
 	id = node.getAttribute('id')
 	if id != '' :
 		elems[id] = node
@@ -375,32 +381,39 @@ def findElementsWithId(node,elems={}):
 				findElementsWithId(child, elems)
 	return elems
 
-# returns the number of times an id is referenced as well as all elements that reference it
-# currently looks at fill, stroke, clip-path, mask, marker and xlink:href attributes
-def findReferencedElements(node,ids={}):
-	# TODO: error here (ids is not cleared upon next invocation), the
-	# input argument ids is clunky here (see below how it is called)
+def findReferencedElements(node, ids=None):
+	"""
+	Returns the number of times an ID is referenced as well as all elements
+	that reference it.
+
+	Currently looks at fill, stroke, clip-path, mask, marker, and
+	xlink:href attributes.
+	"""
+	if ids is None:
+		ids = {}
+	# TODO: input argument ids is clunky here (see below how it is called)
+	# GZ: alternative to passing dict, use **kwargs
 	href = node.getAttributeNS(NS['XLINK'],'href')
 	
 	# if xlink:href is set, then grab the id
 	if href != '' and len(href) > 1 and href[0] == '#':
 		# we remove the hash mark from the beginning of the id
 		id = href[1:]
-		if ids.has_key(id) :
+		if id in ids:
 			ids[id][0] += 1
 			ids[id][1].append(node)
 		else:
 			ids[id] = [1,[node]]
 
 	# now get all style properties and the fill, stroke, filter attributes
-	styles = string.split(node.getAttribute('style'),';')
+	styles = node.getAttribute('style').split(';')
 	referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
 						'marker-end', 'marker-mid']
 	for attr in referencingProps:
-		styles.append( string.join([attr,node.getAttribute(attr)],':') )
+		styles.append(':'.join([attr, node.getAttribute(attr)]))
 			
 	for style in styles:
-		propval = string.split(style,':')
+		propval = style.split(':')
 		if len(propval) == 2 :
 			prop = propval[0].strip()
 			val = propval[1].strip()
@@ -450,8 +463,8 @@ def removeUnreferencedElements(doc):
 	num = 0
 	removeTags = ['linearGradient', 'radialGradient', 'pattern']
 
-	identifiedElements = findElementsWithId(doc.documentElement, {})
-	referencedIDs = findReferencedElements(doc.documentElement, {})
+	identifiedElements = findElementsWithId(doc.documentElement)
+	referencedIDs = findReferencedElements(doc.documentElement)
 
 	for id in identifiedElements:
 		if not id in referencedIDs:
@@ -462,8 +475,8 @@ def removeUnreferencedElements(doc):
 				numElemsRemoved += 1
 
 	# TODO: should also go through defs and vacuum it
-	identifiedElements = findElementsWithId(doc.documentElement, {})
-	referencedIDs = findReferencedElements(doc.documentElement, {})
+	identifiedElements = findElementsWithId(doc.documentElement)
+	referencedIDs = findReferencedElements(doc.documentElement)
 	
 	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
 	num = 0
@@ -611,7 +624,7 @@ def collapseSinglyReferencedGradients(doc):
 	num = 0
 	
 	# make sure to reset the ref'ed ids for when we are running this in testscour
-	for rid,nodeCount in findReferencedElements(doc.documentElement, {}).iteritems():
+	for rid,nodeCount in findReferencedElements(doc.documentElement).iteritems():
 		count = nodeCount[0]
 		nodes = nodeCount[1]
 		if count == 1:
@@ -666,9 +679,9 @@ def repairStyle(node, options):
 	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
 		# get all style properties and stuff them into a dictionary
 		styleMap = { }
-		rawStyles = string.split(node.getAttribute('style'),';')
+		rawStyles = node.getAttribute('style').split(';')
 		for style in rawStyles:
-			propval = string.split(style,':')
+			propval = style.split(':')
 			if len(propval) == 2 :
 				styleMap[propval[0].strip()] = propval[1].strip()
 
@@ -684,7 +697,7 @@ def repairStyle(node, options):
 		# Here is where we can weed out unnecessary styles like:
 		#  opacity:1
 		if styleMap.has_key('opacity') :
-			opacity = string.atof(styleMap['opacity'])
+			opacity = float(styleMap['opacity'])
 			# opacity='1.0' is useless, remove it
 			if opacity == 1.0 :
 				del styleMap['opacity']
@@ -719,13 +732,13 @@ def repairStyle(node, options):
 					
 		#  stop-opacity: 1
 		if styleMap.has_key('stop-opacity') :
-			if string.atof(styleMap['stop-opacity']) == 1.0 :
+			if float(styleMap['stop-opacity']) == 1.0 :
 				del styleMap['stop-opacity']
 				num += 1
 		
 		#  fill-opacity: 1 or 0
 		if styleMap.has_key('fill-opacity') :
-			fillOpacity = string.atof(styleMap['fill-opacity'])
+			fillOpacity = float(styleMap['fill-opacity'])
 			#  TODO: This is actually a problem is the parent element does not have fill-opacity = 1
 			if fillOpacity == 1.0 :
 				del styleMap['fill-opacity']
@@ -738,7 +751,7 @@ def repairStyle(node, options):
 		
 		#  stroke-opacity: 1 or 0
 		if styleMap.has_key('stroke-opacity') :
-			strokeOpacity = string.atof(styleMap['stroke-opacity']) 
+			strokeOpacity = float(styleMap['stroke-opacity']) 
 			#  TODO: This is actually a problem is the parent element does not have stroke-opacity = 1
 			if strokeOpacity == 1.0 :
 				del styleMap['stroke-opacity']
@@ -825,9 +838,9 @@ def convertColor(value):
 	
 	rgbpMatch = rgbp.match(s)
 	if rgbpMatch != None :
-		r = int( string.atof( rgbpMatch.group(1) ) * 255.0 / 100.0 )
-		g = int( string.atof( rgbpMatch.group(2) ) * 255.0 / 100.0 )
-		b = int( string.atof( rgbpMatch.group(3) ) * 255.0 / 100.0 )
+		r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
+		g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
+		b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
 		s  = 'rgb(%d,%d,%d)' % (r,g,b)
 	
 	rgbMatch = rgb.match(s)
@@ -1181,14 +1194,14 @@ def properlySizeDoc(docElement):
 	if len(vbSep) == 4:
 		try:
 			# if x or y are specified and non-zero then it is not ok to overwrite it
-			vbX = string.atof(vbSep[0])
-			vbY = string.atof(vbSep[1])
+			vbX = float(vbSep[0])
+			vbY = float(vbSep[1])
 			if vbX != 0 or vbY != 0:
 				return
 				
 			# if width or height are not equal to doc width/height then it is not ok to overwrite it
-			vbWidth = string.atof(vbSep[2])
-			vbHeight = string.atof(vbSep[3])
+			vbWidth = float(vbSep[2])
+			vbHeight = float(vbSep[3])
 			if vbWidth != w.value or vbHeight != h.value:
 				return
 		# if the viewBox did not parse properly it is invalid and ok to overwrite it
@@ -1259,8 +1272,8 @@ def scourString(in_string, options=[]):
 	if '--enable-id-stripping' in options:
 		bContinueLooping = True
 		while bContinueLooping:
-			identifiedElements = findElementsWithId(doc.documentElement, {})
-			referencedIDs = findReferencedElements(doc.documentElement, {})
+			identifiedElements = findElementsWithId(doc.documentElement)
+			referencedIDs = findReferencedElements(doc.documentElement)
 			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
 	
 	if not '--disable-group-collapsing' in options:
