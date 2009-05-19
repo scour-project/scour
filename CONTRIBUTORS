@@ -5,3 +5,6 @@ Thanks to the following contributors to scour:
 	- report file size reduction
 	- prettied up the report
 	
+* Martin:
+	- better methods of handling string-to-float conversions in Python
+	- document functions in the traditional Python way

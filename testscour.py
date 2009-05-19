@@ -543,5 +543,10 @@ class AllowQuotEntitiesInUrl(unittest.TestCase):
 		self.assertEquals( len(grads), 1,
 			'Removed referenced gradient when &quot; was in the url')
 		
+class RemoveFontStylesFromNonTextShapes(unittest.TestCase):
+	def runTest(self):
+		r = scour.scourXmlFile('unittests/font-styles.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+		self.assertEquals( r.getAttribute('font-size'), '',
+			'font-size not removed from rect' )
 if __name__ == '__main__':
     unittest.main()

@@ -42,6 +42,10 @@
 
 # Next Up:
 # + recognize that fill="url(&quot;#grd1&quot;)" is legal and do not remove grd1 gradient
+# + properly handle paths with more than 1 pair of coordinates in the first Move command
+# + remove font/text styles from non-text elements
+# + remove -inkscape-font-specification styles
+# + added --set-precision argument to set the number of significant digits (defaults to 6)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -61,7 +65,7 @@ from svg_regex import svg_parser
 from decimal import *
 import gzip
 
-# set precision to 6 decimal places
+# set precision to 6 decimal places by default
 getcontext().prec = 6
 
 APP = 'scour'
@@ -455,10 +459,13 @@ numPathSegmentsReduced = 0
 numBytesSavedInPathData = 0
 numBytesSavedInColors = 0
 
-# removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>
-# also vacuums the defs of any non-referenced renderable elements
-# returns the number of unreferenced elements removed from the document
 def removeUnreferencedElements(doc):
+	"""
+	Removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>.	
+	Also vacuums the defs of any non-referenced renderable elements.
+	
+	Returns the number of unreferenced elements removed from the document.
+	"""
 	global numElemsRemoved
 	num = 0
 	removeTags = ['linearGradient', 'radialGradient', 'pattern']
@@ -496,9 +503,12 @@ def removeUnreferencedElements(doc):
 	
 	return num
 
-# removes the unreferenced ID attributes
-# returns the number of ID attributes removed
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
+	"""
+	Removes the unreferenced ID attributes.
+	
+	Returns the number of ID attributes removed
+	"""
 	global numIDsRemoved
 	keepTags = ['font']
 	num = 0;
@@ -773,6 +783,23 @@ def repairStyle(node, options):
 						del styleMap[uselessStrokeStyle]
 						num += 1
 		
+		# remove font properties for non-text elements
+		if node.nodeName in ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path']:
+			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust', 
+								'font-style', 'font-variant', 'font-weight', 
+								'letter-spacing', 'line-height', 'kerning',
+								'text-anchor', 'text-decoration', 'text-rendering',
+								'unicode-bidi', 'word-spacing', 'writing-mode'] :
+				if styleMap.has_key(fontstyle) :
+					del styleMap[fontstyle]
+					num += 1
+
+		# remove inkscape-specific styles
+		for inkscapeStyle in ['-inkscape-font-specification']:
+			if styleMap.has_key(inkscapeStyle):
+				del styleMap[inkscapeStyle]
+				num += 1
+
 		#  TODO: what else?
 		
 		# visibility: visible
@@ -823,10 +850,6 @@ def repairStyle(node, options):
 			
 	return num
 
-# convert blue to rgb(r,g,b)
-# convert rgb(r%,g%,b%) to rgb(r,g,b)
-# convert rgb(r,g,b) to #RRGGBB
-# finally convert #RRGGBB to #RGB if possible
 rgb = re.compile("\\s*rgb\\(\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\)\\s*")
 rgbp = re.compile("\\s*rgb\\(\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\)\\s*")
 def convertColor(value):
@@ -962,7 +985,22 @@ def cleanPath(element) :
 
 	# convert absolute coordinates into relative ones (start with the second subcommand
 	# and leave the first M as absolute)
-	(x,y) = path[0][1]
+	if len(path[0][1]) == 2:
+		(x,y) = path[0][1]
+	else:
+		# we have a move and then 1 or more coords for lines
+		N = len(path[0][1])
+		if path[0] == 'M':
+			# take the last pair of coordinates for the starting point
+			x = path[0][1][N-2]
+			y = path[0][1][N-1]
+		else: # m, accumulate coordinates for the starting point
+			(x,y) = path[0][1][0],path[0][1][1]
+			n = 2
+			while n < N:
+				x += path[0][1][n]
+				y += path[0][1][n+1]
+				n += 2
 	i = 1
 	for (cmd,data) in path[1:]:
 		# adjust abs to rel
@@ -1124,9 +1162,11 @@ def serializePath(pathObj):
 #		pathStr += ' '
 	return pathStr
 
-# converts raster references to inline images
-# NOTE: there are size limits to base64-encoding handling in browsers 
 def embedRasters(element) :
+	"""
+	Converts raster references to inline images.
+	NOTE: there are size limits to base64-encoding handling in browsers 
+	"""
 	global numRastersEmbedded
 
 	href = element.getAttributeNS(NS['XLINK'],'href')
@@ -1343,11 +1383,13 @@ def printSyntaxAndQuit():
 	print '  --disable-style-to-xml     : Scour will not convert style properties into XML attributes'
 	print '  --disable-group-collapsing : Scour will not collapse <g> elements'
 	print '  --enable-id-stripping      : Scour will remove all un-referenced ID attributes'
+	print '  --set-precision N          : Scour will set the number of significant digits (default: 6)'
 	print ''
 	quit()	
 
 # returns a tuple with:
-# input stream, output stream, and a list of options specified on the command-line
+# input stream, output stream, a list of options specified on the command-line, 
+# input filename, and output filename
 def parseCLA():
 	args = sys.argv[1:]
 
@@ -1362,6 +1404,7 @@ def parseCLA():
 					'--disable-style-to-xml',
 					'--disable-group-collapsing',
 					'--enable-id-stripping',
+					'--set-precision',
 					]
 					
 	i = 0
@@ -1390,6 +1433,13 @@ def parseCLA():
 				continue
 			else:
 				printSyntaxAndQuit()
+		elif arg == '--set-precision':
+			if i < len(args):
+				getcontext().prec = int(args[i])
+				i += 1
+				continue
+			else:
+				printSyntaxAndQuit()
 		elif arg in validOptions :
 			options.append(arg)
 		else :
@@ -1401,7 +1451,6 @@ def parseCLA():
 if __name__ == '__main__':
 
 	startTimes = os.times()
-#	print times[0], times[1]
 	
 	(input, output, options, inputfilename, outputfilename) = parseCLA()
 	
