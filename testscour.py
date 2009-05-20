@@ -156,7 +156,8 @@ class KeepUnreferencedIDsWhenEnabled(unittest.TestCase):
 			
 class RemoveUnreferencedIDsWhenEnabled(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/ids-to-strip.svg', ['--enable-id-stripping'])
+		doc = scour.scourXmlFile('unittests/ids-to-strip.svg',
+			scour.parse_args(['--enable-id-stripping'])[0])
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'svg')[0].getAttribute('id'), '',
 			'<svg> ID not stripped' )
 
@@ -168,7 +169,8 @@ class RemoveUselessNestedGroups(unittest.TestCase):
 
 class DoNotRemoveUselessNestedGroups(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg', ['--disable-group-collapsing'])
+		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg',
+			scour.parse_args(['--disable-group-collapsing'])[0])
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 2,
 			'Useless nested groups were removed despite --disable-group-collapsing' )
 
@@ -388,7 +390,8 @@ class RemoveFillOpacityWhenFillNone(unittest.TestCase):
 
 class ConvertFillPropertyToAttr(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/fill-none.svg', '--disable-simplify-colors')
+		doc = scour.scourXmlFile('unittests/fill-none.svg',
+			scour.parse_args(['--disable-simplify-colors'])[0])
 		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill'), 'black',
 			'fill property not converted to XML attribute' )
 

@@ -8,3 +8,4 @@ Thanks to the following contributors to scour:
 * Martin:
 	- better methods of handling string-to-float conversions in Python
 	- document functions in the traditional Python way
+	- rewrite option parsing code
