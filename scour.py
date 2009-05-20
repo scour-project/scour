@@ -66,8 +66,8 @@ from svg_regex import svg_parser
 from decimal import *
 import gzip
 
-# set precision to 6 decimal places by default
-getcontext().prec = 6
+# set precision to 5 decimal places by default
+getcontext().prec = 5
 
 APP = 'scour'
 VER = '0.13'
