@@ -46,6 +46,7 @@
 # + remove font/text styles from non-text elements
 # + remove -inkscape-font-specification styles
 # + added --set-precision argument to set the number of significant digits (defaults to 6)
+# + collapse unnecessary consecutive horizontal/vertical line segments
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -271,6 +272,8 @@ colors = {
 	'yellow': 'rgb(255, 255, 0)',
 	'yellowgreen': 'rgb(154, 205, 50)',
 	}
+	
+def isSameSign(a,b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 	
 coord = re.compile("\\-?\\d+\\.?\\d*")
 scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
@@ -711,6 +714,7 @@ def repairStyle(node, options):
 			# opacity='1.0' is useless, remove it
 			if opacity == 1.0 :
 				del styleMap['opacity']
+				num += 1
 				
 			# if opacity='0' then all fill and stroke properties are useless, remove them
 			elif opacity == 0.0 :
@@ -722,7 +726,7 @@ def repairStyle(node, options):
 						num += 1
 
 		#  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
-		#  TODO: should also detect if the computed value of this element is fill="none"
+		#  TODO: should also detect if the computed value of this element is stroke="none"
 		if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
 			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit', 
 					'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
@@ -730,10 +734,10 @@ def repairStyle(node, options):
 					del styleMap[strokestyle]
 					num += 1
 			# TODO: This is actually a problem if a parent element has a specified stroke
+			# we need to properly calculate computed values
 			del styleMap['stroke']
 
 		#  if fill:none, then remove all fill-related properties (fill-rule, etc)
-		#  TODO: should also detect if fill-opacity=0
 		if styleMap.has_key('fill') and styleMap['fill'] == 'none' :
 			for fillstyle in [ 'fill-rule', 'fill-opacity' ] :
 				if styleMap.has_key(fillstyle) :
@@ -749,7 +753,7 @@ def repairStyle(node, options):
 		#  fill-opacity: 1 or 0
 		if styleMap.has_key('fill-opacity') :
 			fillOpacity = float(styleMap['fill-opacity'])
-			#  TODO: This is actually a problem is the parent element does not have fill-opacity = 1
+			#  TODO: This is actually a problem if the parent element does not have fill-opacity=1
 			if fillOpacity == 1.0 :
 				del styleMap['fill-opacity']
 				num += 1
@@ -762,7 +766,7 @@ def repairStyle(node, options):
 		#  stroke-opacity: 1 or 0
 		if styleMap.has_key('stroke-opacity') :
 			strokeOpacity = float(styleMap['stroke-opacity']) 
-			#  TODO: This is actually a problem is the parent element does not have stroke-opacity = 1
+			#  TODO: This is actually a problem if the parent element does not have stroke-opacity=1
 			if strokeOpacity == 1.0 :
 				del styleMap['stroke-opacity']
 				num += 1
@@ -784,6 +788,7 @@ def repairStyle(node, options):
 						num += 1
 		
 		# remove font properties for non-text elements
+		# I've actually observed this in real SVG content
 		if node.nodeName in ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path']:
 			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust', 
 								'font-style', 'font-variant', 'font-weight', 
@@ -795,13 +800,12 @@ def repairStyle(node, options):
 					num += 1
 
 		# remove inkscape-specific styles
+		# TODO: need to get a full list of these
 		for inkscapeStyle in ['-inkscape-font-specification']:
 			if styleMap.has_key(inkscapeStyle):
 				del styleMap[inkscapeStyle]
 				num += 1
 
-		#  TODO: what else?
-		
 		# visibility: visible
 		if styleMap.has_key('visibility') :
 			if styleMap['visibility'] == 'visible':
@@ -834,7 +838,7 @@ def repairStyle(node, options):
 					node.setAttribute(propName, styleMap[propName])
 					del styleMap[propName]
 
-		# sew our style back together
+		# sew our remaining style properties back together into a style attribute
 		fixedStyle = ''
 		for prop in styleMap.keys() :
 			fixedStyle += prop + ':' + styleMap[prop] + ';'
@@ -853,7 +857,9 @@ def repairStyle(node, options):
 rgb = re.compile("\\s*rgb\\(\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\)\\s*")
 rgbp = re.compile("\\s*rgb\\(\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\)\\s*")
 def convertColor(value):
-
+	"""
+		Converts the input color string and returns a #RRGGBB (or #RGB if possible) string
+	"""
 	s = value
 	
 	if s in colors.keys():
@@ -883,6 +889,9 @@ def convertColor(value):
 	return s
 	
 def convertColors(element) :
+	"""
+		Recursively converts all color properties into #RRGGBB format
+	"""
 	numBytes = 0
 	
 	if element.nodeType != 1: return 0
@@ -912,6 +921,9 @@ def convertColors(element) :
 	return numBytes
 
 def cleanPath(element) :
+	"""
+		Cleans the path string (d attribute) of the element 
+	"""
 	global numBytesSavedInPathData
 	global numPathSegmentsReduced
 	
@@ -994,13 +1006,17 @@ def cleanPath(element) :
 			# take the last pair of coordinates for the starting point
 			x = path[0][1][N-2]
 			y = path[0][1][N-1]
-		else: # m, accumulate coordinates for the starting point
+		else: # relative move, accumulate coordinates for the starting point
 			(x,y) = path[0][1][0],path[0][1][1]
 			n = 2
 			while n < N:
 				x += path[0][1][n]
 				y += path[0][1][n+1]
 				n += 2
+	
+	# now we have the starting point at x,y so let's save it 
+	(startx,starty) = (x,y)
+	
 	i = 1
 	for (cmd,data) in path[1:]:
 		# adjust abs to rel
@@ -1095,7 +1111,6 @@ def cleanPath(element) :
 				newPath.append( (cmd,newData) )			
 		else:
 			newPath.append( (cmd,data) )
-	
 	path = newPath
 
 	# convert line segments into h,v where possible	
@@ -1108,7 +1123,7 @@ def cleanPath(element) :
 				if data[i] == 0:
 					# vertical
 					if lineTuples:
-						# append the line command
+						# flush the existing line command
 						newPath.append( ('l', lineTuples) )
 						lineTuples = []
 					# append the v and then the remaining line coords						
@@ -1116,7 +1131,7 @@ def cleanPath(element) :
 					numPathSegmentsReduced += 1
 				elif data[i+1] == 0:
 					if lineTuples:
-						# change the line command, then append the h and then the remaining line coords
+						# flush the line command, then append the h and then the remaining line coords
 						newPath.append( ('l', lineTuples) )
 						lineTuples = []
 					newPath.append( ('h', [data[i]]) )
@@ -1131,19 +1146,66 @@ def cleanPath(element) :
 			newPath.append( (cmd, data) )
 	path = newPath
 
-	# TODO: collapse adjacent H or V segments that have coords in the same direction
+	# collapse all consecutive h or v commands together into one command
+	prevCmd = ''
+	prevData = []
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		# flush the previous command if it is not the same type as the current command
+		# or it is not an h or v line
+		if prevCmd != '':
+			if cmd != prevCmd or not prevCmd in ['h','v']:
+				newPath.append( (prevCmd, prevData) )
+				prevCmd = ''
+				prevData = []
+		
+		# if the previous and current commands are the same type and a h/v line, collapse
+		if cmd == prevCmd and cmd in ['h','v']:
+			for coord in data:
+				prevData.append(coord)
+				numPathSegmentsReduced += 1
+		# save last command and data
+		else:
+			prevCmd = cmd
+			prevData = data
+	# flush last command and data
+	if prevCmd != '':
+		newPath.append( (prevCmd, prevData) )
+	path = newPath
 
+	# for each h or v, collapse unnecessary coordinates that run in the same direction
+	# i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		if cmd in ['h','v'] and len(data) > 1:
+			newData = []
+			prevCoord = data[0]
+			for coord in data[1:]:
+				if isSameSign(prevCoord, coord):
+					prevCoord += coord
+					numPathSegmentsReduced += 1
+				else:
+					newData.append(prevCoord)
+					prevCoord = coord
+			newData.append(prevCoord)
+			newPath.append( (cmd, newData) )
+		else:
+			newPath.append( (cmd, data) )
+	path = newPath
+	
 	newPathStr = serializePath(path)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
 	element.setAttribute('d', newPathStr)
 	
 
-# - reserialize the path data with some cleanups:
-#   - removes scientific notation (exponents)
-#   - removes all trailing zeros after the decimal
-#   - removes extraneous whitespace
-#   - adds commas between all values in a subcommand
 def serializePath(pathObj):
+	"""
+	Reserializes the path data with some cleanups:
+		- removes scientific notation (exponents)
+		- removes all trailing zeros after the decimal
+		- removes extraneous whitespace
+		- adds commas between values in a subcommand if required
+	"""
 	pathStr = ""
 	for (cmd,data) in pathObj:
 		pathStr += cmd
@@ -1154,12 +1216,10 @@ def serializePath(pathObj):
 				if int(coord) == coord: pathStr += str(int(coord))
 				else: pathStr += str(coord)
 				
-				# only need the comma if the next number if non-negative
+				# only need the comma if the next number is non-negative
 				if c < len(data)-1 and data[c+1] >= 0:
 					pathStr += ','
 				c += 1
-#       we do not even bother with spaces to separate commands
-#		pathStr += ' '
 	return pathStr
 
 def embedRasters(element) :

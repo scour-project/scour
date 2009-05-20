@@ -548,5 +548,24 @@ class RemoveFontStylesFromNonTextShapes(unittest.TestCase):
 		r = scour.scourXmlFile('unittests/font-styles.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
 		self.assertEquals( r.getAttribute('font-size'), '',
 			'font-size not removed from rect' )
+			
+class CollapseConsecutiveHLinesSegments(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals( p.getAttribute('d'), 'M100,100h200v100h-200z',
+			'Did not collapse consecutive hlines segments')
+
+class CollapseConsecutiveHLinesCoords(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[1]
+		self.assertEquals( p.getAttribute('d'), 'M100,300h200v100h-200z',
+			'Did not collapse consecutive hlines coordinates')
+			
+class DoNotCollapseConsecutiveHLinesSegsWithDifferingSigns(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[2]
+		self.assertEquals( p.getAttribute('d'), 'M100,500h300-100v100h-200z',
+			'Collapsed consecutive hlines segments with differing signs')
+						
 if __name__ == '__main__':
     unittest.main()
