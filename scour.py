@@ -39,14 +39,11 @@
 
 # Suggestion from Richard Hutch:
 #  * Put id attributes first in the serialization (or make the d attribute last)
+#    This would require my own serialization fo the DOM objects
 
 # Next Up:
-# + recognize that fill="url(&quot;#grd1&quot;)" is legal and do not remove grd1 gradient
-# + properly handle paths with more than 1 pair of coordinates in the first Move command
-# + remove font/text styles from non-text elements
-# + remove -inkscape-font-specification styles
-# + added --set-precision argument to set the number of significant digits (defaults to 6)
-# + collapse unnecessary consecutive horizontal/vertical line segments
+# - eliminate last segment in a polygon
+# - collapse straight curves
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -70,7 +67,7 @@ import gzip
 getcontext().prec = 5
 
 APP = 'scour'
-VER = '0.13'
+VER = '0.14'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
