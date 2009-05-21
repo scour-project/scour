@@ -42,8 +42,10 @@
 #    This would require my own serialization fo the DOM objects
 
 # Next Up:
+# + fix bug with consecutive path coordinates not being translated properly to relative commands
 # - eliminate last segment in a polygon
 # - collapse straight curves
+# - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -992,8 +994,7 @@ def cleanPath(element) :
 		elif cmd in ['Z','z']:
 			path.append( (cmd, []) )
 
-	# convert absolute coordinates into relative ones (start with the second subcommand
-	# and leave the first M as absolute)
+	# calculate the starting x,y coord for the second path command
 	if len(path[0][1]) == 2:
 		(x,y) = path[0][1]
 	else:
@@ -1014,64 +1015,109 @@ def cleanPath(element) :
 	# now we have the starting point at x,y so let's save it 
 	(startx,starty) = (x,y)
 	
-	i = 1
+	# convert absolute coordinates into relative ones (start with the second subcommand
+	# and leave the first M as absolute)
+	# TODO: This loop totally fails to handle multiple sets of data points per command!
+	# TODO: rewrite this so it properly adjusts to rel commands and keeps track of the cur pos
+#	i = 1
+	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
+		i = 0
+		newCmd = cmd
+		newData = data
 		# adjust abs to rel
 		# only the A command has some values that we don't want to adjust (radii, rotation, flags)
 		if cmd == 'A':
-			path[i] = ('a', [data[0], data[1], data[2], data[3], data[4], (data[5]-x), (data[6]-y)])
+			newCmd = 'a'
+			newData = []
+			while i < len(data):
+				newData.append(data[i])
+				newData.append(data[i+1])
+				newData.append(data[i+2])
+				newData.append(data[i+3])
+				newData.append(data[i+4])
+				newData.append(data[i+5]-x)
+				newData.append(data[i+6]-y)
+				x = data[i+5]
+				y = data[i+6]
+				i += 7
+		elif cmd == 'a':
+			while i < len(data):
+				x += data[i+5]
+				y += data[i+6]
+				i += 7			
 		elif cmd == 'H':
-			for j in range(len(data)):
-				data[j] -= x
-			path[i] = ('h', data)
-		elif cmd == 'V':
-			for j in range(len(data)):
-				data[j] -= y
-			path[i] = ('v', data)
-		elif cmd in ['M','L','C','S','Q','T']:
-			j = 0
-			while j < len(data):
-				data[j] -= x
-				data[j+1] -= y
-				j += 2
-			path[i] = (cmd.lower(), data)
-		
-		cmd = path[i][0]
-		data = path[i][1]
-		i += 1
-		
-		# now adjust the current point
-		xind = 0
-		yind = 1		
-		k = 0
-		if cmd == 'a':
-			while k < len(data):
-				x += data[k+5]
-				y += data[k+6]
-				k += 7
+			newCmd = 'h'
+			newData = []
+			while i < len(data):
+				newData.append(data[i]-x)
+				x = data[i]
+				i += 1
 		elif cmd == 'h':
-			while k < len(data):
-				x += data[k]
-				k += 1
+			while i < len(data):
+				x += data[i]
+				i += 1
+		elif cmd == 'V':
+			newCmd = 'v'
+			newData = []
+			while i < len(data):
+				newData.append(data[i] - y)
+				y = data[i]
+				i += 1
 		elif cmd == 'v':
-			while k < len(data):
-				y += data[k]
-				k += 1
+			while i < len(data):
+				y += data[i]
+				i += 1
+		elif cmd in ['M','L','T']:
+			newCmd = cmd.lower()
+			newData = []
+			while i < len(data):
+				newData.append( data[i] - x )
+				newData.append( data[i+1] - y )
+				x = data[i]
+				y = data[i+1]
+				i += 2
 		elif cmd in ['m','l','t']:
-			while k < len(data):
-				x += data[k]
-				y += data[k+1]
-				k += 2
-		elif cmd == 'c':
-			while k < len(data):
-				x += data[k+4]
-				y += data[k+5]
-				k += 6
+			while i < len(data):
+				x += data[i]
+				y += data[i+1]
+				i += 2
+		elif cmd in ['S','Q']:
+			newCmd = cmd.lower()
+			newData = []
+			while i < len(data):
+				newData.append( data[i] - x )
+				newData.append( data[i+1] - y )
+				newData.append( data[i+2] - x )
+				newData.append( data[i+3] - y )
+				x = data[i+2]
+				y = data[i+3]
+				i += 4
 		elif cmd in ['s','q']:
-			while k < len(data):
-				x += data[k+2]
-				y += data[k+3]
-				k += 4
+			while i < len(data):
+				x += data[i+2]
+				y += data[i+3]
+				i += 4
+		elif cmd == 'C':
+			newCmd = 'c'
+			newData = []
+			while i < len(data):
+				newData.append( data[i] - x )
+				newData.append( data[i+1] - y )
+				newData.append( data[i+2] - x )
+				newData.append( data[i+3] - y )
+				newData.append( data[i+4] - x )
+				newData.append( data[i+5] - y )
+				x = data[i+4]
+				y = data[i+5]
+				i += 6
+		elif cmd == 'c':
+			while i < len(data):
+				x += data[i+4]
+				y += data[i+5]
+				i += 6
+		newPath.append( (newCmd, newData) )
+	path = newPath
 	
 	# remove empty segments
 	# TODO: q, t, a
