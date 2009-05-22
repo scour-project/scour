@@ -138,7 +138,8 @@ class SVGPathParser(object):
             'a': self.rule_elliptical_arc,
         }
 
-        self.number_tokens = set(['int', 'float'])
+#        self.number_tokens = set(['int', 'float'])
+        self.number_tokens = list(['int', 'float'])
 
     def parse(self, text):
         """ Parse a string of SVG <path> data.

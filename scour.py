@@ -59,14 +59,17 @@ import xml.dom.minidom
 import re
 import math
 import base64
-import os.path
 import urllib
 from svg_regex import svg_parser
-from decimal import *
 import gzip
+import optparse
 
-# set precision to 5 decimal places by default
-getcontext().prec = 5
+# Python 2.3- did not have Decimal
+try:
+	from decimal import *
+except ImportError:
+	from fixedpoint import *
+	Decimal = FixedPoint	
 
 APP = 'scour'
 VER = '0.14'
@@ -293,7 +296,7 @@ class Unit(object):
 	MM = 8
 	IN = 9
 	
-	@staticmethod
+#	@staticmethod
 	def get(str):
 		# GZ: shadowing builtins like 'str' is generally bad form
 		# GZ: encoding stuff like this in a dict makes for nicer code
@@ -308,6 +311,8 @@ class Unit(object):
 		elif str == 'mm': return Unit.MM
 		elif str == 'in': return Unit.IN
 		return Unit.INVALID
+		
+	get = staticmethod(get)
 	
 class SVGLength(object):
 	def __init__(self, str):
@@ -839,7 +844,7 @@ def repairStyle(node, options):
 		
 		# now if any of the properties match known SVG attributes we prefer attributes 
 		# over style so emit them and remove them from the style map
-		if not '--disable-style-to-xml' in options:
+		if options.style_to_xml:
 			for propName in styleMap.keys() :
 				if propName in svgAttributes :
 					node.setAttribute(propName, styleMap[propName])
@@ -1307,9 +1312,9 @@ def cleanPath(element) :
 
 def parseListOfPoints(s):
 	"""
-	Parse string into a list of points.
+		Parse string into a list of points.
 	
-	Returns a list of (x,y) tuples where x and y are strings
+		Returns a list of (x,y) tuples where x and y are strings
 	"""
 	
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
@@ -1329,7 +1334,7 @@ def parseListOfPoints(s):
 	
 def cleanPolygon(elem):
 	"""
-	Remove unnecessary closing point of polygon points attribute
+		Remove unnecessary closing point of polygon points attribute
 	"""
 	global numPointsRemovedFromPolygon
 	
@@ -1347,11 +1352,11 @@ def cleanPolygon(elem):
 	
 def serializePath(pathObj):
 	"""
-	Reserializes the path data with some cleanups:
-		- removes scientific notation (exponents)
-		- removes all trailing zeros after the decimal
-		- removes extraneous whitespace
-		- adds commas between values in a subcommand if required
+		Reserializes the path data with some cleanups:
+			- removes scientific notation (exponents)
+			- removes all trailing zeros after the decimal
+			- removes extraneous whitespace
+			- adds commas between values in a subcommand if required
 	"""
 	pathStr = ""
 	for (cmd,data) in pathObj:
@@ -1371,8 +1376,8 @@ def serializePath(pathObj):
 
 def embedRasters(element) :
 	"""
-	Converts raster references to inline images.
-	NOTE: there are size limits to base64-encoding handling in browsers 
+		Converts raster references to inline images.
+		NOTE: there are size limits to base64-encoding handling in browsers 
 	"""
 	global numRastersEmbedded
 
@@ -1463,7 +1468,10 @@ def properlySizeDoc(docElement):
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
-def scourString(in_string, options=[]):
+def scourString(in_string, options=None):
+	if options is None:
+		options = _options_parser.get_default_values()
+	getcontext().prec = options.digits
 	global numAttrsRemoved
 	global numStylePropsFixed
 	global numElemsRemoved
@@ -1493,7 +1501,7 @@ def scourString(in_string, options=[]):
 	numStylePropsFixed = repairStyle(doc.documentElement, options)
 
 	# convert colors to #RRGGBB format
-	if not '--disable-simplify-colors' in options:
+	if options.simple_colors:
 		numBytesSavedInColors = convertColors(doc.documentElement)
 	
 	# remove empty defs, metadata, g
@@ -1516,14 +1524,14 @@ def scourString(in_string, options=[]):
 	while removeUnreferencedElements(doc) > 0:
 		pass
 
-	if '--enable-id-stripping' in options:
+	if options.strip_ids:
 		bContinueLooping = True
 		while bContinueLooping:
 			identifiedElements = findElementsWithId(doc.documentElement)
 			referencedIDs = findReferencedElements(doc.documentElement)
 			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
 	
-	if not '--disable-group-collapsing' in options:
+	if options.group_collapse:
 		while removeNestedGroups(doc.documentElement) > 0:
 			pass
 
@@ -1571,135 +1579,121 @@ def scourString(in_string, options=[]):
 # used mostly by unit tests
 # input is a filename
 # returns the minidom doc representation of the SVG
-def scourXmlFile(filename, options=[]):
+def scourXmlFile(filename, options=None):
 	in_string = open(filename).read()
-#	print 'IN=',in_string
 	out_string = scourString(in_string, options)
-#	print 'OUT=',out_string
 	return xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
-def printHeader():
-	print APP , VER
-	print COPYRIGHT
+# GZ: Seems most other commandline tools don't do this, is it really wanted?
+class HeaderedFormatter(optparse.IndentedHelpFormatter):
+	"""
+		Show application name, version number, and copyright statement
+		above usage information.
+	"""
+	def format_usage(self, usage):
+		return "%s %s\n%s\n%s" % (APP, VER, COPYRIGHT,
+			optparse.IndentedHelpFormatter.format_usage(self, usage))
 
-def printSyntaxAndQuit():
-	printHeader()
-	print 'usage: scour.py [-i input.svg] [-o output.svg] [OPTIONS]\n'
-	print 'If the input/output files are specified with a svgz extension, then compressed SVG is assumed.\n'
-	print 'If the input file is not specified, stdin is used.'
-	print 'If the output file is not specified, stdout is used.'
-	print 'If an option is not available below that means it occurs automatically'
-	print 'when scour is invoked.  Available OPTIONS:\n'
-	print '  --disable-simplify-colors  : Scour will not convert all colors to #RRGGBB format'
-	print '  --disable-style-to-xml     : Scour will not convert style properties into XML attributes'
-	print '  --disable-group-collapsing : Scour will not collapse <g> elements'
-	print '  --enable-id-stripping      : Scour will remove all un-referenced ID attributes'
-	print '  --set-precision N          : Scour will set the number of significant digits (default: 6)'
-	print ''
-	quit()	
+# GZ: would prefer this to be in a function or class scope, but tests etc need
+#     access to the defaults anyway
+_options_parser = optparse.OptionParser(
+	usage="%prog [-i input.svg] [-o output.svg] [OPTIONS]",
+	description=("If the input/output files are specified with a svgz"
+	" extension, then compressed SVG is assumed. If the input file is not"
+	" specified, stdin is used. If the output file is not specified, "
+	" stdout is used."),
+	formatter=HeaderedFormatter(max_help_position=30),
+	version=VER)
 
-# returns a tuple with:
-# input stream, output stream, a list of options specified on the command-line, 
-# input filename, and output filename
-def parseCLA():
-	args = sys.argv[1:]
+_options_parser.add_option("--disable-simplify-colors",
+	action="store_false", dest="simple_colors", default=True,
+	help="won't convert all colors to #RRGGBB format")
+_options_parser.add_option("--disable-style-to-xml",
+	action="store_false", dest="style_to_xml", default=True,
+	help="won't convert styles into XML attributes")
+_options_parser.add_option("--disable-group-collapsing",
+	action="store_false", dest="group_collapse", default=True,
+	help="won't collapse <g> elements")
+_options_parser.add_option("--enable-id-stripping",
+	action="store_true", dest="strip_ids", default=False,
+	help="remove all un-referenced ID attributes")
+# GZ: this is confusing, most people will be thinking in terms of
+#     decimal places, which is not what decimal precision is doing
+_options_parser.add_option("-p", "--set-precision",
+	action="store", type=int, dest="digits", default=5,
+	help="set number of significant digits (default: %default)")
+_options_parser.add_option("-i",
+	action="store", dest="infilename", help=optparse.SUPPRESS_HELP)
+_options_parser.add_option("-o",
+	action="store", dest="outfilename", help=optparse.SUPPRESS_HELP)
 
-	# by default the input and output are the standard streams
-	inputfilename = ''
-	outputfilename = ''
-	input = sys.stdin
-	output = sys.stdout
-	options = []
-	validOptions = [
-					'--disable-simplify-colors',
-					'--disable-style-to-xml',
-					'--disable-group-collapsing',
-					'--enable-id-stripping',
-					'--set-precision',
-					]
-					
-	i = 0
-	while i < len(args):
-		arg = args[i]
-		i += 1
-		if arg == '-i' :
-			if i < len(args) :
-				inputfilename = args[i]
-				if args[i][-5:] == '.svgz':
-					input = gzip.open(args[i], 'rb')
-				else:
-					input = open(args[i], 'r')
-				i += 1
-				continue
-			else:
-				printSyntaxAndQuit()
-		elif arg == '-o' :
-			if i < len(args) :
-				outputfilename = args[i]
-				if args[i][-5:] == '.svgz':
-					output = gzip.open(args[i], 'wb')
-				else:
-					output = open(args[i], 'w')
-				i += 1
-				continue
-			else:
-				printSyntaxAndQuit()
-		elif arg == '--set-precision':
-			if i < len(args):
-				getcontext().prec = int(args[i])
-				i += 1
-				continue
-			else:
-				printSyntaxAndQuit()
-		elif arg in validOptions :
-			options.append(arg)
-		else :
-			print 'Error!  Invalid argument:', arg
-			printSyntaxAndQuit()
-			
-	return (input, output, options, inputfilename, outputfilename)
+def maybe_gziped_file(filename, mode="r"):
+	if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
+		return gzip.GzipFile(filename, mode)
+	return file(filename, mode)
+
+def parse_args(args=None):
+	options, rargs = _options_parser.parse_args(args)
+
+	if rargs:
+		_options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
+	if options.digits < 0:
+		_options_parser.error("Can't have negative significant digits, see --help")
+	if options.infilename:
+		infile = maybe_gziped_file(options.infilename)
+		# GZ: could catch a raised IOError here and report
+	else:
+		# GZ: could sniff for gzip compression here
+		infile = sys.stdin
+	if options.outfilename:
+		outfile = maybe_gziped_file(options.outfilename, "w")
+	else:
+		outfile = sys.stdout
+
+	return options, [infile, outfile]
 
 if __name__ == '__main__':
+	if sys.platform == "win32":
+		from time import clock as get_tick
+	else:
+		# GZ: is this different from time.time() in any way?
+		def get_tick():
+			return os.times()[0]
 
-	startTimes = os.times()
+	start = get_tick()
 	
-	(input, output, options, inputfilename, outputfilename) = parseCLA()
+	options, (input, output) = parse_args()
 	
-	# if we are not sending to stdout, then print out app information
-	bOutputReport = False
-	if output != sys.stdout :
-		bOutputReport = True
-		printHeader()
+	print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
 
 	# do the work
 	in_string = input.read()
-	out_string = scourString(in_string, options)
-	output.write(out_string.encode("utf-8"))
+	out_string = scourString(in_string, options).encode("UTF-8")
+	output.write(out_string)
 
 	# Close input and output files
 	input.close()
 	output.close()
 
-	endTimes = os.times()
+	end = get_tick()
 
-	# output some statistics if we are not using stdout
-	if bOutputReport :
-	    if inputfilename != '': 
-	    	print ' File:', inputfilename
-		print ' Time taken:', str(endTimes[0]-startTimes[0]) + 's'
-		print ' Number of elements removed:', numElemsRemoved
-		print ' Number of attributes removed:', numAttrsRemoved
-		print ' Number of unreferenced id attributes removed:', numIDsRemoved 
-		print ' Number of style properties fixed:', numStylePropsFixed
-		print ' Number of raster images embedded inline:', numRastersEmbedded
-		print ' Number of path segments reduced/removed:', numPathSegmentsReduced
-		print ' Number of curves straightened:', numCurvesStraightened
-		print ' Number of bytes saved in path data:', numBytesSavedInPathData
-		print ' Number of bytes saved in colors:', numBytesSavedInColors
-		print ' Number of points removed from polygons:',numPointsRemovedFromPolygon
-		oldsize = os.path.getsize(inputfilename)
-		newsize = os.path.getsize(outputfilename)
-		sizediff = (newsize / oldsize) * 100;
-		print ' Original file size:', oldsize, 'bytes; new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
+	# GZ: unless silenced by -q or something?
+	# GZ: not using globals would be good too
+	print >>sys.stderr, ' File:', input.name, \
+		'\n Time taken:', str(end-start) + 's', \
+		'\n Number of elements removed:', numElemsRemoved, \
+		'\n Number of attributes removed:', numAttrsRemoved, \
+		'\n Number of unreferenced id attributes removed:', numIDsRemoved, \
+		'\n Number of style properties fixed:', numStylePropsFixed, \
+		'\n Number of raster images embedded inline:', numRastersEmbedded, \
+		'\n Number of path segments reduced/removed:', numPathSegmentsReduced, \
+		'\n Number of bytes saved in path data:', numBytesSavedInPathData, \
+		'\n Number of bytes saved in colors:', numBytesSavedInColors, \
+		'\n Number of points removed from polygons:',numPointsRemovedFromPolygon
+	oldsize = len(in_string)
+	newsize = len(out_string)
+	sizediff = (newsize / oldsize) * 100
+	print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
+		'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
 
 
