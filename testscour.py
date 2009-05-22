@@ -566,6 +566,24 @@ class DoNotCollapseConsecutiveHLinesSegsWithDifferingSigns(unittest.TestCase):
 		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[2]
 		self.assertEquals( p.getAttribute('d'), 'M100,500h300-100v100h-200z',
 			'Collapsed consecutive hlines segments with differing signs')
-						
+
+class ConvertStraightCurvesToLines(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/straight-curve.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals(p.getAttribute('d'), 'M10,10l40,40,40-40z', 
+			'Did not convert straight curves into lines')
+			
+class RemoveUnnecessaryPolgonEndPoint(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
+		self.assertEquals(p.getAttribute('points'), '50,50 150,50 150,150 50,150',
+			'Unnecessary polygon end point not removed' )
+
+class DoNotRemovePolgonLastPoint(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[1]
+		self.assertEquals(p.getAttribute('points'), '200,50 300,50 300,150 200,150',
+			'Last point of polygon removed' )
+
 if __name__ == '__main__':
     unittest.main()

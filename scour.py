@@ -27,25 +27,25 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 # TODO: Adapt this script into an Inkscape python plugin
 #
-# * Specify a limit to the precision of all positional elements.
 # * Clean up Definitions
 #  * Collapse duplicate gradient definitions
 # * Clean up paths
 #  * Eliminate last segment in a polygon
-#  * Collapse straight curves.
 # * Process Transformations
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
 
 # Suggestion from Richard Hutch:
 #  * Put id attributes first in the serialization (or make the d attribute last)
-#    This would require my own serialization fo the DOM objects
+#    This would require my own serialization fo the DOM objects (not impossible)
 
 # Next Up:
 # + fix bug with consecutive path coordinates not being translated properly to relative commands
-# - eliminate last segment in a polygon
-# - collapse straight curves
+# + convert straight curves to lines
+# + eliminate last segment in a polygon
+# - provide command-line option to disable raster-to-base64 conversion
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
+# - convert polygons/polylines to path? (actually the change in semantics may not be worth the marginal savings)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -314,12 +314,15 @@ class SVGLength(object):
 #		print "Parsing '%s'" % str
 		try: # simple unitless and no scientific notation
 			self.value = float(str)
+			if int(self.value) == self.value: 
+				self.value = int(self.value)
 			self.units = Unit.NONE
 #			print "  Value =", self.value
 		except ValueError:
 			# we know that the length string has an exponent, a unit, both or is invalid
 
-			# TODO: parse out number, exponent and unit
+			# parse out number, exponent and unit
+			self.value = 0
 			unitBegin = 0
 			scinum = scinumber.match(str)
 			if scinum != None:
@@ -335,6 +338,9 @@ class SVGLength(object):
 				if numMatch != None:
 					self.value = float(numMatch.group(0))
 					unitBegin = numMatch.end(0)
+					
+			if int(self.value) == self.value:
+				self.value = int(self.value)
 
 			if unitBegin != 0 :
 #				print "  Value =", self.value
@@ -458,8 +464,10 @@ numElemsRemoved = 0
 numAttrsRemoved = 0
 numRastersEmbedded = 0
 numPathSegmentsReduced = 0
+numCurvesStraightened = 0
 numBytesSavedInPathData = 0
 numBytesSavedInColors = 0
+numPointsRemovedFromPolygon = 0
 
 def removeUnreferencedElements(doc):
 	"""
@@ -925,6 +933,7 @@ def cleanPath(element) :
 	"""
 	global numBytesSavedInPathData
 	global numPathSegmentsReduced
+	global numCurvesStraightened
 	
 	# this gets the parser object from svg_regex.py
 	oldPathStr = element.getAttribute('d')
@@ -1017,9 +1026,6 @@ def cleanPath(element) :
 	
 	# convert absolute coordinates into relative ones (start with the second subcommand
 	# and leave the first M as absolute)
-	# TODO: This loop totally fails to handle multiple sets of data points per command!
-	# TODO: rewrite this so it properly adjusts to rel commands and keeps track of the cur pos
-#	i = 1
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
 		i = 0
@@ -1123,7 +1129,7 @@ def cleanPath(element) :
 	# TODO: q, t, a
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
-		if cmd in ['m','l']:
+		if cmd in ['m','l','t']:
 			newData = []
 			i = 0
 			while i < len(data):
@@ -1151,9 +1157,95 @@ def cleanPath(element) :
 					numPathSegmentsReduced += 1
 				i += 6
 			if newData:
-				newPath.append( (cmd,newData) )			
+				newPath.append( (cmd,newData) )
+		elif cmd in ['h','v']:
+			newData = []
+			i = 0
+			while i < len(data):
+				if data[i] != 0:
+					newData.append(data[i])
+				else:
+					numPathSegmentsReduced += 1
+				i += 1
+			if newData:
+				newPath.append( (cmd,newData) )
 		else:
 			newPath.append( (cmd,data) )
+	path = newPath
+
+	# convert straight curves into lines
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		i = 0
+		newData = data
+		if cmd == 'c':
+			newData = []
+			while i < len(data):
+				# since all commands are now relative, we can think of previous point as (0,0)
+				# and new point (dx,dy) is (data[i+4],data[i+5])
+				# eqn of line will be y = (dy/dx)*x or if dx=0 then eqn of line is x=0
+				(p1x,p1y) = (data[i],data[i+1])
+				(p2x,p2y) = (data[i+2],data[i+3])
+				dx = data[i+4]
+				dy = data[i+5]
+				
+				foundStraightCurve = False
+				
+				if dx == 0:
+					if p1x == 0 and p2x == 0:
+						foundStraightCurve = True
+				else:
+					m = dy/dx
+					if p1y == m*p1x and p2y == m*p2y:
+						foundStraightCurve = True
+
+				if foundStraightCurve:
+					# flush any existing curve coords first
+					if newData:
+						newPath.append( (cmd,newData) )
+						newData = []
+					# now create a straight line segment
+					newPath.append( ('l', [dx,dy]) )
+					numCurvesStraightened += 1
+				else:
+					newData.append(data[i])
+					newData.append(data[i+1])
+					newData.append(data[i+2])
+					newData.append(data[i+3])
+					newData.append(data[i+4])
+					newData.append(data[i+5])
+					
+				i += 6
+				
+		if newData or cmd == 'z':
+			newPath.append( (cmd,newData) )
+	path = newPath
+	
+	# collapse all consecutive commands of the same type into one command
+	prevCmd = ''
+	prevData = []
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		# flush the previous command if it is not the same type as the current command
+		# or it is not an h or v line
+		if prevCmd != '':
+			if cmd != prevCmd:# or not prevCmd in ['h','v']:
+				newPath.append( (prevCmd, prevData) )
+				prevCmd = ''
+				prevData = []
+		
+		# if the previous and current commands are the same type and a h/v line, collapse
+		if cmd == prevCmd: # and cmd in ['h','v','l']:
+			for coord in data:
+				prevData.append(coord)
+		
+		# save last command and data
+		else:
+			prevCmd = cmd
+			prevData = data
+	# flush last command and data
+	if prevCmd != '':
+		newPath.append( (prevCmd, prevData) )
 	path = newPath
 
 	# convert line segments into h,v where possible	
@@ -1189,33 +1281,6 @@ def cleanPath(element) :
 			newPath.append( (cmd, data) )
 	path = newPath
 
-	# collapse all consecutive h or v commands together into one command
-	prevCmd = ''
-	prevData = []
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
-		# flush the previous command if it is not the same type as the current command
-		# or it is not an h or v line
-		if prevCmd != '':
-			if cmd != prevCmd or not prevCmd in ['h','v']:
-				newPath.append( (prevCmd, prevData) )
-				prevCmd = ''
-				prevData = []
-		
-		# if the previous and current commands are the same type and a h/v line, collapse
-		if cmd == prevCmd and cmd in ['h','v']:
-			for coord in data:
-				prevData.append(coord)
-				numPathSegmentsReduced += 1
-		# save last command and data
-		else:
-			prevCmd = cmd
-			prevData = data
-	# flush last command and data
-	if prevCmd != '':
-		newPath.append( (prevCmd, prevData) )
-	path = newPath
-
 	# for each h or v, collapse unnecessary coordinates that run in the same direction
 	# i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
 	newPath = [path[0]]
@@ -1239,8 +1304,47 @@ def cleanPath(element) :
 	newPathStr = serializePath(path)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
 	element.setAttribute('d', newPathStr)
-	
 
+def parseListOfPoints(s):
+	"""
+	Parse string into a list of points.
+	
+	Returns a list of (x,y) tuples where x and y are strings
+	"""
+	
+	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
+	# coordinate-pair = coordinate comma-or-wsp coordinate
+	# coordinate = sign? integer
+	nums = re.split("\\s*\\,?\\s*", s)
+	i = 0
+	points = []
+	while i < len(nums):
+		x = SVGLength(nums[i])
+		y = SVGLength(nums[i+1])
+		if x.units != Unit.NONE or y.units != Unit.NONE: return []
+		points.append( (str(x.value),str(y.value)) )
+		i += 2
+	
+	return points
+	
+def cleanPolygon(elem):
+	"""
+	Remove unnecessary closing point of polygon points attribute
+	"""
+	global numPointsRemovedFromPolygon
+	
+	pts = parseListOfPoints(elem.getAttribute('points'))
+	N = len(pts)
+	if N >= 2:		
+		(startx,starty) = (pts[0][0],pts[0][1])
+		(endx,endy) = (pts[N-1][0],pts[N-1][1])
+		if startx == endx and starty == endy:
+			str = ''
+			for pt in pts[:-1]:
+				str += (pt[0] + ',' + pt[1] + ' ')
+			elem.setAttribute('points', str[:-1])
+			numPointsRemovedFromPolygon += 1
+	
 def serializePath(pathObj):
 	"""
 	Reserializes the path data with some cleanups:
@@ -1288,7 +1392,7 @@ def embedRasters(element) :
 						# if this is not an absolute path, set path relative
 						# to script file based on input arg 
 						href = os.path.join(os.path.dirname(args[1]), href)				
-				
+			
 			rasterdata = ''
 			# test if file exists locally
 			if os.path.isfile(href) == True :
@@ -1436,6 +1540,10 @@ def scourString(in_string, options=[]):
 			elem.parentNode.removeChild(elem)
 		else:
 			cleanPath(elem)
+
+	# remove unnecessary closing point of polygons
+	for polygon in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polygon') :
+		cleanPolygon(polygon)
 
 	# convert rasters references to base64-encoded strings 
 	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
@@ -1585,8 +1693,10 @@ if __name__ == '__main__':
 		print ' Number of style properties fixed:', numStylePropsFixed
 		print ' Number of raster images embedded inline:', numRastersEmbedded
 		print ' Number of path segments reduced/removed:', numPathSegmentsReduced
+		print ' Number of curves straightened:', numCurvesStraightened
 		print ' Number of bytes saved in path data:', numBytesSavedInPathData
 		print ' Number of bytes saved in colors:', numBytesSavedInColors
+		print ' Number of points removed from polygons:',numPointsRemovedFromPolygon
 		oldsize = os.path.getsize(inputfilename)
 		newsize = os.path.getsize(outputfilename)
 		sizediff = (newsize / oldsize) * 100;
