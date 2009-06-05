@@ -1325,7 +1325,11 @@ def parseListOfPoints(s):
 	points = []
 	while i < len(nums):
 		x = SVGLength(nums[i])
-		y = SVGLength(nums[i+1])
+		# if we had an odd number of points, return empty
+		if i == len(nums)-1: return []
+		else: y = SVGLength(nums[i+1])
+		
+		# if the coordinates were not unitless, return empty
 		if x.units != Unit.NONE or y.units != Unit.NONE: return []
 		points.append( (str(x.value),str(y.value)) )
 		i += 2
