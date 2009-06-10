@@ -81,6 +81,7 @@ def fetch(req, indoc,**params):
 	if not params.has_key('simplifyColors'):
 		options.simple_colors = False
 	options.digits = int(params['digits'])
+	options.embed_rasters = False
 
 	req.write(scourString(indoc,options))
 

@@ -588,5 +588,8 @@ class DoNotRemovePolgonLastPoint(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '200,50 300,50 300,150 200,150',
 			'Last point of polygon removed' )
 
+# TODO; write a test for embedding rasters
+# TODO: write a test for --disable-embed-rasters
+
 if __name__ == '__main__':
     unittest.main()

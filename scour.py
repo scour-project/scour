@@ -1378,7 +1378,7 @@ def serializePath(pathObj):
 				c += 1
 	return pathStr
 
-def embedRasters(element) :
+def embedRasters(element, options) :
 	"""
 		Converts raster references to inline images.
 		NOTE: there are size limits to base64-encoding handling in browsers 
@@ -1400,7 +1400,9 @@ def embedRasters(element) :
 				if href[:7] != 'http://' and os.path.isfile(href) == False :
 						# if this is not an absolute path, set path relative
 						# to script file based on input arg 
-						href = os.path.join(os.path.dirname(args[1]), href)				
+						infilename = '.'
+						if options.infilename: infilename = options.infilename
+						href = os.path.join(os.path.dirname(infilename), href)				
 			
 			rasterdata = ''
 			# test if file exists locally
@@ -1558,8 +1560,9 @@ def scourString(in_string, options=None):
 		cleanPolygon(polygon)
 
 	# convert rasters references to base64-encoded strings 
-	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
-		embedRasters(elem)		
+	if options.embed_rasters:
+		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
+			embedRasters(elem, options)		
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
 	properlySizeDoc(doc.documentElement)
@@ -1621,6 +1624,10 @@ _options_parser.add_option("--disable-group-collapsing",
 _options_parser.add_option("--enable-id-stripping",
 	action="store_true", dest="strip_ids", default=False,
 	help="remove all un-referenced ID attributes")
+_options_parser.add_option("--disable-embed-rasters",
+	action="store_false", dest="embed_rasters", default=True,
+	help="won't embed rasters as base64-encoded data")
+
 # GZ: this is confusing, most people will be thinking in terms of
 #     decimal places, which is not what decimal precision is doing
 _options_parser.add_option("-p", "--set-precision",
