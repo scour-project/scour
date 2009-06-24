@@ -64,7 +64,8 @@ class ScourOptions:
 	style_to_xml = True
 	group_collapse = True
 	strip_ids = False
-	digits = 5	
+	digits = 5
+	embed_rasters = False
 
 # params are the form elements (if a checkbox is unchecked it will not be present)
 def fetch(req, indoc,**params):
@@ -81,7 +82,6 @@ def fetch(req, indoc,**params):
 	if not params.has_key('simplifyColors'):
 		options.simple_colors = False
 	options.digits = int(params['digits'])
-	options.embed_rasters = False
 
 	req.write(scourString(indoc,options))
 

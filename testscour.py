@@ -37,6 +37,14 @@ def walkTree(elem, func):
 		if walkTree(child, func) == False: return False
 	return True
 
+class ScourOptions:
+	simple_colors = True
+	style_to_xml = True
+	group_collapse = True
+	strip_ids = False
+	digits = 5
+	embed_rasters = True
+
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
 		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement, 
@@ -588,6 +596,7 @@ class DoNotRemovePolgonLastPoint(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '200,50 300,50 300,150 200,150',
 			'Last point of polygon removed' )
 
+# TODO: write tests for --set-precision for path data, for polygon data, for attributes
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 

@@ -29,21 +29,18 @@
 #
 # * Clean up Definitions
 #  * Collapse duplicate gradient definitions
-# * Clean up paths
-#  * Eliminate last segment in a polygon
 # * Process Transformations
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
 
 # Suggestion from Richard Hutch:
 #  * Put id attributes first in the serialization (or make the d attribute last)
-#    This would require my own serialization fo the DOM objects (not impossible)
+#    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
-# + fix bug with consecutive path coordinates not being translated properly to relative commands
-# + convert straight curves to lines
-# + eliminate last segment in a polygon
-# - provide command-line option to disable raster-to-base64 conversion
+# + add option to keep inkscape, adobe, sodipodi elements and attributes
+# - ensure a really good understanding of prec vs. quantize and what I want --set-precision to do
+# - enable the precision argument to affect all numbers: polygon points, lengths, coordinates
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - convert polygons/polylines to path? (actually the change in semantics may not be worth the marginal savings)
 # - prevent elements from being stripped if they are referenced in a <style> element
@@ -72,7 +69,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.14'
+VER = '0.15'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -1487,10 +1484,11 @@ def scourString(in_string, options=None):
 	# for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
 	# on the first pass, so we do it multiple times
 	# does it have to do with removal of children affecting the childlist?
-	while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
-		pass	
-	while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
-		pass
+	if options.keep_editor_data == False:
+		while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
+			pass	
+		while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
+			pass
 	
 	# remove the xmlns: declarations now
 	xmlnsDeclsToRemove = []
@@ -1627,6 +1625,9 @@ _options_parser.add_option("--enable-id-stripping",
 _options_parser.add_option("--disable-embed-rasters",
 	action="store_false", dest="embed_rasters", default=True,
 	help="won't embed rasters as base64-encoded data")
+_options_parser.add_option("--keep-editor-data",
+	action="store_true", dest="keep_editor_data", default=False,
+	help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
 
 # GZ: this is confusing, most people will be thinking in terms of
 #     decimal places, which is not what decimal precision is doing
