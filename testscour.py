@@ -600,7 +600,13 @@ class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 	def runTest(self):
 		f = scour.scourXmlFile('unittests/important-groups-in-defs.svg')
 		self.assertEquals(len(f.getElementsByTagNameNS(SVGNS, 'linearGradient')), 1,
-			'Group in defs with id\'ed element removed');
+			'Group in defs with id\'ed element removed')
+
+class AlwaysKeepClosePathSegments(unittest.TestCase):
+	def runTest(self):
+		p= scour.scourXmlFile('unittests/path-with-closepath.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals(p.getAttribute('d'), 'M10,10h100v100h-100z',
+			'Path with closepath not preserved')
 
 # TODO: write tests for --set-precision for path data, for polygon data, for attributes
 # TODO; write a test for embedding rasters
