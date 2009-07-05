@@ -1083,7 +1083,18 @@ def cleanPath(element) :
 			while i < len(data):
 				y += data[i]
 				i += 1
-		elif cmd in ['M','L','T']:
+		elif cmd in ['M']:
+			newCmd = cmd.lower()
+			newData = []
+			startx = data[0]
+			starty = data[1]
+			while i < len(data):
+				newData.append( data[i] - x )
+				newData.append( data[i+1] - y )
+				x = data[i]
+				y = data[i+1]
+				i += 2
+		elif cmd in ['L','T']:
 			newCmd = cmd.lower()
 			newData = []
 			while i < len(data):
@@ -1092,7 +1103,14 @@ def cleanPath(element) :
 				x = data[i]
 				y = data[i+1]
 				i += 2
-		elif cmd in ['m','l','t']:
+		elif cmd in ['m']:
+			startx += data[0]
+			starty += data[1]
+			while i < len(data):
+				x += data[i]
+				y += data[i+1]
+				i += 2
+		elif cmd in ['l','t']:
 			while i < len(data):
 				x += data[i]
 				y += data[i+1]
@@ -1131,6 +1149,10 @@ def cleanPath(element) :
 				x += data[i+4]
 				y += data[i+5]
 				i += 6
+		elif cmd in ['z','Z']:
+			x = startx
+			y = starty
+			newCmd = 'z'
 		newPath.append( (newCmd, newData) )
 	path = newPath
 	
@@ -1181,7 +1203,7 @@ def cleanPath(element) :
 		else:
 			newPath.append( (cmd,data) )
 	path = newPath
-
+	
 	# convert straight curves into lines
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
@@ -1225,11 +1247,10 @@ def cleanPath(element) :
 					newData.append(data[i+5])
 					
 				i += 6
-				
-		if newData or cmd == 'z':
+		if newData or cmd == 'z' or cmd == 'Z':
 			newPath.append( (cmd,newData) )
 	path = newPath
-	
+
 	# collapse all consecutive commands of the same type into one command
 	prevCmd = ''
 	prevData = []
