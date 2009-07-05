@@ -596,6 +596,12 @@ class DoNotRemovePolgonLastPoint(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '200,50 300,50 300,150 200,150',
 			'Last point of polygon removed' )
 
+class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
+	def runTest(self):
+		f = scour.scourXmlFile('unittests/important-groups-in-defs.svg')
+		self.assertEquals(len(f.getElementsByTagNameNS(SVGNS, 'linearGradient')), 1,
+			'Group in defs with id\'ed element removed');
+
 # TODO: write tests for --set-precision for path data, for polygon data, for attributes
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

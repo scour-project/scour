@@ -471,6 +471,24 @@ numBytesSavedInPathData = 0
 numBytesSavedInColors = 0
 numPointsRemovedFromPolygon = 0
 
+def removeUnusedDefs(doc, defElem, elemsToRemove=None):
+	if elemsToRemove is None:
+		elemsToRemove = []
+
+	identifiedElements = findElementsWithId(doc.documentElement)
+	referencedIDs = findReferencedElements(doc.documentElement)
+	
+	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
+	for elem in defElem.childNodes:
+		if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
+			elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
+			continue
+		if elem.nodeType == 1 and (elem.getAttribute('id') == '' or \
+				(not elem.getAttribute('id') in referencedIDs)) and \
+				not elem.nodeName in keepTags:
+			elemsToRemove.append(elem)
+	return elemsToRemove
+
 def removeUnreferencedElements(doc):
 	"""
 	Removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>.	
@@ -494,25 +512,14 @@ def removeUnreferencedElements(doc):
 				numElemsRemoved += 1
 
 	# TODO: should also go through defs and vacuum it
-	identifiedElements = findElementsWithId(doc.documentElement)
-	referencedIDs = findReferencedElements(doc.documentElement)
-	
-	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
 	num = 0
 	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
 	for aDef in defs:
-		elemsToRemove = []
-		for elem in aDef.childNodes:
-			if elem.nodeType == 1 and (elem.getAttribute('id') == '' or \
-					(not elem.getAttribute('id') in referencedIDs)) and \
-					not elem.nodeName in keepTags:
-				elemsToRemove.append(elem)
+		elemsToRemove = removeUnusedDefs(doc, aDef)
 		for elem in elemsToRemove:
-			aDef.removeChild(elem)
+			elem.parentNode.removeChild(elem)
 			numElemsRemoved += 1
 			num += 1
-	return num
-	
 	return num
 
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
