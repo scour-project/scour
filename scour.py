@@ -1692,6 +1692,17 @@ def parse_args(args=None):
 
 	return options, [infile, outfile]
 
+def getReport():
+	return ' Number of elements removed: ' + str(numElemsRemoved) + \
+		'\n Number of attributes removed: ' + str(numAttrsRemoved) + \
+		'\n Number of unreferenced id attributes removed: ' + str(numIDsRemoved) + \
+		'\n Number of style properties fixed: ' + str(numStylePropsFixed) + \
+		'\n Number of raster images embedded inline: ' + str(numRastersEmbedded) + \
+		'\n Number of path segments reduced/removed: ' + str(numPathSegmentsReduced) + \
+		'\n Number of bytes saved in path data: ' + str(numBytesSavedInPathData) + \
+		'\n Number of bytes saved in colors: ' + str(numBytesSavedInColors) + \
+		'\n Number of points removed from polygons: ' + str(numPointsRemovedFromPolygon)
+
 if __name__ == '__main__':
 	if sys.platform == "win32":
 		from time import clock as get_tick
@@ -1720,16 +1731,9 @@ if __name__ == '__main__':
 	# GZ: unless silenced by -q or something?
 	# GZ: not using globals would be good too
 	print >>sys.stderr, ' File:', input.name, \
-		'\n Time taken:', str(end-start) + 's', \
-		'\n Number of elements removed:', numElemsRemoved, \
-		'\n Number of attributes removed:', numAttrsRemoved, \
-		'\n Number of unreferenced id attributes removed:', numIDsRemoved, \
-		'\n Number of style properties fixed:', numStylePropsFixed, \
-		'\n Number of raster images embedded inline:', numRastersEmbedded, \
-		'\n Number of path segments reduced/removed:', numPathSegmentsReduced, \
-		'\n Number of bytes saved in path data:', numBytesSavedInPathData, \
-		'\n Number of bytes saved in colors:', numBytesSavedInColors, \
-		'\n Number of points removed from polygons:',numPointsRemovedFromPolygon
+		'\n Time taken:', str(end-start) + 's\n', \
+		getReport()
+	
 	oldsize = len(in_string)
 	newsize = len(out_string)
 	sizediff = (newsize / oldsize) * 100

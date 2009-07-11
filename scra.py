@@ -106,6 +106,3 @@ def fetch(req, indoc,**params):
 		req.write(scourString(fileitem.file.read()))
 	else:
 		req.write(scourString(indoc,options))
-
-	req.write( '<!-- ' + getReport() + ' -->')
-
