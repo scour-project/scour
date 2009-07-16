@@ -82,7 +82,8 @@ class ScourOptions:
 	style_to_xml = True
 	group_collapse = True
 	strip_ids = False
-	digits = 5	
+	digits = 5
+	keep_editor_data = False
 
 # params are the form elements (if a checkbox is unchecked it will not be present)
 def fetch(req, indoc,**params):
