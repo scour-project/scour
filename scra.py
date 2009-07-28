@@ -83,6 +83,7 @@ class ScourOptions:
 	group_collapse = True
 	strip_ids = False
 	digits = 5
+	embed_rasters = False
 	keep_editor_data = False
 
 # params are the form elements (if a checkbox is unchecked it will not be present)
@@ -104,6 +105,6 @@ def fetch(req, indoc,**params):
 
 	fileitem = fs['upload']
 	if fileitem.filename:
-		req.write(scourString(fileitem.file.read()))
+		req.write(scourString(fileitem.file.read(), options))
 	else:
 		req.write(scourString(indoc,options))

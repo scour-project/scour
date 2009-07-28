@@ -44,6 +44,7 @@ class ScourOptions:
 	strip_ids = False
 	digits = 5
 	embed_rasters = True
+	keep_editor_data = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -256,6 +257,34 @@ class NoInkscapeAttributes(unittest.TestCase):
 		self.assertNotEquals(walkTree(scour.scourXmlFile('unittests/inkscape.svg').documentElement, 
 			findInkscapeAttr), False,
 			'Found Inkscape attributes' )
+
+class KeepInkscapeNamespaceDeclarationsWhenKeepEditorData(unittest.TestCase):
+	def runTest(self):
+		options = ScourOptions
+		options.keep_editor_data = True
+		attrs = scour.scourXmlFile('unittests/inkscape.svg', options).documentElement.attributes
+		FoundNamespace = False
+		for i in range(len(attrs)):
+			if attrs.item(i).nodeValue == 'http://www.inkscape.org/namespaces/inkscape':
+				FoundNamespace = True
+				break	
+		self.assertEquals(True, FoundNamespace,
+			"Did not find Inkscape namespace declaration when using --keep-editor-data")
+		return False
+
+class KeepSodipodiNamespaceDeclarationsWhenKeepEditorData(unittest.TestCase):
+	def runTest(self):
+		options = ScourOptions
+		options.keep_editor_data = True
+		attrs = scour.scourXmlFile('unittests/sodipodi.svg', options).documentElement.attributes
+		FoundNamespace = False
+		for i in range(len(attrs)):
+			if attrs.item(i).nodeValue == 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd':
+				FoundNamespace = True
+				break	
+		self.assertEquals(True, FoundNamespace,
+			"Did not find Sodipodi namespace declaration when using --keep-editor-data")
+		return False
 
 class KeepReferencedFonts(unittest.TestCase):
 	def runTest(self):
@@ -604,13 +633,14 @@ class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 
 class AlwaysKeepClosePathSegments(unittest.TestCase):
 	def runTest(self):
-		p= scour.scourXmlFile('unittests/path-with-closepath.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		p = scour.scourXmlFile('unittests/path-with-closepath.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
 		self.assertEquals(p.getAttribute('d'), 'M10,10h100v100h-100z',
 			'Path with closepath not preserved')
 
 # TODO: write tests for --set-precision for path data, for polygon data, for attributes
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
+# TODO: write tests for --keep-editor-data
 
 if __name__ == '__main__':
     unittest.main()

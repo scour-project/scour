@@ -1517,17 +1517,17 @@ def scourString(in_string, options=None):
 			pass	
 		while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
 			pass
-	
-	# remove the xmlns: declarations now
-	xmlnsDeclsToRemove = []
-	attrList = doc.documentElement.attributes
-	for num in range(attrList.length) :
-		if attrList.item(num).nodeValue in unwanted_ns :
-			xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
-
-	for attr in xmlnsDeclsToRemove :
-		doc.documentElement.removeAttribute(attr)
-		numAttrsRemoved += 1
+		
+		# remove the xmlns: declarations now
+		xmlnsDeclsToRemove = []
+		attrList = doc.documentElement.attributes
+		for num in range(attrList.length) :
+			if attrList.item(num).nodeValue in unwanted_ns :
+				xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
+		
+		for attr in xmlnsDeclsToRemove :
+			doc.documentElement.removeAttribute(attr)
+			numAttrsRemoved += 1
 
 	# repair style (remove unnecessary style properties and change them into XML attributes)
 	numStylePropsFixed = repairStyle(doc.documentElement, options)
