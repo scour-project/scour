@@ -56,6 +56,7 @@ def form(req):
 		<input type="checkbox" id="collapseGroups" name="collapseGroups" checked>Collapse nested groups when possible</input><br/>
 		<input type="checkbox" id="stripIds" name="stripIds">Strip all unused id attributes</input><br/>
 		<input type="checkbox" id="simplifyColors" name="simplifyColors" checked>Simplify colors to #RGB format</input><br/>
+		<input type="checkbox" id="stripXmlProlog" name="stripXmlProlog">Strip the &lt;?xml ?&gt; prolog</input><br/>
 		<label>Digits of Precision:</label>
 		<select id="digits" name="digits">
 			<option value="1">1</option>
@@ -85,6 +86,7 @@ class ScourOptions:
 	digits = 5
 	embed_rasters = False
 	keep_editor_data = False
+	strip_xml_prolog = False
 
 # params are the form elements (if a checkbox is unchecked it will not be present)
 def fetch(req, indoc,**params):
@@ -101,6 +103,8 @@ def fetch(req, indoc,**params):
 		options.strip_ids = True
 	if not params.has_key('simplifyColors'):
 		options.simple_colors = False
+	if params.has_key('stripXmlProlog'):
+		options.strip_xml_prolog = True
 	options.digits = int(params['digits'])
 
 	fileitem = fs['upload']

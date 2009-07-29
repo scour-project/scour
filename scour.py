@@ -961,8 +961,8 @@ def cleanPath(element) :
 			nums = []
 			for t in dataset:
 				# convert to a Decimal
-				nums.append(Decimal(str(t[0])))
-				nums.append(Decimal(str(t[1])))
+				nums.append(Decimal(str(t[0])) * Decimal(1))
+				nums.append(Decimal(str(t[1])) * Decimal(1))
 					
 			# only create this segment if it is not empty
 			if nums:
@@ -1405,6 +1405,10 @@ def scourCoordinates(data):
 	if data != None:
 		c = 0
 		for coord in data:
+			# reduce to the proper number of digits
+			coord = Decimal(coord) * Decimal(1)
+
+			# integerize if we can
 			if int(coord) == coord: coord = Decimal(str(int(coord)))
 				
 			# Decimal.trim() is available in Python 2.6+ to trim trailing zeros
@@ -1418,9 +1422,6 @@ def scourCoordinates(data):
 					while s[-1] == '0':
 						s = s[:-1]
 				coord = Decimal(s)
-
-			# reduce to the proper number of digits
-			coord = coord * Decimal(1)
 
 			# Decimal.normalize() will uses scientific notation - if that
 			# string is smaller, then use it
@@ -1641,7 +1642,12 @@ def scourString(in_string, options=None):
 			lines.append(line)
 
 	# return the string stripped of empty lines
-	return "".join(lines)
+	if options.strip_xml_prolog == False:
+		xmlprolog = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+	else:
+		xmlprolog = ""
+		
+	return xmlprolog + "".join(lines)
 
 # used mostly by unit tests
 # input is a filename
@@ -1690,6 +1696,9 @@ _options_parser.add_option("--disable-embed-rasters",
 _options_parser.add_option("--keep-editor-data",
 	action="store_true", dest="keep_editor_data", default=False,
 	help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
+_options_parser.add_option("--strip-xml-prolog",
+	action="store_true", dest="strip_xml_prolog", default=False,
+	help="won't output the <?xml ?> prolog")
 
 # GZ: this is confusing, most people will be thinking in terms of
 #     decimal places, which is not what decimal precision is doing

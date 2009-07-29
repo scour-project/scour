@@ -45,6 +45,7 @@ class ScourOptions:
 	digits = 5
 	embed_rasters = True
 	keep_editor_data = False
+	strip_xml_prolog = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -660,6 +661,7 @@ class AlwaysKeepClosePathSegments(unittest.TestCase):
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
+# TODO: write tests for --strip-xml-prolog
 
 if __name__ == '__main__':
     unittest.main()
