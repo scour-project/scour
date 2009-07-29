@@ -39,10 +39,14 @@
 
 # Next Up:
 # + add option to keep inkscape, adobe, sodipodi elements and attributes
-# - ensure a really good understanding of prec vs. quantize and what I want --set-precision to do
+# + if any path coordinate has decimal places, remove any trailing zeros
+# + use scientific notation is shorter in path coordinates
+# + scour polygon coordinates just like path coordinates
+# - scour polyline coordinates just like path coordinates
+# - if after reducing precision we have duplicate path segments, then remove the duplicates and
+#   leave it as a straight line segment
 # - enable the precision argument to affect all numbers: polygon points, lengths, coordinates
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
-# - convert polygons/polylines to path? (actually the change in semantics may not be worth the marginal savings)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
@@ -69,7 +73,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.15'
+VER = '0.16'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -956,9 +960,9 @@ def cleanPath(element) :
 			# one or more tuples, each containing two numbers
 			nums = []
 			for t in dataset:
-				# convert to a Decimal and ensure precision
-				nums.append(Decimal(str(t[0])) * Decimal(1))
-				nums.append(Decimal(str(t[1])) * Decimal(1))
+				# convert to a Decimal
+				nums.append(Decimal(str(t[0])))
+				nums.append(Decimal(str(t[1])))
 					
 			# only create this segment if it is not empty
 			if nums:
@@ -1339,7 +1343,7 @@ def parseListOfPoints(s):
 	"""
 		Parse string into a list of points.
 	
-		Returns a list of (x,y) tuples where x and y are strings
+		Returns a list of containing an even number of coordinate strings
 	"""
 	
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
@@ -1356,7 +1360,8 @@ def parseListOfPoints(s):
 		
 		# if the coordinates were not unitless, return empty
 		if x.units != Unit.NONE or y.units != Unit.NONE: return []
-		points.append( (str(x.value),str(y.value)) )
+		points.append( str(x.value) )
+		points.append( str(y.value) )
 		i += 2
 	
 	return points
@@ -1368,40 +1373,69 @@ def cleanPolygon(elem):
 	global numPointsRemovedFromPolygon
 	
 	pts = parseListOfPoints(elem.getAttribute('points'))
-	N = len(pts)
+	N = len(pts)/2
 	if N >= 2:		
-		(startx,starty) = (pts[0][0],pts[0][1])
-		(endx,endy) = (pts[N-1][0],pts[N-1][1])
+		(startx,starty) = (pts[0],pts[0])
+		(endx,endy) = (pts[len(pts)-2],pts[len(pts)-1])
 		if startx == endx and starty == endy:
-			str = ''
-			for pt in pts[:-1]:
-				str += (pt[0] + ',' + pt[1] + ' ')
-			elem.setAttribute('points', str[:-1])
+			pts = pts[:-2]
 			numPointsRemovedFromPolygon += 1
+		
+	elem.setAttribute('points', scourCoordinates(pts))
 	
 def serializePath(pathObj):
 	"""
-		Reserializes the path data with some cleanups:
-			- removes scientific notation (exponents)
-			- removes all trailing zeros after the decimal
-			- removes extraneous whitespace
-			- adds commas between values in a subcommand if required
+		Reserializes the path data with some cleanups.
 	"""
 	pathStr = ""
 	for (cmd,data) in pathObj:
 		pathStr += cmd
-		if data != None:
-			c = 0
-			for coord in data:
-				# if coord can be an integer without loss of precision, go for it
-				if int(coord) == coord: pathStr += str(int(coord))
-				else: pathStr += str(coord)
-				
-				# only need the comma if the next number is non-negative
-				if c < len(data)-1 and data[c+1] >= 0:
-					pathStr += ','
-				c += 1
+		pathStr += scourCoordinates(data)
 	return pathStr
+
+def scourCoordinates(data):
+	"""
+		Serializes coordinate data with some cleanups:
+			- removes all trailing zeros after the decimal
+			- integerize coordinates if possible
+			- removes extraneous whitespace
+			- adds commas between values in a subcommand if required
+	"""
+	coordsStr = ""
+	if data != None:
+		c = 0
+		for coord in data:
+			if int(coord) == coord: coord = Decimal(str(int(coord)))
+				
+			# Decimal.trim() is available in Python 2.6+ to trim trailing zeros
+			try:
+				coord = coord.trim()
+			except AttributeError:
+				# trim it ourselves
+				s = str(coord)
+				dec = s.find('.')
+				if dec != -1:
+					while s[-1] == '0':
+						s = s[:-1]
+				coord = Decimal(s)
+
+			# reduce to the proper number of digits
+			coord = coord * Decimal(1)
+
+			# Decimal.normalize() will uses scientific notation - if that
+			# string is smaller, then use it
+			normd = coord.normalize()
+			if len(str(normd)) < len(str(coord)):
+				coord = normd
+
+			# finally add the coordinate to the path string
+			coordsStr += str(coord)
+			
+			# only need the comma if the next number is non-negative
+			if c < len(data)-1 and Decimal(data[c+1]) >= 0:
+				coordsStr += ','
+			c += 1
+	return coordsStr
 
 def embedRasters(element, options) :
 	"""

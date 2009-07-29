@@ -470,19 +470,33 @@ class DoNotCollapseMultiplyReferencedGradients(unittest.TestCase):
 		self.assertNotEquals(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 0,
 			'Multiply-referenced linear gradient collapsed' )
 
-class RemoveTrailingZeroesFromPath(unittest.TestCase):
+class RemoveTrailingZerosFromPath(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/path-truncate-zeroes.svg')
+		doc = scour.scourXmlFile('unittests/path-truncate-zeros.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
 		self.assertEquals(path[:4] == 'M300' and path[4] != '.', True,
 			'Trailing zeros not removed from path data' )
 
+class RemoveTrailingZerosFromPathAfterCalculation(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-truncate-zeros-calc.svg')
+		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
+		self.assertEquals(path, 'M5.81,0h0.1',
+			'Trailing zeros not removed from path data after calculation' )
+
 class RemoveDelimiterBeforeNegativeCoordsInPath(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/path-truncate-zeroes.svg')
+		doc = scour.scourXmlFile('unittests/path-truncate-zeros.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
 		self.assertEquals(path[4], '-', 
 			'Delimiters not removed before negative coordinates in path data' )
+			
+class UseScientificNotationToShortenCoordsInPath(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-use-scientific-notation.svg')
+		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
+		self.assertEquals(path, 'M1E+4,0',
+			'Not using scientific notation for path coord when representation is shorter')
 
 class ConvertAbsoluteToRelativePathCommands(unittest.TestCase):
 	def runTest(self):
@@ -506,7 +520,7 @@ class LimitPrecisionInPathData(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-precision.svg')
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
-		self.assertEquals(path[1][1][0], 100.001,
+		self.assertEquals(path[1][1][0], 100.01,
 			'Not correctly limiting precision on path data' )
 
 class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
@@ -616,14 +630,20 @@ class ConvertStraightCurvesToLines(unittest.TestCase):
 class RemoveUnnecessaryPolgonEndPoint(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
-		self.assertEquals(p.getAttribute('points'), '50,50 150,50 150,150 50,150',
+		self.assertEquals(p.getAttribute('points'), '50,50,150,50,150,150,50,150',
 			'Unnecessary polygon end point not removed' )
 
 class DoNotRemovePolgonLastPoint(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[1]
-		self.assertEquals(p.getAttribute('points'), '200,50 300,50 300,150 200,150',
+		self.assertEquals(p.getAttribute('points'), '200,50,300,50,300,150,200,150',
 			'Last point of polygon removed' )
+			
+class ScourPolygonCoordinates(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polygon-coord.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
+		self.assertEquals(p.getAttribute('points'), '1E+4-50',
+			'Polygon coordinates not scoured')
 
 class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 	def runTest(self):
@@ -637,7 +657,6 @@ class AlwaysKeepClosePathSegments(unittest.TestCase):
 		self.assertEquals(p.getAttribute('d'), 'M10,10h100v100h-100z',
 			'Path with closepath not preserved')
 
-# TODO: write tests for --set-precision for path data, for polygon data, for attributes
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
