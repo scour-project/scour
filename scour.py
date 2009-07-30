@@ -38,10 +38,6 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
-# + add option to keep inkscape, adobe, sodipodi elements and attributes
-# + if any path coordinate has decimal places, remove any trailing zeros
-# + use scientific notation is shorter in path coordinates
-# + scour polygon coordinates just like path coordinates
 # - scour polyline coordinates just like path coordinates
 # - if after reducing precision we have duplicate path segments, then remove the duplicates and
 #   leave it as a straight line segment
