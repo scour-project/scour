@@ -759,7 +759,8 @@ def removeDuplicateGradients(doc):
 				# find out which attribute referenced the duplicate gradient
 				for attr in ['fill', 'stroke']:
 					# TODO: also need to check for url("#id")
-					if elem.getAttribute(attr) == 'url(#'+dup_id+')':
+					v = elem.getAttribute(attr)
+					if v == 'url(#'+dup_id+')' or v == 'url("#'+dup_id+'")' or v == "url('#"+dup_id+"')":
 						elem.setAttribute(attr, 'url(#'+master_id+')')
 				if elem.getAttributeNS(NS['XLINK'], 'href') == '#'+dup_id:
 					elem.setAttributeNS(NS['XLINK'], 'href', '#'+master_id)
