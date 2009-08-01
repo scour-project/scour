@@ -743,22 +743,25 @@ def removeDuplicateGradients(doc):
 				if stopsNotEqual: continue
 
 				# ograd is a duplicate of grad, we schedule it to be removed UNLESS
-				# ograd is ALREADY considered the 'master' element
+				# ograd is ALREADY considered a 'master' element
 				if not gradientsToRemove.has_key(ograd):
 					if not gradientsToRemove.has_key(grad):
 						gradientsToRemove[grad] = []
 					gradientsToRemove[grad].append( ograd )
 	
+	# get a collection of all elements that are referenced and their referencing elements
 	referencedIDs = findReferencedElements(doc.documentElement)
 	for masterGrad in gradientsToRemove.keys():
 		master_id = masterGrad.getAttribute('id')
 		for dupGrad in gradientsToRemove[masterGrad]:
+			# if the duplicate gradient no longer has a parent that means it was
+			# already re-mapped to another master gradient
+			if not dupGrad.parentNode: continue
 			dup_id = dupGrad.getAttribute('id')
 			# for each element that referenced the gradient we are going to remove
 			for elem in referencedIDs[dup_id][1]:
 				# find out which attribute referenced the duplicate gradient
 				for attr in ['fill', 'stroke']:
-					# TODO: also need to check for url("#id")
 					v = elem.getAttribute(attr)
 					if v == 'url(#'+dup_id+')' or v == 'url("#'+dup_id+'")' or v == "url('#"+dup_id+"')":
 						elem.setAttribute(attr, 'url(#'+master_id+')')

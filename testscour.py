@@ -677,6 +677,8 @@ class RereferenceForLinearGradient(unittest.TestCase):
 		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
 		self.assertEquals(rects[0].getAttribute('fill'), rects[1].getAttribute('stroke'),
 			'Rect not changed after removing duplicate linear gradient')
+		self.assertEquals(rects[0].getAttribute('fill'), rects[4].getAttribute('fill'),
+			'Rect not changed after removing duplicate linear gradient')
 			
 class RemoveDuplicateRadialGradients(unittest.TestCase):
 	def runTest(self):
