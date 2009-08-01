@@ -27,8 +27,6 @@
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 # TODO: Adapt this script into an Inkscape python plugin
 #
-# * Clean up Definitions
-#  * Collapse duplicate gradient definitions
 # * Process Transformations
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
@@ -38,7 +36,7 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
-# - remove duplicate gradients
+# + remove duplicate gradients
 # - scour polyline coordinates just like path coordinates
 # - if after reducing precision we have duplicate path segments, then remove the duplicates and
 #   leave it as a straight line segment
@@ -666,7 +664,6 @@ def collapseSinglyReferencedGradients(doc):
 				if refElem.nodeType == 1 and refElem.nodeName in ['linearGradient', 'radialGradient'] \
 						and refElem.namespaceURI == NS['SVG']:
 					# elem is a gradient referenced by only one other gradient (refElem)
-					# TODO: update elem with properties and stops from refElem
 					
 					# add the stops to the referencing gradient (this removes them from elem)
 					if len(refElem.getElementsByTagNameNS(NS['SVG'], 'stop')) == 0:
@@ -707,10 +704,71 @@ def removeDuplicateGradients(doc):
 	global numElemsRemoved
 	num = 0
 	
+	gradientsToRemove = {}
+
 	for gradType in ['linearGradient', 'radialGradient']:
-		for grad in doc.getElementsByTagNameNS(NS['SVG'], gradType):
-			pass
+		grads = doc.getElementsByTagNameNS(NS['SVG'], gradType)
+		for grad in grads:
+			# TODO: should slice grads from 'grad' here to optimize
+			for ograd in grads:
+				# do not compare gradient to itself
+				if grad == ograd: continue
+
+				# compare grad to ograd (all properties, then all stops)
+				# if attributes do not match, go to next gradient
+				for attr in ['gradientUnits','spreadMethod','gradientTransform','x1','y1','x2','y2','cx','cy','fx','fy','r']:
+					if grad.getAttribute(attr) != ograd.getAttribute(attr):
+						continue
+
+				# compare xlink:href values too
+				if grad.getAttributeNS(NS['XLINK'], 'href') != ograd.getAttributeNS(NS['XLINK'], 'href'):
+					continue
+
+				# all gradient properties match, now time to compare stops
+				stops = grad.getElementsByTagNameNS(NS['SVG'], 'stop')
+				ostops = ograd.getElementsByTagNameNS(NS['SVG'], 'stop')
+
+				if stops.length != ostops.length: continue
+
+				# now compare stops
+				stopsNotEqual = False
+				for i in range(stops.length):
+					if stopsNotEqual: break
+					stop = stops.item(i)
+					ostop = ostops.item(i)
+					for attr in ['offset', 'stop-color', 'stop-opacity']:
+						if stop.getAttribute(attr) != ostop.getAttribute(attr):
+							stopsNotEqual = True
+							break
+				if stopsNotEqual: continue
+
+				# ograd is a duplicate of grad, we schedule it to be removed UNLESS
+				# ograd is ALREADY considered the 'master' element
+				if not gradientsToRemove.has_key(ograd):
+					if not gradientsToRemove.has_key(grad):
+						gradientsToRemove[grad] = []
+					gradientsToRemove[grad].append( ograd )
 	
+	referencedIDs = findReferencedElements(doc.documentElement)
+	for masterGrad in gradientsToRemove.keys():
+		master_id = masterGrad.getAttribute('id')
+		for dupGrad in gradientsToRemove[masterGrad]:
+			dup_id = dupGrad.getAttribute('id')
+			# for each element that referenced the gradient we are going to remove
+			for elem in referencedIDs[dup_id][1]:
+				# find out which attribute referenced the duplicate gradient
+				for attr in ['fill', 'stroke']:
+					# TODO: also need to check for url("#id")
+					if elem.getAttribute(attr) == 'url(#'+dup_id+')':
+						elem.setAttribute(attr, 'url(#'+master_id+')')
+				if elem.getAttributeNS(NS['XLINK'], 'href') == '#'+dup_id:
+					elem.setAttributeNS(NS['XLINK'], 'href', '#'+master_id)
+			
+			# now that all referencing elements have been re-mapped to the master
+			# it is safe to remove this gradient from the document
+			dupGrad.parentNode.removeChild(dupGrad)
+			numElemsRemoved += 1
+			num += 1
 	return num
 
 def repairStyle(node, options):
