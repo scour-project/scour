@@ -38,6 +38,7 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
+# - remove duplicate gradients
 # - scour polyline coordinates just like path coordinates
 # - if after reducing precision we have duplicate path segments, then remove the duplicates and
 #   leave it as a straight line segment
@@ -69,7 +70,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.16'
+VER = '0.17'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -673,7 +674,7 @@ def collapseSinglyReferencedGradients(doc):
 						for stop in stopsToAdd:
 							refElem.appendChild(stop)
 							
-					# adopt the gradientUnits, spreadMethod,  gradientTransform attributess if
+					# adopt the gradientUnits, spreadMethod,  gradientTransform attributes if
 					# they are unspecified on refElem
 					for attr in ['gradientUnits','spreadMethod','gradientTransform']:
 						if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
@@ -699,10 +700,19 @@ def collapseSinglyReferencedGradients(doc):
 					# now delete elem
 					elem.parentNode.removeChild(elem)
 					numElemsRemoved += 1
-					num += 1
-					
+					num += 1		
 	return num
+
+def removeDuplicateGradients(doc):
+	global numElemsRemoved
+	num = 0
 	
+	for gradType in ['linearGradient', 'radialGradient']:
+		for grad in doc.getElementsByTagNameNS(NS['SVG'], gradType):
+			pass
+	
+	return num
+
 def repairStyle(node, options):
 	num = 0
 	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
@@ -906,7 +916,7 @@ def convertColor(value):
 	
 def convertColors(element) :
 	"""
-		Recursively converts all color properties into #RRGGBB format
+		Recursively converts all color properties into #RRGGBB format if shorter
 	"""
 	numBytes = 0
 	
@@ -924,11 +934,14 @@ def convertColors(element) :
 
 	# now convert all the color formats
 	for attr in attrsToConvert:
-		val = element.getAttribute(attr)
-		oldBytes = len(val)
-		if val != '':
-			element.setAttribute(attr, convertColor(val))
-			numBytes += (oldBytes - len(element.getAttribute(attr)))
+		oldColorValue = element.getAttribute(attr)
+		if oldColorValue != '':
+			newColorValue = convertColor(oldColorValue)
+			oldBytes = len(oldColorValue)
+			newBytes = len(newColorValue)
+			if oldBytes > newBytes:
+				element.setAttribute(attr, newColorValue)
+				numBytes += (oldBytes - len(element.getAttribute(attr)))
 	
 	# now recurse for our child elements
 	for child in element.childNodes :
@@ -1603,6 +1616,10 @@ def scourString(in_string, options=None):
 	
 	# remove gradients that are only referenced by one other gradient
 	while collapseSinglyReferencedGradients(doc) > 0:
+		pass
+		
+	# remove duplicate gradients
+	while removeDuplicateGradients(doc) > 0:
 		pass
 	
 	# clean path data

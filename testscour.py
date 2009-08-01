@@ -583,7 +583,7 @@ class TranslateColorNamesIntoHex(unittest.TestCase):
 class TranslateExtendedColorNamesIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'solidColor')[0]
-		self.assertEquals( elem.getAttribute('solid-color'), '#800000',
+		self.assertEquals( elem.getAttribute('solid-color'), '#FAFAD2',
 			'Not converting extended color names into hex')
 
 class TranslateLongHexColorIntoShortHex(unittest.TestCase):
@@ -591,7 +591,13 @@ class TranslateLongHexColorIntoShortHex(unittest.TestCase):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'ellipse')[0]
 		self.assertEquals( elem.getAttribute('fill'), '#FFF',
 			'Not converting long hex color into short hex')
-		
+
+class DoNotConvertShortColorNames(unittest.TestCase):
+	def runTest(self):
+		elem = scour.scourXmlFile('unittests/dont-convert-short-color-names.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+		self.assertEquals( 'red', elem.getAttribute('fill'),
+			'Converted short color name to longer hex string')
+
 class AllowQuotEntitiesInUrl(unittest.TestCase):
 	def runTest(self):
 		grads = scour.scourXmlFile('unittests/quot-in-url.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')
@@ -657,6 +663,34 @@ class AlwaysKeepClosePathSegments(unittest.TestCase):
 		p = scour.scourXmlFile('unittests/path-with-closepath.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
 		self.assertEquals(p.getAttribute('d'), 'M10,10h100v100h-100z',
 			'Path with closepath not preserved')
+
+class RemoveDuplicateLinearGradients(unittest.TestCase):
+	def runTest(self):
+		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
+		lingrads = svgdoc.getElementsByTagNameNS(SVGNS, 'linearGradient')
+		self.assertEquals(1, lingrads.length,
+			'Duplicate linear gradient not removed')
+		
+class RereferenceForLinearGradient(unittest.TestCase):
+	def runTest(self):
+		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
+		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
+		self.assertEquals(rects[0].getAttribute('fill'), rects[1].getAttribute('stroke'),
+			'Rect not changed after removing duplicate linear gradient')
+			
+class RemoveDuplicateRadialGradients(unittest.TestCase):
+	def runTest(self):
+		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
+		radgrads = svgdoc.getElementsByTagNameNS(SVGNS, 'radialGradient')
+		self.assertEquals(1, radgrads.length,
+			'Duplicate radial gradient not removed')
+			
+class RereferenceForRadialGradient(unittest.TestCase):
+	def runTest(self):
+		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
+		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
+		self.assertEquals(rects[2].getAttribute('stroke'), rects[3].getAttribute('fill'),
+			'Rect not changed after removing duplicate radial gradient')
 
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
