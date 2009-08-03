@@ -652,6 +652,12 @@ class ScourPolygonCoordinates(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '1E+4-50',
 			'Polygon coordinates not scoured')
 
+class ScourPolylineCoordinates(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polyline-coord.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
+		self.assertEquals(p.getAttribute('points'), '1E+4-50',
+			'Polyline coordinates not scoured')
+
 class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 	def runTest(self):
 		f = scour.scourXmlFile('unittests/important-groups-in-defs.svg')
@@ -694,6 +700,12 @@ class RereferenceForRadialGradient(unittest.TestCase):
 		self.assertEquals(rects[2].getAttribute('stroke'), rects[3].getAttribute('fill'),
 			'Rect not changed after removing duplicate radial gradient')
 
+class CollapseSamePathPoints(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
+		self.assertEquals(p.getAttribute('d'), "M100,100l100.12,100.12z",
+			'Did not collapse same path points')
+		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

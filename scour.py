@@ -31,15 +31,38 @@
 #  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
 
+# Even more ideas here: http://esw.w3.org/topic/SvgTidy
+#  * namespace cleanup <svg:path xmlns:svg="..."/> -> <path />
+#  * removal of more default attribute values (gradientUnits, spreadMethod, x1, y1, etc)
+#  * analysis of path elements to see if rect can be used instead?
+#  * removal of unused attributes in groups:
+#    <g fill="blue" ...>
+#      <rect fill="red" ... />
+#      <rect fill="red" ... />
+#      <rect fill="red" ... />
+#    </g>
+#    in this case, fill="blue" should be removed
+#  * Move common attributes up to a parent group:
+#    <g>
+#      <rect fill="white"/>
+#      <rect fill="white"/>
+#      <rect fill="white"/>
+#    </g>
+#    becomes:
+#    <g fill="white">
+#      <rect />
+#      <rect />
+#      <rect />
+#    </g>
+
 # Suggestion from Richard Hutch:
 #  * Put id attributes first in the serialization (or make the d attribute last)
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
 # + remove duplicate gradients
-# - scour polyline coordinates just like path coordinates
-# - if after reducing precision we have duplicate path segments, then remove the duplicates and
-#   leave it as a straight line segment
+# + remove all empty path segments
+# + scour polyline coordinates just like path coordinates
 # - enable the precision argument to affect all numbers: polygon points, lengths, coordinates
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
@@ -312,13 +335,11 @@ class Unit(object):
 	
 class SVGLength(object):
 	def __init__(self, str):
-#		print "Parsing '%s'" % str
 		try: # simple unitless and no scientific notation
 			self.value = float(str)
 			if int(self.value) == self.value: 
 				self.value = int(self.value)
 			self.units = Unit.NONE
-#			print "  Value =", self.value
 		except ValueError:
 			# we know that the length string has an exponent, a unit, both or is invalid
 
@@ -344,16 +365,13 @@ class SVGLength(object):
 				self.value = int(self.value)
 
 			if unitBegin != 0 :
-#				print "  Value =", self.value
 				unitMatch = unit.search(str, unitBegin)
 				if unitMatch != None :
 					self.units = Unit.get(unitMatch.group(0))
-#					print "  Units =", self.units
 				
 			# invalid
 			else:
 				# TODO: this needs to set the default for the given attribute (how?)
-#				print "  Invalid: ", str
 				self.value = 0 
 				self.units = Unit.INVALID
 
@@ -1232,7 +1250,6 @@ def cleanPath(element) :
 	path = newPath
 	
 	# remove empty segments
-	# TODO: q, t, a
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
 		if cmd in ['m','l','t']:
@@ -1251,8 +1268,7 @@ def cleanPath(element) :
 			newData = []
 			i = 0
 			while i < len(data):
-				if data[i] != 0 or data[i+1] != 0 or data[i+2] != 0 or \
-						data[i+3] != 0 or data[i+4] != 0 or data[i+5] != 0:
+				if data[i+4] != 0 or data[i+5] != 0:
 					newData.append(data[i])
 					newData.append(data[i+1])
 					newData.append(data[i+2])
@@ -1262,6 +1278,37 @@ def cleanPath(element) :
 				else:
 					numPathSegmentsReduced += 1
 				i += 6
+			if newData:
+				newPath.append( (cmd,newData) )
+		elif cmd == 'a':
+			newData = []
+			i = 0
+			while i < len(data):
+				if data[i+5] != 0 or data[i+6] != 0:
+					newData.append(data[i])
+					newData.append(data[i+1])
+					newData.append(data[i+2])
+					newData.append(data[i+3])
+					newData.append(data[i+4])
+					newData.append(data[i+5])
+					newData.append(data[i+6])
+				else:
+					numPathSegmentsReduced += 1
+				i += 7
+			if newData:
+				newPath.append( (cmd,newData) )
+		elif cmd == 'q':
+			newData = []
+			i = 0
+			while i < len(data):
+				if data[i+2] != 0 or data[i+3] != 0:
+					newData.append(data[i])
+					newData.append(data[i+1])
+					newData.append(data[i+2])
+					newData.append(data[i+3])
+				else:
+					numPathSegmentsReduced += 1
+				i += 4
 			if newData:
 				newPath.append( (cmd,newData) )
 		elif cmd in ['h','v']:
@@ -1450,8 +1497,14 @@ def cleanPolygon(elem):
 		(endx,endy) = (pts[len(pts)-2],pts[len(pts)-1])
 		if startx == endx and starty == endy:
 			pts = pts[:-2]
-			numPointsRemovedFromPolygon += 1
-		
+			numPointsRemovedFromPolygon += 1		
+	elem.setAttribute('points', scourCoordinates(pts))
+
+def cleanPolyline(elem):
+	"""
+		Scour the polyline points attribute
+	"""
+	pts = parseListOfPoints(elem.getAttribute('points'))		
 	elem.setAttribute('points', scourCoordinates(pts))
 	
 def serializePath(pathObj):
@@ -1691,9 +1744,13 @@ def scourString(in_string, options=None):
 		else:
 			cleanPath(elem)
 
-	# remove unnecessary closing point of polygons
+	# remove unnecessary closing point of polygons and scour points
 	for polygon in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polygon') :
 		cleanPolygon(polygon)
+
+	# scour points of polyline
+	for polyline in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polyline') :
+		cleanPolygon(polyline)
 
 	# convert rasters references to base64-encoded strings 
 	if options.embed_rasters:
