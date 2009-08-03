@@ -730,6 +730,19 @@ class ScourLengthsWithUnits(unittest.TestCase):
 		self.assertEquals(r.getAttribute('height'), '50%',
 			'Did not scour height attribute with unit')
 
+class RemoveRedundantSvgNamespaceDeclaration(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/redundant-svg-namespace.svg').documentElement
+		self.assertNotEquals( doc.getAttribute('xmlns:svg'), 'http://www.w3.org/2000/svg',
+			'Redundant svg namespace declaration not removed')
+
+class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/redundant-svg-namespace.svg').documentElement
+		r = doc.getElementsByTagNameNS(SVGNS, 'rect')[1]
+		self.assertEquals( r.tagName, 'rect',
+			'Redundant svg: prefix not removed')
+		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

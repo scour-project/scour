@@ -32,7 +32,6 @@
 #  * Collapse all group based transformations
 
 # Even more ideas here: http://esw.w3.org/topic/SvgTidy
-#  * namespace cleanup <svg:path xmlns:svg="..."/> -> <path />
 #  * removal of more default attribute values (gradientUnits, spreadMethod, x1, y1, etc)
 #  * analysis of path elements to see if rect can be used instead?
 #  * removal of unused attributes in groups:
@@ -63,7 +62,9 @@
 # + remove duplicate gradients
 # + remove all empty path segments
 # + scour polyline coordinates just like path coordinates
-# - enable the precision argument to affect all numbers: lengths, coordinates
+# + scour all lengths, coordinates
+# + remove redundant SVG namespace declarations and prefixes
+# - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
@@ -1683,6 +1684,39 @@ def properlySizeDoc(docElement):
 	docElement.removeAttribute('width')
 	docElement.removeAttribute('height')
 
+def remapNamespacePrefix(node, oldprefix, newprefix):
+	if node == None or node.nodeType != 1: return
+	
+	if node.prefix == oldprefix:
+		localName = node.localName
+		namespace = node.namespaceURI
+		doc = node.ownerDocument
+		parent = node.parentNode
+	
+		# create a replacement node
+		newNode = None
+		if newprefix != '':
+			newNode = doc.createElementNS(namespace, newprefix+":"+localName)
+		else:
+			newNode = doc.createElement(localName);
+			
+		# add all the attributes
+		attrList = node.attributes
+		for i in range(attrList.length):
+			attr = attrList.item(i)
+			newNode.setAttributeNS( attr.namespaceURI, attr.localName, attr.nodeValue)
+	
+		# clone and add all the child nodes
+		for child in node.childNodes:
+			newNode.appendChild(child.cloneNode(true))
+			
+		# replace old node with new node
+		node = parent.replaceChild( newNode, node )
+	
+	# now do all child nodes
+	for child in node.childNodes :
+		remapNamespacePrefix(child, oldprefix, newprefix)	
+
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
@@ -1715,6 +1749,29 @@ def scourString(in_string, options=None):
 		for attr in xmlnsDeclsToRemove :
 			doc.documentElement.removeAttribute(attr)
 			numAttrsRemoved += 1
+
+	# ensure namespace for SVG is declared
+	if doc.documentElement.getAttribute('xmlns') != 'http://www.w3.org/2000/svg':
+		doc.documentElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+		# TODO: throw error or warning?
+		
+	# check for redundant SVG namespace declaration
+	attrList = doc.documentElement.attributes
+	xmlnsDeclsToRemove = []
+	redundantPrefixes = []
+	for i in range(attrList.length):
+		attr = attrList.item(i)
+		name = attr.nodeName
+		val = attr.nodeValue
+		if name[0:6] == 'xmlns:' and val == 'http://www.w3.org/2000/svg':
+			redundantPrefixes.append(name[6:])
+			xmlnsDeclsToRemove.append(name)
+			
+	for attrName in xmlnsDeclsToRemove:
+		doc.documentElement.removeAttribute(attrName)
+	
+	for prefix in redundantPrefixes:
+		remapNamespacePrefix(doc.documentElement, prefix, '')
 
 	# repair style (remove unnecessary style properties and change them into XML attributes)
 	numStylePropsFixed = repairStyle(doc.documentElement, options)
