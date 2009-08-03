@@ -705,7 +705,31 @@ class CollapseSamePathPoints(unittest.TestCase):
 		p = scour.scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
 		self.assertEquals(p.getAttribute('d'), "M100,100l100.12,100.12z",
 			'Did not collapse same path points')
-		
+
+class ScourUnitlessLengths(unittest.TestCase):
+	def runTest(self):
+		r = scour.scourXmlFile('unittests/scour-lengths.svg').getElementsByTagNameNS(SVGNS, 'rect')[0];
+		self.assertEquals(r.getAttribute('x'), '123.46',
+			'Did not scour x attribute unitless number')
+		self.assertEquals(r.getAttribute('y'), '123',
+			'Did not scour y attribute unitless number')
+		self.assertEquals(r.getAttribute('width'), '300',
+			'Did not scour width attribute unitless number')
+		self.assertEquals(r.getAttribute('height'), '100',
+			'Did not scour height attribute unitless number')
+
+class ScourLengthsWithUnits(unittest.TestCase):
+	def runTest(self):
+		r = scour.scourXmlFile('unittests/scour-lengths.svg').getElementsByTagNameNS(SVGNS, 'rect')[1];
+		self.assertEquals(r.getAttribute('x'), '123.46px',
+			'Did not scour x attribute with unit')
+		self.assertEquals(r.getAttribute('y'), '35ex',
+			'Did not scour y attribute with unit')
+		self.assertEquals(r.getAttribute('width'), '300pt',
+			'Did not scour width attribute with unit')
+		self.assertEquals(r.getAttribute('height'), '50%',
+			'Did not scour height attribute with unit')
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

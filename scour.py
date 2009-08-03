@@ -63,7 +63,7 @@
 # + remove duplicate gradients
 # + remove all empty path segments
 # + scour polyline coordinates just like path coordinates
-# - enable the precision argument to affect all numbers: polygon points, lengths, coordinates
+# - enable the precision argument to affect all numbers: lengths, coordinates
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
@@ -330,8 +330,23 @@ class Unit(object):
 		elif str == 'mm': return Unit.MM
 		elif str == 'in': return Unit.IN
 		return Unit.INVALID
+
+#	@staticmethod
+	def str(u):
+		if u == Unit.NONE: return ''
+		elif u == Unit.PCT: return '%'
+		elif u == Unit.PX: return 'px'
+		elif u == Unit.PT: return 'pt'
+		elif u == Unit.PC: return 'pc'
+		elif u == Unit.EM: return 'em'
+		elif u == Unit.EX: return 'ex'
+		elif u == Unit.CM: return 'cm'
+		elif u == Unit.MM: return 'mm'
+		elif u == Unit.IN: return 'in'
+		return 'INVALID'
 		
 	get = staticmethod(get)
+	str = staticmethod(str)
 	
 class SVGLength(object):
 	def __init__(self, str):
@@ -471,7 +486,7 @@ def findReferencedElements(node, ids=None):
 							ids[id][1].append(node)
 						else:
 							ids[id] = [1,[node]]
-					
+
 	if node.hasChildNodes() :
 		for child in node.childNodes:
 			if child.nodeType == 1 :
@@ -723,6 +738,7 @@ def removeDuplicateGradients(doc):
 	num = 0
 	
 	gradientsToRemove = {}
+	duplicateToMaster = {}
 
 	for gradType in ['linearGradient', 'radialGradient']:
 		grads = doc.getElementsByTagNameNS(NS['SVG'], gradType)
@@ -734,9 +750,13 @@ def removeDuplicateGradients(doc):
 
 				# compare grad to ograd (all properties, then all stops)
 				# if attributes do not match, go to next gradient
+				someGradAttrsDoNotMatch = False
 				for attr in ['gradientUnits','spreadMethod','gradientTransform','x1','y1','x2','y2','cx','cy','fx','fy','r']:
 					if grad.getAttribute(attr) != ograd.getAttribute(attr):
-						continue
+						someGradAttrsDoNotMatch = True
+						break;
+				
+				if someGradAttrsDoNotMatch: continue
 
 				# compare xlink:href values too
 				if grad.getAttributeNS(NS['XLINK'], 'href') != ograd.getAttributeNS(NS['XLINK'], 'href'):
@@ -763,9 +783,11 @@ def removeDuplicateGradients(doc):
 				# ograd is a duplicate of grad, we schedule it to be removed UNLESS
 				# ograd is ALREADY considered a 'master' element
 				if not gradientsToRemove.has_key(ograd):
-					if not gradientsToRemove.has_key(grad):
-						gradientsToRemove[grad] = []
-					gradientsToRemove[grad].append( ograd )
+					if not duplicateToMaster.has_key(ograd):
+						if not gradientsToRemove.has_key(grad):
+							gradientsToRemove[grad] = []
+						gradientsToRemove[grad].append( ograd )
+						duplicateToMaster[ograd] = grad
 	
 	# get a collection of all elements that are referenced and their referencing elements
 	referencedIDs = findReferencedElements(doc.documentElement)
@@ -809,7 +831,7 @@ def repairStyle(node, options):
 		for prop in ['fill', 'stroke'] :
 			if styleMap.has_key(prop) :
 				chunk = styleMap[prop].split(') ')
-				if len(chunk) == 2 and chunk[0][:5] == 'url(#' and chunk[1] == 'rgb(0, 0, 0)' :
+				if len(chunk) == 2 and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#") and chunk[1] == 'rgb(0, 0, 0)' :
 					styleMap[prop] = chunk[0] + ')'
 					num += 1
 
@@ -1529,38 +1551,44 @@ def scourCoordinates(data):
 	if data != None:
 		c = 0
 		for coord in data:
-			# reduce to the proper number of digits
-			coord = Decimal(coord) * Decimal(1)
-
-			# integerize if we can
-			if int(coord) == coord: coord = Decimal(str(int(coord)))
-				
-			# Decimal.trim() is available in Python 2.6+ to trim trailing zeros
-			try:
-				coord = coord.trim()
-			except AttributeError:
-				# trim it ourselves
-				s = str(coord)
-				dec = s.find('.')
-				if dec != -1:
-					while s[-1] == '0':
-						s = s[:-1]
-				coord = Decimal(s)
-
-			# Decimal.normalize() will uses scientific notation - if that
-			# string is smaller, then use it
-			normd = coord.normalize()
-			if len(str(normd)) < len(str(coord)):
-				coord = normd
-
-			# finally add the coordinate to the path string
-			coordsStr += str(coord)
+			# add the scoured coordinate to the path string
+			coordsStr += scourLength(coord)
 			
 			# only need the comma if the next number is non-negative
 			if c < len(data)-1 and Decimal(data[c+1]) >= 0:
 				coordsStr += ','
 			c += 1
 	return coordsStr
+
+def scourLength(str):
+	length = SVGLength(str)
+	coord = length.value
+	
+	# reduce to the proper number of digits
+	coord = Decimal(unicode(coord)) * Decimal(1)
+	
+	# integerize if we can
+	if int(coord) == coord: coord = Decimal(unicode(int(coord)))
+
+	# Decimal.trim() is available in Python 2.6+ to trim trailing zeros
+	try:
+		coord = coord.trim()
+	except AttributeError:
+		# trim it ourselves
+		s = unicode(coord)
+		dec = s.find('.')
+		if dec != -1:
+			while s[-1] == '0':
+				s = s[:-1]
+		coord = Decimal(s)
+
+		# Decimal.normalize() will uses scientific notation - if that
+		# string is smaller, then use it
+		normd = coord.normalize()
+		if len(unicode(normd)) < len(unicode(coord)):
+			coord = normd
+	
+	return unicode(coord)+Unit.str(length.units)
 
 def embedRasters(element, options) :
 	"""
@@ -1751,6 +1779,13 @@ def scourString(in_string, options=None):
 	# scour points of polyline
 	for polyline in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polyline') :
 		cleanPolygon(polyline)
+	
+	# scour lengths (including coordinates)
+	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop']:
+		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], type):
+			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
+				if elem.getAttribute(attr) != '':
+					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
 
 	# convert rasters references to base64-encoded strings 
 	if options.embed_rasters:
