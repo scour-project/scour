@@ -461,8 +461,7 @@ class InheritGradientUnitsUponCollapsing(unittest.TestCase):
 class OverrideGradientUnitsUponCollapsing(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/collapse-gradients-gradientUnits.svg')
-		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')[0].getAttribute('gradientUnits'), 
-			'objectBoundingBox',
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')[0].getAttribute('gradientUnits'), '',
 			'gradientUnits not properly overrode when collapsing gradients' )
 
 class DoNotCollapseMultiplyReferencedGradients(unittest.TestCase):
@@ -742,7 +741,73 @@ class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
 		r = doc.getElementsByTagNameNS(SVGNS, 'rect')[1]
 		self.assertEquals( r.tagName, 'rect',
 			'Redundant svg: prefix not removed')
-		
+
+class RemoveDefaultGradX1Value(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('x1'), '',
+			'x1="0" not removed')
+
+class RemoveDefaultGradY1Value(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('y1'), '',
+			'y1="0" not removed')
+
+class RemoveDefaultGradX2Value(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('x2'), '',
+			'x2="100%" not removed')
+
+class RemoveDefaultGradY2Value(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('y2'), '',
+			'y2="0" not removed')
+
+class RemoveDefaultGradGradientUnitsValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('gradientUnits'), '',
+			'gradientUnits="objectBoundingBox" not removed')
+
+class RemoveDefaultGradSpreadMethodValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		self.assertEquals( g.getAttribute('spreadMethod'), '',
+			'spreadMethod="pad" not removed')
+
+class RemoveDefaultGradCXValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		self.assertEquals( g.getAttribute('cx'), '',
+			'cx="50%" not removed')
+
+class RemoveDefaultGradCYValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		self.assertEquals( g.getAttribute('cy'), '',
+			'cy="50%" not removed')
+
+class RemoveDefaultGradRValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		self.assertEquals( g.getAttribute('r'), '',
+			'r="50%" not removed')
+
+class RemoveDefaultGradFXValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		self.assertEquals( g.getAttribute('fx'), '',
+			'fx matching cx not removed')
+
+class RemoveDefaultGradFYValue(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		self.assertEquals( g.getAttribute('fy'), '',
+			'fy matching cy not removed')
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

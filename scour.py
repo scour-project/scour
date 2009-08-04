@@ -59,6 +59,7 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
+# - add an option for svgweb compatible markup (no self-closing tags)?
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
@@ -978,6 +979,87 @@ def repairStyle(node, options):
 			
 	return num
 
+def removeDefaultAttributeValues(node, options):
+	num = 0
+	if node.nodeType != 1: return 0
+	
+	# gradientUnits: objectBoundingBox
+	if node.getAttribute('gradientUnits') == 'objectBoundingBox':
+		node.removeAttribute('gradientUnits')
+		num += 1
+		
+	# spreadMethod: pad
+	if node.getAttribute('spreadMethod') == 'pad':
+		node.removeAttribute('spreadMethod')
+		num += 1
+		
+	# x1: 0%
+	if node.getAttribute('x1') != '':
+		x1 = SVGLength(node.getAttribute('x1'))
+		if x1.value == 0:
+			node.removeAttribute('x1')
+			num += 1
+
+	# y1: 0%
+	if node.getAttribute('y1') != '':
+		y1 = SVGLength(node.getAttribute('y1'))
+		if y1.value == 0:
+			node.removeAttribute('y1')
+			num += 1
+
+	# x2: 100%
+	if node.getAttribute('x2') != '':
+		x2 = SVGLength(node.getAttribute('x2'))
+		if (x2.value == 100 and x2.units == Unit.PCT) or (x2.value == 1 and x2.units == Unit.NONE):
+			node.removeAttribute('x2')
+			num += 1
+
+	# y2: 0%
+	if node.getAttribute('y2') != '':
+		y2 = SVGLength(node.getAttribute('y2'))
+		if y2.value == 0:
+			node.removeAttribute('y2')
+			num += 1
+
+	# fx: equal to rx
+	if node.getAttribute('fx') != '':
+		if node.getAttribute('fx') == node.getAttribute('cx'):
+			node.removeAttribute('fx')
+			num += 1
+
+	# fy: equal to ry
+	if node.getAttribute('fy') != '':
+		if node.getAttribute('fy') == node.getAttribute('cy'):
+			node.removeAttribute('fy')
+			num += 1
+
+	# cx: 50%
+	if node.getAttribute('cx') != '':
+		cx = SVGLength(node.getAttribute('cx'))
+		if (cx.value == 50 and cx.units == Unit.PCT) or (cx.value == 0.5 and cx.units == Unit.NONE):
+			node.removeAttribute('cx')
+			num += 1
+
+	# cy: 50%
+	if node.getAttribute('cy') != '':
+		cy = SVGLength(node.getAttribute('cy'))
+		if (cy.value == 50 and cy.units == Unit.PCT) or (cy.value == 0.5 and cy.units == Unit.NONE):
+			node.removeAttribute('cy')
+			num += 1
+
+	# r: 50%
+	if node.getAttribute('r') != '':
+		r = SVGLength(node.getAttribute('r'))
+		if (r.value == 50 and r.units == Unit.PCT) or (r.value == 0.5 and r.units == Unit.NONE):
+			node.removeAttribute('r')
+			num += 1
+
+	# recurse for our child elements
+	for child in node.childNodes :
+		num += removeDefaultAttributeValues(child,options)
+	
+	return num
+
 rgb = re.compile("\\s*rgb\\(\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\)\\s*")
 rgbp = re.compile("\\s*rgb\\(\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\)\\s*")
 def convertColor(value):
@@ -1839,6 +1921,10 @@ def scourString(in_string, options=None):
 				if elem.getAttribute(attr) != '':
 					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
 
+	# remove default values of attributes
+#	print doc.documentElement.toxml()
+	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)		
+	
 	# convert rasters references to base64-encoded strings 
 	if options.embed_rasters:
 		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
