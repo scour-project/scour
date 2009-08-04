@@ -59,11 +59,6 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
-# + remove duplicate gradients
-# + remove all empty path segments
-# + scour polyline coordinates just like path coordinates
-# + scour all lengths, coordinates
-# + remove redundant SVG namespace declarations and prefixes
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
@@ -92,7 +87,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.17'
+VER = '0.18'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
