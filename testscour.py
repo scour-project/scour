@@ -548,6 +548,18 @@ class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
 		self.assertEquals(path[2][1][0], 100.0,
 			'Did not calculate vertical line segment in path correctly' )
 
+class ChangeBezierToShorthandInPath(unittest.TestCase):
+	def runTest(self):
+		path = scour.scourXmlFile('unittests/path-bez-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals(path.getAttribute('d'), 'm10,100c50-50,50,50,100,0s50,50,100,0',
+			'Did not change bezier curves into shorthand curve segments in path')
+
+class ChangeQuadToShorthandInPath(unittest.TestCase):
+	def runTest(self):
+		path = scour.scourXmlFile('unittests/path-quad-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals(path.getAttribute('d'), 'm10,100q50-50,100,0t100,0',
+			'Did not change quadratic curves into shorthand curve segments in path')
+
 class HandleNonAsciiUtf8(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/utf8.svg')

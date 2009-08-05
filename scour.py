@@ -65,6 +65,8 @@
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
+# - Convert path segment c into s where possible: http://www.w3.org/TR/SVG11/paths.html#PathDataCubicBezierCommands
+# - Convert path segment q into t where possible: http://www.w3.org/TR/SVG11/paths.html#PathDataQuadraticBezierCommands
 
 # necessary to get true division
 from __future__ import division
@@ -1500,9 +1502,10 @@ def cleanPath(element) :
 		newPath.append( (prevCmd, prevData) )
 	path = newPath
 
-	# convert line segments into h,v where possible	
+	# convert to shorthand path segments where possible
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
+		# convert line segments into h,v where possible	
 		if cmd == 'l':
 			i = 0
 			lineTuples = []
@@ -1529,6 +1532,12 @@ def cleanPath(element) :
 				i += 2
 			if lineTuples:
 				newPath.append( ('l', lineTuples) )
+		# convert Bézier curve segments into s where possible	
+		elif cmd == 'c':
+			newPath.append( (cmd, data) )
+		# convert quadratic curve segments into t where possible	
+		elif cmd == 'q':
+			newPath.append( (cmd, data) )
 		else:
 			newPath.append( (cmd, data) )
 	path = newPath
