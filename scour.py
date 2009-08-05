@@ -28,11 +28,9 @@
 # TODO: Adapt this script into an Inkscape python plugin
 #
 # * Process Transformations
-#  * Process quadratic Bezier curves
 #  * Collapse all group based transformations
 
 # Even more ideas here: http://esw.w3.org/topic/SvgTidy
-#  * removal of more default attribute values (gradientUnits, spreadMethod, x1, y1, etc)
 #  * analysis of path elements to see if rect can be used instead?
 #  * removal of unused attributes in groups:
 #    <g fill="blue" ...>
@@ -59,14 +57,14 @@
 #    This would require my own serialization of the DOM objects (not impossible)
 
 # Next Up:
+# + Remove some attributes that have default values
+# + Convert c/q path segments into shorthand equivalents where possible: 
 # - add an option for svgweb compatible markup (no self-closing tags)?
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
-# - Convert path segment c into s where possible: http://www.w3.org/TR/SVG11/paths.html#PathDataCubicBezierCommands
-# - Convert path segment q into t where possible: http://www.w3.org/TR/SVG11/paths.html#PathDataQuadraticBezierCommands
 
 # necessary to get true division
 from __future__ import division
@@ -1534,10 +1532,54 @@ def cleanPath(element) :
 				newPath.append( ('l', lineTuples) )
 		# convert Bézier curve segments into s where possible	
 		elif cmd == 'c':
-			newPath.append( (cmd, data) )
+			bez_ctl_pt = (0,0)
+			i = 0
+			curveTuples = []
+			while i < len(data):
+				# rotate by 180deg means negate both coordinates
+				# if the previous control point is equal then we can substitute a
+				# shorthand bezier command
+				if bez_ctl_pt[0] == data[i] and bez_ctl_pt[1] == data[i+1]:
+					if curveTuples:
+						newPath.append( ('c', curveTuples) )
+						curveTuples = []
+					# append the s command
+					newPath.append( ('s', [data[i+2], data[i+3], data[i+4], data[i+5]]) )
+				else:
+					j = 0
+					while j <= 5:
+						curveTuples.append(data[i+j])
+						j += 1
+				
+				# set up control point for next curve segment
+				bez_ctl_pt = (data[i+4]-data[i+2], data[i+5]-data[i+3])
+				i += 6
+				
+			if curveTuples:
+				newPath.append( ('c', curveTuples) )
 		# convert quadratic curve segments into t where possible	
 		elif cmd == 'q':
-			newPath.append( (cmd, data) )
+			quad_ctl_pt = (0,0)
+			i = 0
+			curveTuples = []
+			while i < len(data):
+				if quad_ctl_pt[0] == data[i] and quad_ctl_pt[1] == data[i+1]:
+					if curveTuples:
+						newPath.append( ('q', curveTuples) )
+						curveTuples = []
+					# append the t command
+					newPath.append( ('t', [data[i+2], data[i+3]]) )
+				else:
+					j = 0;
+					while j <= 3:
+						curveTuples.append(data[i+j])
+						j += 1
+				
+				quad_ctl_pt = (data[i+2]-data[i], data[i+3]-data[i+1])
+				i += 4
+				
+			if curveTuples:
+				newPath.append( ('q', curveTuples) )
 		else:
 			newPath.append( (cmd, data) )
 	path = newPath
