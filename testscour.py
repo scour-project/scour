@@ -820,6 +820,17 @@ class RemoveDefaultGradFYValue(unittest.TestCase):
 		self.assertEquals( g.getAttribute('fy'), '',
 			'fy matching cy not removed')
 
+class CDATAInXml(unittest.TestCase):
+	def runTest(self):
+		self.assertEquals( scour.scourString(open('unittests/cdata.svg').read()), 
+			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <script type="application/ecmascript"><![CDATA[
+  	alert('pb&j');
+ ]]></script>
+</svg>''',
+			'Improperly serialized the cdata unit tests')
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

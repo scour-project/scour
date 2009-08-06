@@ -51,13 +51,12 @@
 #      <rect />
 #    </g>
 
-# Suggestion from Richard Hutch:
-#  * Put id attributes first in the serialization (or make the d attribute last)
-#    This would require my own serialization of the DOM objects (not impossible)
-
 # Next Up:
 # + Remove some attributes that have default values
 # + Convert c/q path segments into shorthand equivalents where possible: 
+# + custom serialization of SVG that prints out id/xml:id first (suggestion by Richard Hutch)
+# + --indent option to specify how indent should work: space, tab, none
+# - option to remove metadata
 # - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
@@ -1876,6 +1875,82 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 	for child in node.childNodes :
 		remapNamespacePrefix(child, oldprefix, newprefix)	
 
+# hand-rolled serialization function that has the following benefits:
+# - pretty printing
+# - somewhat judicious use of whitespace
+# - ensure id attributes are first
+def serializeXML(element, options, ind = 0):
+	indent = ind
+	I=''
+	if options.indent_type == 'tab': I='\t'
+	elif options.indent_type == 'space': I=' '
+	
+	outString = (I * ind) + '<' + element.nodeName
+
+	# always serialize the id or xml:id attributes first
+	if element.getAttribute('id') != '':
+		id = element.getAttribute('id')
+		quot = '"'
+		if id.find('"') != -1:
+			quot = "'"
+		outString += ' ' + 'id=' + quot + id + quot
+	if element.getAttribute('xml:id') != '':
+		id = element.getAttribute('xml:id')
+		quot = '"'
+		if id.find('"') != -1:
+			quot = "'"
+		outString += ' ' + 'xml:id=' + quot + id + quot
+	
+	# now serialize the other attributes
+	attrList = element.attributes
+	for num in range(attrList.length) :
+		attr = attrList.item(num)
+		if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
+		# if the attribute value contains a double-quote, use single-quotes
+		quot = '"'
+		if attr.nodeValue.find('"') != -1:
+			quot = "'"
+
+		outString += ' ' + attr.nodeName + '=' + quot + attr.nodeValue + quot
+	
+	# if no children, self-close
+	children = element.childNodes
+	if children.length > 0:
+		outString += '>'
+	
+		onNewLine = False
+		for child in element.childNodes:
+			# element node
+			if child.nodeType == 1:
+				outString += '\n' + serializeXML(child, options, indent + 1)
+				onNewLine = True
+			# text node
+			elif child.nodeType == 3:
+				# trim it only in the case of not being a child of an element
+				# where whitespace might be important
+				if element.nodeName in ["text", "tspan", "textPath", "tref", "title", "desc", "textArea"]:
+					outString += child.nodeValue
+				else:
+					outString += child.nodeValue.strip()
+			# CDATA node
+			elif child.nodeType == 4:
+				outString += '<![CDATA[' + child.nodeValue + ']]>'
+			# Comment node
+			elif child.nodeType == 8:
+				outString += '<!--' + child.nodeValue + '-->'
+			# TODO: entities, processing instructions, what else?
+			else: # ignore the rest
+				pass
+				
+		if onNewLine: outString += (I * ind)
+		outString += '</' + element.nodeName + '>'
+		if indent > 0: outString += '\n'
+	else:
+		outString += '/>'
+		if indent > 0: outString += '\n'
+		
+	return outString
+	
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
@@ -2004,7 +2079,6 @@ def scourString(in_string, options=None):
 					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
 
 	# remove default values of attributes
-#	print doc.documentElement.toxml()
 	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)		
 	
 	# convert rasters references to base64-encoded strings 
@@ -2018,8 +2092,9 @@ def scourString(in_string, options=None):
 	# output the document as a pretty string with a single space for indent
 	# NOTE: removed pretty printing because of this problem:
 	# http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+	# rolled our own serialize function here to save on space, put id first, customize indentation, etc
 #	out_string = doc.documentElement.toprettyxml(' ')
-	out_string = doc.documentElement.toxml()
+	out_string = serializeXML(doc.documentElement, options)
 	
 	# now strip out empty lines
 	lines = []
@@ -2096,6 +2171,9 @@ _options_parser.add_option("-i",
 	action="store", dest="infilename", help=optparse.SUPPRESS_HELP)
 _options_parser.add_option("-o",
 	action="store", dest="outfilename", help=optparse.SUPPRESS_HELP)
+_options_parser.add_option("--indent",
+	action="store", type="string", dest="indent_type", default="space",
+	help="indentation of the output: none, space, tab (default: %default)")
 
 def maybe_gziped_file(filename, mode="r"):
 	if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
@@ -2109,6 +2187,9 @@ def parse_args(args=None):
 		_options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
 	if options.digits < 0:
 		_options_parser.error("Can't have negative significant digits, see --help")
+	if not options.indent_type in ["tab", "space", "none"]:
+		_options_parser.error("Invalid value for --indent, see --help")
+
 	if options.infilename:
 		infile = maybe_gziped_file(options.infilename)
 		# GZ: could catch a raised IOError here and report
@@ -2119,7 +2200,7 @@ def parse_args(args=None):
 		outfile = maybe_gziped_file(options.outfilename, "w")
 	else:
 		outfile = sys.stdout
-
+		
 	return options, [infile, outfile]
 
 def getReport():
