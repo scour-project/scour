@@ -25,7 +25,6 @@
 # (and implemented here: http://intertwingly.net/code/svgtidy/svgtidy.rb )
 
 # Yet more ideas here: http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
-# TODO: Adapt this script into an Inkscape python plugin
 #
 # * Process Transformations
 #  * Collapse all group based transformations
@@ -59,12 +58,13 @@
 # Next Up:
 # + Remove some attributes that have default values
 # + Convert c/q path segments into shorthand equivalents where possible: 
-# - add an option for svgweb compatible markup (no self-closing tags)?
+# - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - Remove any unused glyphs from font elements?
+# - add an option for svgweb compatible markup (no self-closing tags)?
 
 # necessary to get true division
 from __future__ import division
@@ -1129,6 +1129,9 @@ def convertColors(element) :
 
 	return numBytes
 
+# TODO: go over what this method does and see if there is a way to optimize it
+# TODO: go over the performance of this method and see if I can save memory/speed by
+#       reusing data structures, etc
 def cleanPath(element) :
 	"""
 		Cleans the path string (d attribute) of the element 
@@ -1479,15 +1482,14 @@ def cleanPath(element) :
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
 		# flush the previous command if it is not the same type as the current command
-		# or it is not an h or v line
 		if prevCmd != '':
-			if cmd != prevCmd:# or not prevCmd in ['h','v']:
+			if cmd != prevCmd:
 				newPath.append( (prevCmd, prevData) )
 				prevCmd = ''
 				prevData = []
 		
-		# if the previous and current commands are the same type and a h/v line, collapse
-		if cmd == prevCmd: # and cmd in ['h','v','l']:
+		# if the previous and current commands are the same type, collapse
+		if cmd == prevCmd: 
 			for coord in data:
 				prevData.append(coord)
 		
@@ -1545,6 +1547,7 @@ def cleanPath(element) :
 						curveTuples = []
 					# append the s command
 					newPath.append( ('s', [data[i+2], data[i+3], data[i+4], data[i+5]]) )
+					numPathSegmentsReduced += 1
 				else:
 					j = 0
 					while j <= 5:
@@ -1569,6 +1572,7 @@ def cleanPath(element) :
 						curveTuples = []
 					# append the t command
 					newPath.append( ('t', [data[i+2], data[i+3]]) )
+					numPathSegmentsReduced += 1
 				else:
 					j = 0;
 					while j <= 3:
@@ -1583,7 +1587,7 @@ def cleanPath(element) :
 		else:
 			newPath.append( (cmd, data) )
 	path = newPath
-
+		
 	# for each h or v, collapse unnecessary coordinates that run in the same direction
 	# i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
 	newPath = [path[0]]
@@ -1602,6 +1606,33 @@ def cleanPath(element) :
 			newPath.append( (cmd, newData) )
 		else:
 			newPath.append( (cmd, data) )
+	path = newPath
+	
+	# it is possible that we have consecutive h, v, c, t commands now
+	# so again collapse all consecutive commands of the same type into one command
+	prevCmd = ''
+	prevData = []
+	newPath = [path[0]]
+	for (cmd,data) in path[1:]:
+		# flush the previous command if it is not the same type as the current command
+		if prevCmd != '':
+			if cmd != prevCmd:
+				newPath.append( (prevCmd, prevData) )
+				prevCmd = ''
+				prevData = []
+		
+		# if the previous and current commands are the same type, collapse
+		if cmd == prevCmd: 
+			for coord in data:
+				prevData.append(coord)
+		
+		# save last command and data
+		else:
+			prevCmd = cmd
+			prevData = data
+	# flush last command and data
+	if prevCmd != '':
+		newPath.append( (prevCmd, prevData) )
 	path = newPath
 	
 	newPathStr = serializePath(path)
