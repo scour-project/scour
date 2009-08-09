@@ -46,6 +46,7 @@ class ScourOptions:
 	embed_rasters = True
 	keep_editor_data = False
 	strip_xml_prolog = False
+	indent_type = "space"
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -753,6 +754,7 @@ class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
 		r = doc.getElementsByTagNameNS(SVGNS, 'rect')[1]
 		self.assertEquals( r.tagName, 'rect',
 			'Redundant svg: prefix not removed')
+
 
 class RemoveDefaultGradX1Value(unittest.TestCase):
 	def runTest(self):

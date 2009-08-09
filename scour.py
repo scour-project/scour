@@ -30,7 +30,8 @@
 #  * Collapse all group based transformations
 
 # Even more ideas here: http://esw.w3.org/topic/SvgTidy
-#  * analysis of path elements to see if rect can be used instead?
+#  * analysis of path elements to see if rect can be used instead? (must also need to look
+#    at rounded corners)
 #  * removal of unused attributes in groups:
 #    <g fill="blue" ...>
 #      <rect fill="red" ... />
@@ -1866,7 +1867,7 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 	
 		# clone and add all the child nodes
 		for child in node.childNodes:
-			newNode.appendChild(child.cloneNode(true))
+			newNode.appendChild(child.cloneNode(True))
 			
 		# replace old node with new node
 		node = parent.replaceChild( newNode, node )
