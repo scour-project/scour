@@ -1876,6 +1876,23 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 	for child in node.childNodes :
 		remapNamespacePrefix(child, oldprefix, newprefix)	
 
+def makeWellFormed(str):
+	newstr = str
+	
+	# encode & as &amp; ( must do this first so that &lt; does not become &amp;lt; )
+	if str.find('&') != -1:
+		newstr = str.replace('&', '&amp;')
+			
+	# encode < as &lt;
+	if str.find("<") != -1:
+		newstr = str.replace('<', '&lt;')
+		
+	# encode > as &gt; (TODO: is this necessary?)
+	if str.find('>') != -1:
+		newstr = str.replace('>', '&gt;')
+	
+	return newstr
+
 # hand-rolled serialization function that has the following benefits:
 # - pretty printing
 # - somewhat judicious use of whitespace
@@ -1912,7 +1929,9 @@ def serializeXML(element, options, ind = 0):
 		if attr.nodeValue.find('"') != -1:
 			quot = "'"
 
-		outString += ' ' + attr.nodeName + '=' + quot + attr.nodeValue + quot
+		attrValue = makeWellFormed( attr.nodeValue )
+					
+		outString += ' ' + attr.nodeName + '=' + quot + attrValue + quot
 	
 	# if no children, self-close
 	children = element.childNodes
@@ -1930,9 +1949,9 @@ def serializeXML(element, options, ind = 0):
 				# trim it only in the case of not being a child of an element
 				# where whitespace might be important
 				if element.nodeName in ["text", "tspan", "textPath", "tref", "title", "desc", "textArea"]:
-					outString += child.nodeValue
+					outString += makeWellFormed(child.nodeValue)
 				else:
-					outString += child.nodeValue.strip()
+					outString += makeWellFormed(child.nodeValue.strip())
 			# CDATA node
 			elif child.nodeType == 4:
 				outString += '<![CDATA[' + child.nodeValue + ']]>'

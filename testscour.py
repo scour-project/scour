@@ -833,6 +833,30 @@ class CDATAInXml(unittest.TestCase):
 </svg>''',
 			'Improperly serialized the cdata unit tests')
 
+class WellFormedXMLLesserThanInAttrValue(unittest.TestCase):
+	def runTest(self):
+		wellformed = scour.scourString(open('unittests/xml-well-formed.svg').read())
+		self.assert_( wellformed.find('unicode="&lt;"') != -1,
+			"Improperly serialized &lt; in attribute value")
+
+class WellFormedXMLAmpersandInAttrValue(unittest.TestCase):
+	def runTest(self):
+		wellformed = scour.scourString(open('unittests/xml-well-formed.svg').read())
+		self.assert_( wellformed.find('unicode="&amp;"') != -1,
+			'Improperly serialized &amp; in attribute value' )
+
+class WellFormedXMLLesserThanInTextContent(unittest.TestCase):
+	def runTest(self):
+		wellformed = scour.scourString(open('unittests/xml-well-formed.svg').read())
+		self.assert_( wellformed.find('<title>2 &lt; 5</title>') != -1,
+			'Improperly serialized &lt; in text content')
+
+class WellFormedXMLAmpersandInTextContent(unittest.TestCase):
+	def runTest(self):
+		wellformed = scour.scourString(open('unittests/xml-well-formed.svg').read())
+		self.assert_( wellformed.find('<desc>Peanut Butter &amp; Jelly</desc>') != -1,
+			'Improperly serialized &amp; in text content')
+			
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

@@ -87,6 +87,7 @@ class ScourOptions:
 	embed_rasters = False
 	keep_editor_data = False
 	strip_xml_prolog = False
+	indent_type = "space"
 
 # params are the form elements (if a checkbox is unchecked it will not be present)
 def fetch(req, indoc,**params):
