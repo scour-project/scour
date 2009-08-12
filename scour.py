@@ -650,6 +650,9 @@ def moveCommonAttributesToParentGroup(elem):
 	
 	commonAttrs = {}
 	# add all inheritable properties of the first child element
+	# FIXME: Note there is a chance that the first child is a set/animate in which case
+	# its fill attribute is not what we want to look at, we should look for the first
+	# non-animate/set element
 	attrList = childElements[0].attributes
 	for num in range(attrList.length):
 		attr = attrList.item(num)
@@ -671,8 +674,15 @@ def moveCommonAttributesToParentGroup(elem):
 	
 	# for each subsequent child element
 	for childNum in range(len(childElements)):
-		if childNum == 0: continue
+		# skip first child
+		if childNum == 0: 
+			continue
+			
 		child = childElements[childNum]
+		# if we are on an animateXXX/set element, ignore it (due to the 'fill' attribute)
+		if child.localName in ['set', 'animate', 'animateColor', 'animateTransform', 'animateMotion']:
+			continue
+			
 		distinctAttrs = []
 		# loop through all current 'common' attributes
 		for name in commonAttrs.keys():
