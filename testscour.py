@@ -874,6 +874,24 @@ class MoveSVGElementsToDefaultNamespace(unittest.TestCase):
 		xmlstring = scour.scourString(open('unittests/xml-ns-decl.svg').read())
 		self.assert_( xmlstring.find('<rect ') != -1,
 			'Did not bring SVG elements into the default namespace')
+
+class MoveCommonAttributesToParent(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/move-common-attributes-to-parent.svg').getElementsByTagNameNS(SVGNS, 'g')[0]
+		self.assertEquals( g.getAttribute('fill'), '#0F0',
+			'Did not move common fill attribute to parent group')
+
+class RemoveCommonAttributesFromChild(unittest.TestCase):
+	def runTest(self):
+		r = scour.scourXmlFile('unittests/move-common-attributes-to-parent.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+		self.assertNotEquals( r.getAttribute('fill'), '#0F0',
+			'Did not remove common fill attribute from child')
+
+class PropagateCommonAttributesUp(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/move-common-attributes-to-grandparent.svg').getElementsByTagNameNS(SVGNS, 'g')[0]
+		self.assertEquals( g.getAttribute('fill'), '#0F0',
+			'Did not move common fill attribute to grandparent')
 		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

@@ -39,24 +39,12 @@
 #      <rect fill="red" ... />
 #    </g>
 #    in this case, fill="blue" should be removed
-#  * Move common attributes up to a parent group:
-#    <g>
-#      <rect fill="white"/>
-#      <rect fill="white"/>
-#      <rect fill="white"/>
-#    </g>
-#    becomes:
-#    <g fill="white">
-#      <rect />
-#      <rect />
-#      <rect />
-#    </g>
 
 # Next Up:
-# - analyze all children of a group, if they have common attributes, then move them to the group
+# + analyze all children of a group, if they have common inheritable attributes, then move them to the group
+# - crunch *opacity, offset, svg:x,y, stroke-miterlimit, stroke-width numbers (remove trailing zeros, reduce prec, integerize)
 # - analyze a group and its children, if a group's attribute is not being used by any children 
 #   (or descendants?) then remove it
-# - crunch *opacity, offset, svg:x,y, transform numbers (remove trailing zeros, reduce prec, integerize)
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
@@ -609,10 +597,12 @@ def removeNamespacedElements(node, namespaces):
 			num += removeNamespacedElements(child, namespaces)
 	return num
 
-# this walks further and further down the tree, removing groups
-# which do not have any attributes or a title/desc child and 
-# promoting their children up one level
 def removeNestedGroups(node):
+	""" 
+	This walks further and further down the tree, removing groups
+	which do not have any attributes or a title/desc child and 
+	promoting their children up one level
+	"""
 	global numElemsRemoved
 	num = 0
 	
@@ -640,6 +630,69 @@ def removeNestedGroups(node):
 			num += removeNestedGroups(child)		
 	return num
 
+def moveCommonAttributesToParentGroup(elem):
+	""" 
+	This iterates through all children of the passed in g element and 
+	removes common inheritable attributes from the children and places
+	them in the parent group
+	"""
+	num = 0
+	
+	childElements = []
+	# recurse first into the children (depth-first)
+	for child in elem.childNodes:
+		if child.nodeType == 1: 
+			childElements.append(child)
+			num += moveCommonAttributesToParentGroup(child)
+
+	# only process the children if there are more than one element
+	if len(childElements) <= 1: return num
+	
+	commonAttrs = {}
+	# add all inheritable properties of the first child element
+	attrList = childElements[0].attributes
+	for num in range(attrList.length):
+		attr = attrList.item(num)
+		# this is most of the inheritable properties from http://www.w3.org/TR/SVG11/propidx.html
+		# and http://www.w3.org/TR/SVGTiny12/attributeTable.html
+		if attr.nodeName in ['clip-rule',
+					'display-align', 
+					'fill', 'fill-opacity', 'fill-rule', 
+					'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
+					'font-style', 'font-variant', 'font-weight',
+					'letter-spacing',
+					'pointer-events', 'shape-rendering',
+					'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
+					'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
+					'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+					'word-spacing', 'writing-mode']:
+			# we just add all the attributes from the first child
+			commonAttrs[attr.nodeName] = attr.nodeValue
+	
+	# for each subsequent child element
+	for childNum in range(len(childElements)):
+		if childNum == 0: continue
+		child = childElements[childNum]
+		distinctAttrs = []
+		# loop through all current 'common' attributes
+		for name in commonAttrs.keys():
+			# if this child doesn't match that attribute, schedule it for removal
+			if child.getAttribute(name) != commonAttrs[name]:
+				distinctAttrs.append(name)
+		# remove those attributes which are not common
+		for name in distinctAttrs:
+			del commonAttrs[name]
+	
+	# commonAttrs now has all the inheritable attributes which are common among all child elements
+	for name in commonAttrs.keys():
+		for child in childElements:
+			child.removeAttribute(name)
+		elem.setAttribute(name, commonAttrs[name])
+
+	# update our statistic (we remove N*M attributes and add back in M attributes)
+	num += (len(childElements)-1) * len(commonAttrs)
+	return num
+	
 def removeDuplicateGradientStops(doc):
 	global numElemsRemoved
 	num = 0
@@ -2071,6 +2124,10 @@ def scourString(in_string, options=None):
 	if options.group_collapse:
 		while removeNestedGroups(doc.documentElement) > 0:
 			pass
+
+	# move common attributes to parent group
+	# TODO: should make sure this is called with most-nested groups first
+	numAttrsRemoved += moveCommonAttributesToParentGroup(doc.documentElement)
 
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
