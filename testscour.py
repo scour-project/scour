@@ -856,7 +856,12 @@ class WellFormedXMLAmpersandInTextContent(unittest.TestCase):
 		wellformed = scour.scourString(open('unittests/xml-well-formed.svg').read())
 		self.assert_( wellformed.find('<desc>Peanut Butter &amp; Jelly</desc>') != -1,
 			'Improperly serialized &amp; in text content')
-			
+
+class NamespaceDeclPrefixesInXML(unittest.TestCase):
+	def runTest(self):
+		xmlstring = scour.scourString(open('unittests/xml-ns-decl.svg').read())
+		self.assert_( xmlstring.find('xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"') != -1,
+			'Improperly serialized namespace prefix declarations')
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

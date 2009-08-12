@@ -53,17 +53,17 @@
 #    </g>
 
 # Next Up:
-# + Remove some attributes that have default values
-# + Convert c/q path segments into shorthand equivalents where possible: 
-# + custom serialization of SVG that prints out id/xml:id first (suggestion by Richard Hutch)
-# + --indent option to specify how indent should work: space, tab, none
-# - option to remove metadata
+# - analyze all children of a group, if they have common attributes, then move them to the group
+# - analyze a group and its children, if a group's attribute is not being used by any children 
+#   (or descendants?) then remove it
+# - crunch *opacity, offset values (remove trailing zeros, reduce prec, integerize)
+# - add an option to remove ids if they match the Inkscape-style of IDs
+# - investigate point-reducing algorithms
 # - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
-# - remove id if it matches the Inkscape-style of IDs (also provide a switch to disable this)
+# - option to remove metadata
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
-# - Remove any unused glyphs from font elements?
 # - add an option for svgweb compatible markup (no self-closing tags)?
 
 # necessary to get true division
@@ -88,7 +88,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.18'
+VER = '0.19'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -1930,8 +1930,12 @@ def serializeXML(element, options, ind = 0):
 			quot = "'"
 
 		attrValue = makeWellFormed( attr.nodeValue )
-					
-		outString += ' ' + attr.nodeName + '=' + quot + attrValue + quot
+		
+		outString += ' '
+		# preserve xmlns: if it is a namespace prefix declaration
+		if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
+			outString += 'xmlns:'
+		outString += attr.nodeName + '=' + quot + attrValue + quot
 	
 	# if no children, self-close
 	children = element.childNodes
