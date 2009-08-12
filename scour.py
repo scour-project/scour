@@ -1870,7 +1870,9 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 			newNode.appendChild(child.cloneNode(True))
 			
 		# replace old node with new node
-		node = parent.replaceChild( newNode, node )
+		parent.replaceChild( newNode, node )
+		# set the node to the new node in the remapped namespace prefix
+		node = newNode
 	
 	# now do all child nodes
 	for child in node.childNodes :
@@ -2009,10 +2011,11 @@ def scourString(in_string, options=None):
 			numAttrsRemoved += 1
 
 	# ensure namespace for SVG is declared
+	# TODO: what if the default namespace is something else (i.e. some valid namespace)?
 	if doc.documentElement.getAttribute('xmlns') != 'http://www.w3.org/2000/svg':
 		doc.documentElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
 		# TODO: throw error or warning?
-		
+	
 	# check for redundant SVG namespace declaration
 	attrList = doc.documentElement.attributes
 	xmlnsDeclsToRemove = []

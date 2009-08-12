@@ -868,6 +868,13 @@ class NamespaceDeclPrefixesInXMLWhenNotInDefaultNamespace(unittest.TestCase):
 		xmlstring = scour.scourString(open('unittests/xml-ns-decl.svg').read())
 		self.assert_( xmlstring.find('xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"') != -1,
 			'Improperly serialized namespace prefix declarations when not in default namespace')
+
+class MoveSVGElementsToDefaultNamespace(unittest.TestCase):
+	def runTest(self):
+		xmlstring = scour.scourString(open('unittests/xml-ns-decl.svg').read())
+		self.assert_( xmlstring.find('<rect ') != -1,
+			'Did not bring SVG elements into the default namespace')
+		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

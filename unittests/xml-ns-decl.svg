@@ -26,4 +26,5 @@
     <cc:permits id="permits6253" rdf:resource="http://web.resource.org/cc/DerivativeWorks"/>
    </cc:License>
   </rdf:RDF>
+  <svg:rect width="200" height="100" />
 </svg:svg>
