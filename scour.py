@@ -56,7 +56,7 @@
 # - analyze all children of a group, if they have common attributes, then move them to the group
 # - analyze a group and its children, if a group's attribute is not being used by any children 
 #   (or descendants?) then remove it
-# - crunch *opacity, offset values (remove trailing zeros, reduce prec, integerize)
+# - crunch *opacity, offset, svg:x,y, transform numbers (remove trailing zeros, reduce prec, integerize)
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
@@ -542,7 +542,7 @@ def removeUnreferencedElements(doc):
 
 	# TODO: should also go through defs and vacuum it
 	num = 0
-	defs = doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'defs')
+	defs = doc.documentElement.getElementsByTagName('defs')
 	for aDef in defs:
 		elemsToRemove = removeUnusedDefs(doc, aDef)
 		for elem in elemsToRemove:
@@ -645,10 +645,10 @@ def removeDuplicateGradientStops(doc):
 	num = 0
 	
 	for gradType in ['linearGradient', 'radialGradient']:
-		for grad in doc.getElementsByTagNameNS(NS['SVG'], gradType):
+		for grad in doc.getElementsByTagName(gradType):
 			stops = {}
 			stopsToRemove = []
-			for stop in grad.getElementsByTagNameNS(NS['SVG'], 'stop'):
+			for stop in grad.getElementsByTagName('stop'):
 				# convert percentages into a floating point number
 				offsetU = SVGLength(stop.getAttribute('offset'))
 				if offsetU.units == Unit.PCT:
@@ -696,8 +696,8 @@ def collapseSinglyReferencedGradients(doc):
 					# elem is a gradient referenced by only one other gradient (refElem)
 					
 					# add the stops to the referencing gradient (this removes them from elem)
-					if len(refElem.getElementsByTagNameNS(NS['SVG'], 'stop')) == 0:
-						stopsToAdd = elem.getElementsByTagNameNS(NS['SVG'], 'stop')
+					if len(refElem.getElementsByTagName('stop')) == 0:
+						stopsToAdd = elem.getElementsByTagName('stop')
 						for stop in stopsToAdd:
 							refElem.appendChild(stop)
 							
@@ -738,7 +738,7 @@ def removeDuplicateGradients(doc):
 	duplicateToMaster = {}
 
 	for gradType in ['linearGradient', 'radialGradient']:
-		grads = doc.getElementsByTagNameNS(NS['SVG'], gradType)
+		grads = doc.getElementsByTagName(gradType)
 		for grad in grads:
 			# TODO: should slice grads from 'grad' here to optimize
 			for ograd in grads:
@@ -760,8 +760,8 @@ def removeDuplicateGradients(doc):
 					continue
 
 				# all gradient properties match, now time to compare stops
-				stops = grad.getElementsByTagNameNS(NS['SVG'], 'stop')
-				ostops = ograd.getElementsByTagNameNS(NS['SVG'], 'stop')
+				stops = grad.getElementsByTagName('stop')
+				ostops = ograd.getElementsByTagName('stop')
 
 				if stops.length != ostops.length: continue
 
@@ -2045,7 +2045,7 @@ def scourString(in_string, options=None):
 	# NOTE: these elements will be removed even if they have (invalid) text nodes
 	elemsToRemove = []
 	for tag in ['defs', 'metadata', 'g'] :
-		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], tag) :
+		for elem in doc.documentElement.getElementsByTagName(tag) :
 			removeElem = not elem.hasChildNodes()
 			if removeElem == False :
 				for child in elem.childNodes :
@@ -2084,23 +2084,23 @@ def scourString(in_string, options=None):
 		pass
 	
 	# clean path data
-	for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'path') :
+	for elem in doc.documentElement.getElementsByTagName('path') :
 		if elem.getAttribute('d') == '':
 			elem.parentNode.removeChild(elem)
 		else:
 			cleanPath(elem)
 
 	# remove unnecessary closing point of polygons and scour points
-	for polygon in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polygon') :
+	for polygon in doc.documentElement.getElementsByTagName('polygon') :
 		cleanPolygon(polygon)
 
 	# scour points of polyline
-	for polyline in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'polyline') :
+	for polyline in doc.documentElement.getElementsByTagName('polyline') :
 		cleanPolygon(polyline)
 	
 	# scour lengths (including coordinates)
 	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop']:
-		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], type):
+		for elem in doc.documentElement.getElementsByTagName(type):
 			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
 				if elem.getAttribute(attr) != '':
 					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
@@ -2110,7 +2110,7 @@ def scourString(in_string, options=None):
 	
 	# convert rasters references to base64-encoded strings 
 	if options.embed_rasters:
-		for elem in doc.documentElement.getElementsByTagNameNS(NS['SVG'], 'image') :
+		for elem in doc.documentElement.getElementsByTagName('image') :
 			embedRasters(elem, options)		
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
