@@ -720,15 +720,19 @@ class CollapseSamePathPoints(unittest.TestCase):
 
 class ScourUnitlessLengths(unittest.TestCase):
 	def runTest(self):
-		r = scour.scourXmlFile('unittests/scour-lengths.svg').getElementsByTagNameNS(SVGNS, 'rect')[0];
+		doc = scour.scourXmlFile('unittests/scour-lengths.svg')
+		r = doc.getElementsByTagNameNS(SVGNS, 'rect')[0];
+		svg = doc.documentElement
+		self.assertEquals(svg.getAttribute('x'), '1',
+			'Did not scour x attribute of svg element with unitless number')
 		self.assertEquals(r.getAttribute('x'), '123.46',
-			'Did not scour x attribute unitless number')
+			'Did not scour x attribute of rect with unitless number')
 		self.assertEquals(r.getAttribute('y'), '123',
-			'Did not scour y attribute unitless number')
+			'Did not scour y attribute of rect unitless number')
 		self.assertEquals(r.getAttribute('width'), '300',
-			'Did not scour width attribute unitless number')
+			'Did not scour width attribute of rect with unitless number')
 		self.assertEquals(r.getAttribute('height'), '100',
-			'Did not scour height attribute unitless number')
+			'Did not scour height attribute of rect with unitless number')
 
 class ScourLengthsWithUnits(unittest.TestCase):
 	def runTest(self):
@@ -898,7 +902,20 @@ class PathEllipticalArcParsingCommaWsp(unittest.TestCase):
 		p = scour.scourXmlFile('unittests/path-elliptical-arc-parsing.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
 		self.assertEquals( p.getAttribute('d'), 'M100,100a100,100,0,1,1,-50,100z',
 			'Did not parse elliptical arc command properly')
-		
+
+class RemoveUnusedAttributesOnParent(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/remove-unused-attributes-on-parent.svg').getElementsByTagNameNS(SVGNS, 'g')[0]
+		self.assertNotEquals( g.getAttribute('stroke'), '#000',
+			'Unused attributes on group not removed')
+
+class DoNotRemoveCommonAttributesOnParentIfAtLeastOneUsed(unittest.TestCase):
+	def runTest(self):
+		g = scour.scourXmlFile('unittests/remove-unused-attributes-on-parent.svg').getElementsByTagNameNS(SVGNS, 'g')[0]
+		self.assertEquals( g.getAttribute('fill'), '#0F0',
+			'Used attributes on group were removed')
+
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

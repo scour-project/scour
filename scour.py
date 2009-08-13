@@ -32,19 +32,9 @@
 # Even more ideas here: http://esw.w3.org/topic/SvgTidy
 #  * analysis of path elements to see if rect can be used instead? (must also need to look
 #    at rounded corners)
-#  * removal of unused attributes in groups:
-#    <g fill="blue" ...>
-#      <rect fill="red" ... />
-#      <rect fill="red" ... />
-#      <rect fill="red" ... />
-#    </g>
-#    in this case, fill="blue" should be removed
 
 # Next Up:
-# + analyze all children of a group, if they have common inheritable attributes, then move them to the group
-# - crunch *opacity, offset, svg:x,y, stroke-miterlimit, stroke-width numbers (remove trailing zeros, reduce prec, integerize)
-# - analyze a group and its children, if a group's attribute is not being used by any children 
-#   (or descendants?) then remove it
+# + remove unused attributes in parent elements
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
@@ -52,7 +42,6 @@
 # - option to remove metadata
 # - prevent elements from being stripped if they are referenced in a <style> element
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
-# - add an option for svgweb compatible markup (no self-closing tags)?
 
 # necessary to get true division
 from __future__ import division
@@ -76,7 +65,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.19'
+VER = '0.20'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -632,9 +621,9 @@ def removeNestedGroups(node):
 
 def moveCommonAttributesToParentGroup(elem):
 	""" 
-	This iterates through all children of the passed in g element and 
-	removes common inheritable attributes from the children and places
-	them in the parent group
+	This recursively calls this function on all children of the passed in element
+	and then iterates over all child elements and removes common inheritable attributes 
+	from the children and places them in the parent group.
 	"""
 	num = 0
 	
@@ -701,6 +690,58 @@ def moveCommonAttributesToParentGroup(elem):
 
 	# update our statistic (we remove N*M attributes and add back in M attributes)
 	num += (len(childElements)-1) * len(commonAttrs)
+	return num
+
+def removeUnusedAttributesOnParent(elem):
+	"""
+	This recursively calls this function on all children of the element passed in,
+	then removes any unused attributes on this elem if none of the children inherit it
+	"""
+	num = 0
+
+	childElements = []
+	# recurse first into the children (depth-first)
+	for child in elem.childNodes:
+		if child.nodeType == 1: 
+			childElements.append(child)
+			num += removeUnusedAttributesOnParent(child)
+	
+	# only process the children if there are more than one element
+	if len(childElements) <= 1: return num
+
+	# get all attribute values on this parent
+	attrList = elem.attributes
+	unusedAttrs = {}
+	for num in range(attrList.length):
+		attr = attrList.item(num)
+		if attr.nodeName in ['clip-rule',
+					'display-align', 
+					'fill', 'fill-opacity', 'fill-rule', 
+					'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
+					'font-style', 'font-variant', 'font-weight',
+					'letter-spacing',
+					'pointer-events', 'shape-rendering',
+					'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
+					'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
+					'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+					'word-spacing', 'writing-mode']:
+			unusedAttrs[attr.nodeName] = attr.nodeValue
+	
+	# for each child, if at least one child inherits the parent's attribute, then remove
+	for childNum in range(len(childElements)):
+		child = childElements[childNum]
+		inheritedAttrs = []
+		for name in unusedAttrs.keys():
+			val = child.getAttribute(name)
+			if val == '' or val == None or val == 'inherit':
+				inheritedAttrs.append(name)
+		for a in inheritedAttrs:
+			del unusedAttrs[a]
+	
+	# unusedAttrs now has all the parent attributes that are unused
+	for name in unusedAttrs.keys():
+		elem.removeAttribute(name)
+	
 	return num
 	
 def removeDuplicateGradientStops(doc):
@@ -2138,8 +2179,10 @@ def scourString(in_string, options=None):
 			pass
 
 	# move common attributes to parent group
-	# TODO: should make sure this is called with most-nested groups first
 	numAttrsRemoved += moveCommonAttributesToParentGroup(doc.documentElement)
+	
+	# remove unused attributes from parent
+	numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
 
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
@@ -2169,8 +2212,10 @@ def scourString(in_string, options=None):
 	
 	# scour lengths (including coordinates)
 	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop']:
-		for elem in doc.documentElement.getElementsByTagName(type):
-			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
+		for elem in doc.getElementsByTagName(type):
+			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 
+						'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset', 'opacity',
+						'fill-opacity', 'stroke-opacity', 'stroke-width', 'stroke-miterlimit']:
 				if elem.getAttribute(attr) != '':
 					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
 
