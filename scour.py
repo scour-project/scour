@@ -1759,16 +1759,18 @@ def serializePath(pathObj):
 	pathStr = ""
 	for (cmd,data) in pathObj:
 		pathStr += cmd
-		pathStr += scourCoordinates(data)
+		# elliptical arc commands must have comma/wsp separating the coordinates
+		# this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
+		pathStr += scourCoordinates(data, (cmd == 'a'))
 	return pathStr
 
-def scourCoordinates(data):
+def scourCoordinates(data, forceCommaWsp = False):
 	"""
 		Serializes coordinate data with some cleanups:
 			- removes all trailing zeros after the decimal
 			- integerize coordinates if possible
 			- removes extraneous whitespace
-			- adds commas between values in a subcommand if required
+			- adds commas between values in a subcommand if required (or if forceCommaWsp is True)
 	"""
 	coordsStr = ""
 	if data != None:
@@ -1777,8 +1779,8 @@ def scourCoordinates(data):
 			# add the scoured coordinate to the path string
 			coordsStr += scourLength(coord)
 			
-			# only need the comma if the next number is non-negative
-			if c < len(data)-1 and Decimal(data[c+1]) >= 0:
+			# only need the comma if the next number is non-negative or if forceCommaWsp is True
+			if c < len(data)-1 and (forceCommaWsp or Decimal(data[c+1]) >= 0):
 				coordsStr += ','
 			c += 1
 	return coordsStr

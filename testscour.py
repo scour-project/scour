@@ -892,6 +892,12 @@ class PropagateCommonAttributesUp(unittest.TestCase):
 		g = scour.scourXmlFile('unittests/move-common-attributes-to-grandparent.svg').getElementsByTagNameNS(SVGNS, 'g')[0]
 		self.assertEquals( g.getAttribute('fill'), '#0F0',
 			'Did not move common fill attribute to grandparent')
+			
+class PathEllipticalArcParsingCommaWsp(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/path-elliptical-arc-parsing.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals( p.getAttribute('d'), 'M100,100a100,100,0,1,1,-50,100z',
+			'Did not parse elliptical arc command properly')
 		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
