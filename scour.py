@@ -35,13 +35,13 @@
 
 # Next Up:
 # + remove unused attributes in parent elements
+# + prevent elements from being stripped if they are referenced in a <style> element
+#   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 # - option to remove metadata
-# - prevent elements from being stripped if they are referenced in a <style> element
-#   (for instance, filter, marker, pattern) - need a crude CSS parser
 
 # necessary to get true division
 from __future__ import division
@@ -56,6 +56,7 @@ import urllib
 from svg_regex import svg_parser
 import gzip
 import optparse
+from yocto_css import parseCssString
 
 # Python 2.3- did not have Decimal
 try:
@@ -401,6 +402,9 @@ def findElementsWithId(node, elems=None):
 				findElementsWithId(child, elems)
 	return elems
 
+referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
+					'marker-end', 'marker-mid']
+
 def findReferencedElements(node, ids=None):
 	"""
 	Returns the number of times an ID is referenced as well as all elements
@@ -409,13 +413,25 @@ def findReferencedElements(node, ids=None):
 	Currently looks at fill, stroke, clip-path, mask, marker, and
 	xlink:href attributes.
 	"""
+	global referencingProps
 	if ids is None:
 		ids = {}
 	# TODO: input argument ids is clunky here (see below how it is called)
 	# GZ: alternative to passing dict, use **kwargs
-	href = node.getAttributeNS(NS['XLINK'],'href')
+
+	# if this node is a style element, parse its text into CSS
+	if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
+		# node.firstChild will be either a CDATA or a Text node
+		cssRules = parseCssString(node.firstChild.nodeValue)
+		for rule in cssRules:
+			for propname in rule['properties']:
+				propval = rule['properties'][propname]
+				findReferencingProperty(node, propname, propval, ids)
+		
+		return ids
 	
-	# if xlink:href is set, then grab the id
+	# else if xlink:href is set, then grab the id
+	href = node.getAttributeNS(NS['XLINK'],'href')	
 	if href != '' and len(href) > 1 and href[0] == '#':
 		# we remove the hash mark from the beginning of the id
 		id = href[1:]
@@ -427,8 +443,6 @@ def findReferencedElements(node, ids=None):
 
 	# now get all style properties and the fill, stroke, filter attributes
 	styles = node.getAttribute('style').split(';')
-	referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
-						'marker-end', 'marker-mid']
 	for attr in referencingProps:
 		styles.append(':'.join([attr, node.getAttribute(attr)]))
 			
@@ -437,35 +451,39 @@ def findReferencedElements(node, ids=None):
 		if len(propval) == 2 :
 			prop = propval[0].strip()
 			val = propval[1].strip()
-			if prop in referencingProps and val != '' :
-				if len(val) >= 7 and val[0:5] == 'url(#' :
-					id = val[5:val.find(')')]
-					if ids.has_key(id) :
-						ids[id][0] += 1
-						ids[id][1].append(node)
-					else:
-						ids[id] = [1,[node]]
-				# if the url has a quote in it, we need to compensate
-				elif len(val) >= 8 :
-					id = None
-					# double-quote
-					if val[0:6] == 'url("#' :
-						id = val[6:val.find('")')]
-					# single-quote
-					elif val[0:6] == "url('#" :
-						id = val[6:val.find("')")]
-					if id != None:
-						if ids.has_key(id) :
-							ids[id][0] += 1
-							ids[id][1].append(node)
-						else:
-							ids[id] = [1,[node]]
+			findReferencingProperty(node, prop, val, ids)
 
 	if node.hasChildNodes() :
 		for child in node.childNodes:
 			if child.nodeType == 1 :
 				findReferencedElements(child, ids)
 	return ids
+
+def findReferencingProperty(node, prop, val, ids):
+	global referencingProps
+	if prop in referencingProps and val != '' :
+		if len(val) >= 7 and val[0:5] == 'url(#' :
+			id = val[5:val.find(')')]
+			if ids.has_key(id) :
+				ids[id][0] += 1
+				ids[id][1].append(node)
+			else:
+				ids[id] = [1,[node]]
+		# if the url has a quote in it, we need to compensate
+		elif len(val) >= 8 :
+			id = None
+			# double-quote
+			if val[0:6] == 'url("#' :
+				id = val[6:val.find('")')]
+			# single-quote
+			elif val[0:6] == "url('#" :
+				id = val[6:val.find("')")]
+			if id != None:
+				if ids.has_key(id) :
+					ids[id][0] += 1
+					ids[id][1].append(node)
+				else:
+					ids[id] = [1,[node]]
 
 numIDsRemoved = 0
 numElemsRemoved = 0
@@ -741,6 +759,7 @@ def removeUnusedAttributesOnParent(elem):
 	# unusedAttrs now has all the parent attributes that are unused
 	for name in unusedAttrs.keys():
 		elem.removeAttribute(name)
+		num += 1
 	
 	return num
 	
@@ -1749,11 +1768,10 @@ def parseListOfPoints(s):
 	
 		Returns a list of containing an even number of coordinate strings
 	"""
-	
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
 	# coordinate-pair = coordinate comma-or-wsp coordinate
 	# coordinate = sign? integer
-	nums = re.split("\\s*\\,?\\s*", s)
+	nums = re.split("\\s*\\,?\\s*", s.strip())
 	i = 0
 	points = []
 	while i < len(nums):

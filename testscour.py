@@ -915,7 +915,12 @@ class DoNotRemoveCommonAttributesOnParentIfAtLeastOneUsed(unittest.TestCase):
 		self.assertEquals( g.getAttribute('fill'), '#0F0',
 			'Used attributes on group were removed')
 
-
+class DoNotRemoveGradientsWhenReferencedInStyleCss(unittest.TestCase):
+	def runTest(self):
+		grads = scour.scourXmlFile('unittests/css-reference.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')
+		self.assertEquals( grads.length, 2,
+			'Gradients removed when referenced in CSS')
+		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
