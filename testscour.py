@@ -890,6 +890,12 @@ class RemoveCommonAttributesFromChild(unittest.TestCase):
 		r = scour.scourXmlFile('unittests/move-common-attributes-to-parent.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
 		self.assertNotEquals( r.getAttribute('fill'), '#0F0',
 			'Did not remove common fill attribute from child')
+			
+class DontRemoveCommonAttributesIfParentHasTextNodes(unittest.TestCase):
+	def runTest(self):
+		text = scour.scourXmlFile('unittests/move-common-attributes-to-parent.svg').getElementsByTagNameNS(SVGNS, 'text')[0]
+		self.assertNotEquals( text.getAttribute('font-style'), 'italic',
+			'Removed common attributes when parent contained text elements')
 
 class PropagateCommonAttributesUp(unittest.TestCase):
 	def runTest(self):
