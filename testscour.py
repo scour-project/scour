@@ -936,6 +936,14 @@ class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
 </svg>''',
 			'Whitespace not preserved')
 
+class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
+	def runTest(self):
+		self.assertEquals( scour.scourString(open('unittests/whitespace-nested.svg').read()), 
+			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
+</svg>''',
+			'Whitespace not preserved when nested')
 
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

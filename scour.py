@@ -2035,12 +2035,11 @@ def makeWellFormed(str):
 # - pretty printing
 # - somewhat judicious use of whitespace
 # - ensure id attributes are first
-def serializeXML(element, options, ind = 0):
+def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 	indent = ind
 	I=''
 	if options.indent_type == 'tab': I='\t'
 	elif options.indent_type == 'space': I=' '
-	preserveWhitespace = False
 	
 	outString = (I * ind) + '<' + element.nodeName
 
@@ -2076,8 +2075,12 @@ def serializeXML(element, options, ind = 0):
 			outString += 'xmlns:'
 		outString += attr.nodeName + '=' + quot + attrValue + quot
 		
-		if attr.nodeName == 'xml:space' and attrValue == 'preserve':
-			preserveWhitespace = True
+		# TODO: when to set preserveWhitespace to true, with a value of 'none'?
+		if attr.nodeName == 'xml:space':
+			if attrValue == 'preserve':
+				preserveWhitespace = True
+			elif attrValue == 'default':
+				preserveWhitespace = False
 	
 	# if no children, self-close
 	children = element.childNodes
@@ -2089,9 +2092,9 @@ def serializeXML(element, options, ind = 0):
 			# element node
 			if child.nodeType == 1:
 				if preserveWhitespace:
-					outString += serializeXML(child, options, 0)
+					outString += serializeXML(child, options, 0, preserveWhitespace)
 				else:
-					outString += '\n' + serializeXML(child, options, indent + 1)
+					outString += '\n' + serializeXML(child, options, indent + 1, preserveWhitespace)
 					onNewLine = True
 			# text node
 			elif child.nodeType == 3:
