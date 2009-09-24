@@ -926,7 +926,17 @@ class DoNotRemoveGradientsWhenReferencedInStyleCss(unittest.TestCase):
 		grads = scour.scourXmlFile('unittests/css-reference.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')
 		self.assertEquals( grads.length, 2,
 			'Gradients removed when referenced in CSS')
-		
+
+class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
+	def runTest(self):
+		self.assertEquals( scour.scourString(open('unittests/whitespace-important.svg').read()), 
+			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
+</svg>''',
+			'Whitespace not preserved')
+
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

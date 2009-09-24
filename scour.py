@@ -38,6 +38,7 @@
 # + prevent elements from being stripped if they are referenced in a <style> element
 # + only move common attributes and remove unused attributes after removing duplicate gradients
 # + only move common attributes to parent if the parent contains non-whitespace text nodes
+# + do not pretty-print elements if whitespace is important (xml:space="preserve")
 # - TODO: fix the removal of comment elements (between <?xml?> and <svg>)
 #   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - add an option to remove ids if they match the Inkscape-style of IDs
@@ -2039,6 +2040,7 @@ def serializeXML(element, options, ind = 0):
 	I=''
 	if options.indent_type == 'tab': I='\t'
 	elif options.indent_type == 'space': I=' '
+	preserveWhitespace = False
 	
 	outString = (I * ind) + '<' + element.nodeName
 
@@ -2073,6 +2075,9 @@ def serializeXML(element, options, ind = 0):
 		if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
 			outString += 'xmlns:'
 		outString += attr.nodeName + '=' + quot + attrValue + quot
+		
+		if attr.nodeName == 'xml:space' and attrValue == 'preserve':
+			preserveWhitespace = True
 	
 	# if no children, self-close
 	children = element.childNodes
@@ -2083,13 +2088,17 @@ def serializeXML(element, options, ind = 0):
 		for child in element.childNodes:
 			# element node
 			if child.nodeType == 1:
-				outString += '\n' + serializeXML(child, options, indent + 1)
-				onNewLine = True
+				if preserveWhitespace:
+					outString += serializeXML(child, options, 0)
+				else:
+					outString += '\n' + serializeXML(child, options, indent + 1)
+					onNewLine = True
 			# text node
 			elif child.nodeType == 3:
 				# trim it only in the case of not being a child of an element
 				# where whitespace might be important
-				if element.nodeName in ["text", "tspan", "textPath", "tref", "title", "desc", "textArea"]:
+				if element.nodeName in ["text", "tspan", "textPath", "tref", "title", "desc", "textArea", 
+										"flowRoot", "flowDiv", "flowSpan", "flowPara", "flowRegion"]:
 					outString += makeWellFormed(child.nodeValue)
 				else:
 					outString += makeWellFormed(child.nodeValue.strip())
