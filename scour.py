@@ -2071,11 +2071,15 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 		
 		outString += ' '
 		# preserve xmlns: if it is a namespace prefix declaration
-		if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
-			outString += 'xmlns:'
-		outString += attr.nodeName + '=' + quot + attrValue + quot
-		
-		# TODO: when to set preserveWhitespace to true, with a value of 'none'?
+		if attr.prefix != None:
+			outString += attr.prefix + ':'
+		elif attr.namespaceURI != None:
+			if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
+				outString += 'xmlns:'
+			elif attr.namespaceURI == 'http://www.w3.org/1999/xlink':
+				outString += 'xlink:'
+		outString += attr.localName + '=' + quot + attrValue + quot
+
 		if attr.nodeName == 'xml:space':
 			if attrValue == 'preserve':
 				preserveWhitespace = True

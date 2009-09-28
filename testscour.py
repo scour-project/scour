@@ -944,6 +944,12 @@ class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
  <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
 </svg>''',
 			'Whitespace not preserved when nested')
+	
+class GetAttrPrefixRight(unittest.TestCase):
+	def runTest(self):
+		grad = scour.scourXmlFile('unittests/xml-namespace-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[1]
+		self.assertEquals( grad.getAttributeNS('http://www.w3.org/1999/xlink', 'href'), '#linearGradient841',
+			'Did not get xlink:href prefix right' )
 
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
