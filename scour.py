@@ -2375,6 +2375,8 @@ def parse_args(args=None):
 		_options_parser.error("Can't have negative significant digits, see --help")
 	if not options.indent_type in ["tab", "space", "none"]:
 		_options_parser.error("Invalid value for --indent, see --help")
+	if options.infilename and options.outfilename and options.infilename == options.outfilename:
+		_options_parser.error("Input filename is the same as output filename")
 
 	if options.infilename:
 		infile = maybe_gziped_file(options.infilename)
