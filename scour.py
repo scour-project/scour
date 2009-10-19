@@ -34,13 +34,7 @@
 #    at rounded corners)
 
 # Next Up:
-# + remove unused attributes in parent elements
-# + prevent elements from being stripped if they are referenced in a <style> element
-# + only move common attributes and remove unused attributes after removing duplicate gradients
-# + only move common attributes to parent if the parent contains non-whitespace text nodes
-# + do not pretty-print elements if whitespace is important (xml:space="preserve")
 # - TODO: fix the removal of comment elements (between <?xml?> and <svg>)
-#   (for instance, filter, marker, pattern) - need a crude CSS parser
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
@@ -70,7 +64,7 @@ except ImportError:
 	Decimal = FixedPoint	
 
 APP = 'scour'
-VER = '0.21'
+VER = '0.22'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
