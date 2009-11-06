@@ -2098,8 +2098,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 			elif child.nodeType == 3:
 				# trim it only in the case of not being a child of an element
 				# where whitespace might be important
-				if element.nodeName in ["text", "tspan", "textPath", "tref", "title", "desc", "textArea", 
-										"flowRoot", "flowDiv", "flowSpan", "flowPara", "flowRegion"]:
+				if preserveWhitespace:
 					outString += makeWellFormed(child.nodeValue)
 				else:
 					outString += makeWellFormed(child.nodeValue.strip())

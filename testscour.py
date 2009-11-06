@@ -949,7 +949,13 @@ class GetAttrPrefixRight(unittest.TestCase):
 	def runTest(self):
 		grad = scour.scourXmlFile('unittests/xml-namespace-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[1]
 		self.assertEquals( grad.getAttributeNS('http://www.w3.org/1999/xlink', 'href'), '#linearGradient841',
-			'Did not get xlink:href prefix right' )
+			'Did not get xlink:href prefix right')
+
+class EnsurePreserveWhitespaceOnNonTextElements(unittest.TestCase):
+	def runTest(self):
+		s = scour.scourString(open('unittests/no-collapse-lines.svg').read())
+		self.assertEquals( s.count('\n'), 5,
+			'Did not properly preserve whitespace on elements even if they were not textual')
 
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
