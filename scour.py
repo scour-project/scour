@@ -420,12 +420,12 @@ def findReferencedElements(node, ids=None):
 	# if this node is a style element, parse its text into CSS
 	if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
 		# node.firstChild will be either a CDATA or a Text node
-		cssRules = parseCssString(node.firstChild.nodeValue)
-		for rule in cssRules:
-			for propname in rule['properties']:
-				propval = rule['properties'][propname]
-				findReferencingProperty(node, propname, propval, ids)
-		
+		if node.firstChild != None:
+			cssRules = parseCssString(node.firstChild.nodeValue)
+			for rule in cssRules:
+				for propname in rule['properties']:
+					propval = rule['properties'][propname]
+					findReferencingProperty(node, propname, propval, ids)
 		return ids
 	
 	# else if xlink:href is set, then grab the id

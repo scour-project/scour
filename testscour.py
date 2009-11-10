@@ -957,6 +957,16 @@ class EnsurePreserveWhitespaceOnNonTextElements(unittest.TestCase):
 		self.assertEquals( s.count('\n'), 5,
 			'Did not properly preserve whitespace on elements even if they were not textual')
 
+class HandleEmptyStyleElement(unittest.TestCase):
+	def runTest(self):
+		try:
+			styles = scour.scourXmlFile('unittests/empty-style.svg').getElementsByTagNameNS(SVGNS, 'style')
+			fail = len(styles) != 1
+		except AttributeError:
+			fail = True
+		self.assertEquals( fail, False,
+			'Could not handle an empty style element')
+
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
