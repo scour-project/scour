@@ -828,15 +828,11 @@ class RemoveDefaultGradFYValue(unittest.TestCase):
 
 class CDATAInXml(unittest.TestCase):
 	def runTest(self):
-		self.assertEquals( scour.scourString(open('unittests/cdata.svg').read()), 
-			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg">
- <script type="application/ecmascript"><![CDATA[
-  	alert('pb&j');
- ]]></script>
-</svg>
-''',
-			'Improperly serialized the cdata unit tests')
+		lines = scour.scourString(open('unittests/cdata.svg').read()).splitlines()
+		print lines[4]
+		self.assertEquals( lines[3], 
+			"  	alert('pb&j');",
+			'CDATA did not come out correctly')
 
 class WellFormedXMLLesserThanInAttrValue(unittest.TestCase):
 	def runTest(self):
@@ -930,23 +926,27 @@ class DoNotRemoveGradientsWhenReferencedInStyleCss(unittest.TestCase):
 
 class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
 	def runTest(self):
-		self.assertEquals( scour.scourString(open('unittests/whitespace-important.svg').read()), 
-			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+		s = scour.scourString(open('unittests/whitespace-important.svg').read()).splitlines()
+		c = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
 </svg>
-''',
-			'Whitespace not preserved')
+'''.splitlines()
+		for i in range(4):
+			self.assertEquals( s[i], c[i],
+			'Whitespace not preserved for line ' + str(i))
 
 class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
 	def runTest(self):
-		self.assertEquals( scour.scourString(open('unittests/whitespace-nested.svg').read()), 
-			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+		s = scour.scourString(open('unittests/whitespace-nested.svg').read()).splitlines()
+		c = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
 </svg>
-''',
-			'Whitespace not preserved when nested')
+'''.splitlines()
+		for i in range(4):
+			self.assertEquals( s[i], c[i], 
+				'Whitespace not preserved when nested for line ' + str(i))
 	
 class GetAttrPrefixRight(unittest.TestCase):
 	def runTest(self):
