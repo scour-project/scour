@@ -834,7 +834,8 @@ class CDATAInXml(unittest.TestCase):
  <script type="application/ecmascript"><![CDATA[
   	alert('pb&j');
  ]]></script>
-</svg>''',
+</svg>
+''',
 			'Improperly serialized the cdata unit tests')
 
 class WellFormedXMLLesserThanInAttrValue(unittest.TestCase):
@@ -933,7 +934,8 @@ class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
 			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
-</svg>''',
+</svg>
+''',
 			'Whitespace not preserved')
 
 class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
@@ -942,7 +944,8 @@ class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
 			'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
-</svg>''',
+</svg>
+''',
 			'Whitespace not preserved when nested')
 	
 class GetAttrPrefixRight(unittest.TestCase):
@@ -954,7 +957,7 @@ class GetAttrPrefixRight(unittest.TestCase):
 class EnsurePreserveWhitespaceOnNonTextElements(unittest.TestCase):
 	def runTest(self):
 		s = scour.scourString(open('unittests/no-collapse-lines.svg').read())
-		self.assertEquals( s.count('\n'), 5,
+		self.assertEquals( len(s.splitlines()), 6,
 			'Did not properly preserve whitespace on elements even if they were not textual')
 
 class HandleEmptyStyleElement(unittest.TestCase):
@@ -967,6 +970,12 @@ class HandleEmptyStyleElement(unittest.TestCase):
 		self.assertEquals( fail, False,
 			'Could not handle an empty style element')
 
+class EnsureLineEndings(unittest.TestCase):
+	def runTest(self):
+		s = scour.scourString(open('unittests/whitespace-important.svg').read())
+		self.assertEquals( len(s.splitlines()), 4, 
+			'Did not output line ending character correctly')
+		
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
