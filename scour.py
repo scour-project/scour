@@ -63,8 +63,15 @@ except ImportError:
 	from fixedpoint import *
 	Decimal = FixedPoint	
 
+# Import Psyco if available
+try:
+	import psyco
+	psyco.full()
+except ImportError:
+	pass
+
 APP = 'scour'
-VER = '0.22'
+VER = '0.23'
 COPYRIGHT = 'Copyright Jeff Schiller, 2009'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -2266,7 +2273,8 @@ def scourString(in_string, options=None):
 			embedRasters(elem, options)		
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
-	properlySizeDoc(doc.documentElement)
+	if options.viewboxing:
+		properlySizeDoc(doc.documentElement)
 
 	# output the document as a pretty string with a single space for indent
 	# NOTE: removed pretty printing because of this problem:
@@ -2340,6 +2348,9 @@ _options_parser.add_option("--keep-editor-data",
 _options_parser.add_option("--strip-xml-prolog",
 	action="store_true", dest="strip_xml_prolog", default=False,
 	help="won't output the <?xml ?> prolog")
+_options_parser.add_option("--enable-viewboxing",
+	action="store_true", dest="viewboxing", default=False,
+	help="changes document width/height to 100%/100% and creates viewbox coordinates")
 
 # GZ: this is confusing, most people will be thinking in terms of
 #     decimal places, which is not what decimal precision is doing

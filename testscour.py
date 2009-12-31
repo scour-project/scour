@@ -47,6 +47,7 @@ class ScourOptions:
 	keep_editor_data = False
 	strip_xml_prolog = False
 	indent_type = "space"
+	viewboxing = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -829,7 +830,6 @@ class RemoveDefaultGradFYValue(unittest.TestCase):
 class CDATAInXml(unittest.TestCase):
 	def runTest(self):
 		lines = scour.scourString(open('unittests/cdata.svg').read()).splitlines()
-		print lines[4]
 		self.assertEquals( lines[3], 
 			"  	alert('pb&j');",
 			'CDATA did not come out correctly')
