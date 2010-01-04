@@ -154,6 +154,13 @@ class RemoveUnreferencedElementInDefs(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
 			'Unreferenced rect left in defs' )
 
+class DoNotRemoveChainedRefsInDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/refs-in-defs.svg')
+		g = doc.getElementsByTagNameNS(SVGNS, 'g')[0]
+		self.assertEquals( g.childNodes.length >= 2, True,
+			'Chained references not honored in defs' )
+
 class KeepTitleInDefs(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/referenced-elements-1.svg')
@@ -975,7 +982,8 @@ class EnsureLineEndings(unittest.TestCase):
 		s = scour.scourString(open('unittests/whitespace-important.svg').read())
 		self.assertEquals( len(s.splitlines()), 4, 
 			'Did not output line ending character correctly')
-		
+
+# TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data

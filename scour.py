@@ -34,6 +34,7 @@
 #    at rounded corners)
 
 # Next Up:
+# - only remove unreferenced elements if they are not children of a referenced element
 # - TODO: fix the removal of comment elements (between <?xml?> and <svg>)
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
@@ -506,12 +507,18 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 
 	identifiedElements = findElementsWithId(doc.documentElement)
 	referencedIDs = findReferencedElements(doc.documentElement)
-	
+
 	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
 	for elem in defElem.childNodes:
-		if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
+		# we only inspect the children of a group in a defs if the group
+		# is not referenced anywhere else
+		if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG'] and \
+				not elem.getAttribute('id') in referencedIDs:
 			elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
 			continue
+		
+		# we only remove if it is an element with a blank id and it is
+		# a direct child of the defs
 		if elem.nodeType == 1 and (elem.getAttribute('id') == '' or \
 				(not elem.getAttribute('id') in referencedIDs)) and \
 				not elem.nodeName in keepTags:
