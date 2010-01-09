@@ -3,7 +3,7 @@
 
 #  Test Harness for Scour
 #
-#  Copyright 2009 Jeff Schiller
+#  Copyright 2010 Jeff Schiller
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #

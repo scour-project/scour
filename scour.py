@@ -3,7 +3,7 @@
 
 #  Scour
 #
-#  Copyright 2009 Jeff Schiller
+#  Copyright 2010 Jeff Schiller
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #
@@ -73,7 +73,7 @@ except ImportError:
 
 APP = 'scour'
 VER = '0.23'
-COPYRIGHT = 'Copyright Jeff Schiller, 2009'
+COPYRIGHT = 'Copyright Jeff Schiller, 2010'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
 		'XLINK': 	'http://www.w3.org/1999/xlink', 
@@ -510,19 +510,17 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 
 	keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
 	for elem in defElem.childNodes:
-		# we only inspect the children of a group in a defs if the group
-		# is not referenced anywhere else
-		if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG'] and \
-				not elem.getAttribute('id') in referencedIDs:
-			elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
-			continue
-		
-		# we only remove if it is an element with a blank id and it is
-		# a direct child of the defs
+		# only look at it if an element and not referenced anywhere else
 		if elem.nodeType == 1 and (elem.getAttribute('id') == '' or \
-				(not elem.getAttribute('id') in referencedIDs)) and \
-				not elem.nodeName in keepTags:
-			elemsToRemove.append(elem)
+				(not elem.getAttribute('id') in referencedIDs)):
+
+			# we only inspect the children of a group in a defs if the group
+			# is not referenced anywhere else
+			if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
+				elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
+			# we only remove if it is not one of our tags we always keep (see above)
+			elif not elem.nodeName in keepTags:
+				elemsToRemove.append(elem)
 	return elemsToRemove
 
 def removeUnreferencedElements(doc):
