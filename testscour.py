@@ -47,7 +47,7 @@ class ScourOptions:
 	keep_editor_data = False
 	strip_xml_prolog = False
 	indent_type = "space"
-	viewboxing = False
+	enable_viewboxing = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -983,6 +983,11 @@ class EnsureLineEndings(unittest.TestCase):
 		self.assertEquals( len(s.splitlines()), 4, 
 			'Did not output line ending character correctly')
 
+class XmlEntities(unittest.TestCase):
+	def runTest(self):
+		self.assertEquals( scour.makeWellFormed('<>&"\''), '&lt;&gt;&amp;&quot;&apos;',
+			'Incorrectly translated XML entities')
+		
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

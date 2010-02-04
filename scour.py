@@ -72,7 +72,7 @@ except ImportError:
 	pass
 
 APP = 'scour'
-VER = '0.23'
+VER = '0.24'
 COPYRIGHT = 'Copyright Jeff Schiller, 2010'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
@@ -2021,20 +2021,14 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 		remapNamespacePrefix(child, oldprefix, newprefix)	
 
 def makeWellFormed(str):
-	newstr = str
-	
-	# encode & as &amp; ( must do this first so that &lt; does not become &amp;lt; )
-	if str.find('&') != -1:
-		newstr = str.replace('&', '&amp;')
+	newstr = ''
+	xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
+	for c in str:
+		if c in xml_ents:
+			newstr += xml_ents[c]
+		else:
+			newstr += c
 			
-	# encode < as &lt;
-	if str.find("<") != -1:
-		newstr = str.replace('<', '&lt;')
-		
-	# encode > as &gt; (TODO: is this necessary?)
-	if str.find('>') != -1:
-		newstr = str.replace('>', '&gt;')
-	
 	return newstr
 
 # hand-rolled serialization function that has the following benefits:
@@ -2278,7 +2272,7 @@ def scourString(in_string, options=None):
 			embedRasters(elem, options)		
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
-	if options.viewboxing:
+	if options.enable_viewboxing:
 		properlySizeDoc(doc.documentElement)
 
 	# output the document as a pretty string with a single space for indent
@@ -2354,7 +2348,7 @@ _options_parser.add_option("--strip-xml-prolog",
 	action="store_true", dest="strip_xml_prolog", default=False,
 	help="won't output the <?xml ?> prolog")
 _options_parser.add_option("--enable-viewboxing",
-	action="store_true", dest="viewboxing", default=False,
+	action="store_true", dest="enable_viewboxing", default=False,
 	help="changes document width/height to 100%/100% and creates viewbox coordinates")
 
 # GZ: this is confusing, most people will be thinking in terms of
