@@ -996,7 +996,16 @@ class DoNotStripCommentsOutsideOfRoot(unittest.TestCase):
 		self.assertEquals( doc.childNodes[0].nodeType, 8, 'First node not a comment')
 		self.assertEquals( doc.childNodes[1].nodeType, 8, 'Second node not a comment')
 		self.assertEquals( doc.childNodes[3].nodeType, 8, 'Fourth node not a comment')
-			
+
+class DoNotStripDoctype(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/doctype.svg')
+		self.assertEquals( doc.childNodes.length, 3, 
+			'Did not include the DOCROOT')
+		self.assertEquals( doc.childNodes[0].nodeType, 8, 'First node not a comment')
+		self.assertEquals( doc.childNodes[1].nodeType, 10, 'Second node not a doctype')
+		self.assertEquals( doc.childNodes[2].nodeType, 1, 'Third node not the root node')
+
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

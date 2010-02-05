@@ -2021,15 +2021,17 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 		remapNamespacePrefix(child, oldprefix, newprefix)	
 
 def makeWellFormed(str):
-	newstr = ''
 	xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
-	for c in str:
-		if c in xml_ents:
-			newstr += xml_ents[c]
-		else:
-			newstr += c
+	
+#	starr = []
+#	for c in str:
+#		if c in xml_ents:
+#			starr.append(xml_ents[c])
+#		else:
+#			starr.append(c)
 			
-	return newstr
+	# this list comprehension is short-form for the above for-loop:
+	return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
 
 # hand-rolled serialization function that has the following benefits:
 # - pretty printing
@@ -2295,12 +2297,11 @@ def scourString(in_string, options=None):
 	else:
 		total_output = ""
 	
-	# Find all comments before and after the root node and print them
 	for child in doc.childNodes:
-		if child.nodeType == 8:
-			total_output += ('<!--' + child.nodeValue + '-->' + os.linesep)
-		else:
+		if child.nodeType == 1:
 			total_output += "".join(lines)
+		else: # doctypes, entities, comments
+			total_output += child.toxml() + os.linesep
 		
 	return total_output
 
