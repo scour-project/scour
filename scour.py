@@ -34,8 +34,8 @@
 #    at rounded corners)
 
 # Next Up:
+# - Bug 511186: option to keep XML comments between prolog and root element
 # - only remove unreferenced elements if they are not children of a referenced element
-# - TODO: fix the removal of comment elements (between <?xml?> and <svg>)
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
 # - parse transform attribute
@@ -2289,13 +2289,20 @@ def scourString(in_string, options=None):
 		if line.strip():
 			lines.append(line)
 
-	# return the string stripped of empty lines
+	# return the string with its XML prolog and surrounding comments
 	if options.strip_xml_prolog == False:
-		xmlprolog = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + os.linesep
+		total_output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + os.linesep
 	else:
-		xmlprolog = ""
+		total_output = ""
+	
+	# Find all comments before and after the root node and print them
+	for child in doc.childNodes:
+		if child.nodeType == 8:
+			total_output += ('<!--' + child.nodeValue + '-->' + os.linesep)
+		else:
+			total_output += "".join(lines)
 		
-	return xmlprolog + "".join(lines)
+	return total_output
 
 # used mostly by unit tests
 # input is a filename
