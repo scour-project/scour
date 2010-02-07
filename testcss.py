@@ -29,9 +29,20 @@ class Blank(unittest.TestCase):
 		self.assertEquals( type(r), type([]), 'Blank string returned non list')
 
 class ElementSelector(unittest.TestCase):
-	def runTest(self)
+	def runTest(self):
 		r = parseCssString('foo {}')
 		self.assertEquals( len(r), 1, 'Element selector not returned')
+		self.assertEquals( r[0]['selector'], 'foo', 'Selector for foo not returned')
+		self.assertEquals( len(r[0]['properties']), 0, 'Property list for foo not empty')
+
+class ElementSelectorWithProperty(unittest.TestCase):
+	def runTest(self):
+		r = parseCssString('foo { bar: baz}')
+		print r
+		self.assertEquals( len(r), 1, 'Element selector not returned')
+		self.assertEquals( r[0]['selector'], 'foo', 'Selector for foo not returned')
+		self.assertEquals( len(r[0]['properties']), 1, 'Property list for foo did not have 1')
+		self.assertEquals( r[0]['properties']['bar'], 'baz', 'Property bar did not have baz value')
 
 if __name__ == '__main__':
     unittest.main()
