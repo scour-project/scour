@@ -72,7 +72,7 @@ except ImportError:
 	pass
 
 APP = 'scour'
-VER = '0.24'
+VER = '0.25'
 COPYRIGHT = 'Copyright Jeff Schiller, 2010'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 

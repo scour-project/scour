@@ -20,9 +20,9 @@
 #   limitations under the License.
 
 import unittest
-import scour
 import xml.dom.minidom
 from svg_regex import svg_parser
+from scour import scourXmlFile, scourString, parse_args, makeWellFormed
 
 SVGNS = 'http://www.w3.org/2000/svg'
 
@@ -1013,4 +1013,7 @@ class DoNotStripDoctype(unittest.TestCase):
 # TODO: write tests for --strip-xml-prolog
 
 if __name__ == '__main__':
-    unittest.main()
+	testcss = __import__('testcss')
+	scour = __import__('__main__')
+	suite = unittest.TestSuite( map(unittest.defaultTestLoader.loadTestsFromModule, [testcss, scour]) )
+	unittest.main(defaultTest="suite")
