@@ -28,5 +28,10 @@ class Blank(unittest.TestCase):
 		self.assertEquals( len(r), 0, 'Blank string returned non-empty list')
 		self.assertEquals( type(r), type([]), 'Blank string returned non list')
 
+class ElementSelector(unittest.TestCase):
+	def runTest(self)
+		r = parseCssString('foo {}')
+		self.assertEquals( len(r), 1, 'Element selector not returned')
+
 if __name__ == '__main__':
     unittest.main()
