@@ -654,7 +654,7 @@ class ConvertStraightCurvesToLines(unittest.TestCase):
 		self.assertEquals(p.getAttribute('d'), 'M10,10l40,40,40-40z', 
 			'Did not convert straight curves into lines')
 			
-class RemoveUnnecessaryPolgonEndPoint(unittest.TestCase):
+class RemoveUnnecessaryPolygonEndPoint(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
 		self.assertEquals(p.getAttribute('points'), '50,50,150,50,150,150,50,150',
@@ -666,17 +666,30 @@ class DoNotRemovePolgonLastPoint(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '200,50,300,50,300,150,200,150',
 			'Last point of polygon removed' )
 			
-class ScourPolygonCoordinates(unittest.TestCase):
+class ScourPolygonCoordsSciNo(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon-coord.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
-		self.assertEquals(p.getAttribute('points'), '1E+4-50',
+		self.assertEquals(p.getAttribute('points'), '1E+4,50',
 			'Polygon coordinates not scoured')
 
-class ScourPolylineCoordinates(unittest.TestCase):
+class ScourPolylineCoordsSciNo(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polyline-coord.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
-		self.assertEquals(p.getAttribute('points'), '1E+4-50',
+		self.assertEquals(p.getAttribute('points'), '1E+4,50',
 			'Polyline coordinates not scoured')
+
+class ScourPolygonNegativeCoords(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polygon-coord-neg.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
+		#  points="100,-100,100-100,100-100-100,-100-100,200" />
+		self.assertEquals(p.getAttribute('points'), '100,-100,100,-100,100,-100,-100,-100,-100,200',
+			'Negative polygon coordinates not properly parsed')
+
+class ScourPolylineNegativeCoords(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polyline-coord-neg.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
+		self.assertEquals(p.getAttribute('points'), '100,-100,100,-100,100,-100,-100,-100,-100,200',
+			'Negative polyline coordinates not properly parsed')
 
 class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 	def runTest(self):

@@ -38,7 +38,6 @@ class ElementSelector(unittest.TestCase):
 class ElementSelectorWithProperty(unittest.TestCase):
 	def runTest(self):
 		r = parseCssString('foo { bar: baz}')
-		print r
 		self.assertEquals( len(r), 1, 'Element selector not returned')
 		self.assertEquals( r[0]['selector'], 'foo', 'Selector for foo not returned')
 		self.assertEquals( len(r[0]['properties']), 1, 'Property list for foo did not have 1')

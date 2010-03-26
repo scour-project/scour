@@ -1786,12 +1786,43 @@ def parseListOfPoints(s):
 	
 		Returns a list of containing an even number of coordinate strings
 	"""
+	i = 0
+	points = []
+	
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
 	# coordinate-pair = coordinate comma-or-wsp coordinate
 	# coordinate = sign? integer
-	nums = re.split("\\s*\\,?\\s*", s.strip())
+	# comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
+	ws_nums = re.split("\\s*\\,?\\s*", s.strip())
+	nums = []
+	
+	# also, if 100-100 is found, split it into two also
+    #  <polygon points="100,-100,100-100,100-100-100,-100-100" />
+	for i in range(len(ws_nums)):
+		negcoords = re.split("\\-", ws_nums[i]);
+		
+		# this string didn't have any negative coordinates
+		if len(negcoords) == 1:
+			nums.append(negcoords[0])
+		# we got negative coords
+		else:
+			for j in range(len(negcoords)):
+				# first number could be positive
+				if j == 0:
+					if negcoords[0] != '':
+						nums.append(negcoords[0])
+				# otherwise all other strings will be negative
+				else:
+					# unless we accidentally split a number that was in scientific notation
+					# and had a negative exponent (500.00e-1)
+					prev = nums[len(nums)-1]
+					if prev[len(prev)-1] == 'e' or prev[len(prev)-1] == 'E':
+						nums[len(nums)-1] = prev + '-' + negcoords[j]
+					else:
+						nums.append( '-'+negcoords[j] )
+
+	# now resolve into SVGLength values
 	i = 0
-	points = []
 	while i < len(nums):
 		x = SVGLength(nums[i])
 		# if we had an odd number of points, return empty
@@ -1803,7 +1834,7 @@ def parseListOfPoints(s):
 		points.append( str(x.value) )
 		points.append( str(y.value) )
 		i += 2
-	
+
 	return points
 	
 def cleanPolygon(elem):
@@ -1820,14 +1851,14 @@ def cleanPolygon(elem):
 		if startx == endx and starty == endy:
 			pts = pts[:-2]
 			numPointsRemovedFromPolygon += 1		
-	elem.setAttribute('points', scourCoordinates(pts))
+	elem.setAttribute('points', scourCoordinates(pts,True))
 
 def cleanPolyline(elem):
 	"""
 		Scour the polyline points attribute
 	"""
 	pts = parseListOfPoints(elem.getAttribute('points'))		
-	elem.setAttribute('points', scourCoordinates(pts))
+	elem.setAttribute('points', scourCoordinates(pts,True))
 	
 def serializePath(pathObj):
 	"""
