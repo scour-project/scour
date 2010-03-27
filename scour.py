@@ -34,7 +34,6 @@
 #    at rounded corners)
 
 # Next Up:
-# - Bug 511186: option to keep XML comments between prolog and root element
 # - only remove unreferenced elements if they are not children of a referenced element
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
@@ -1355,7 +1354,7 @@ def cleanPath(element) :
 	else:
 		# we have a move and then 1 or more coords for lines
 		N = len(path[0][1])
-		if path[0] == 'M':
+		if path[0][0] == 'M':
 			# take the last pair of coordinates for the starting point
 			x = path[0][1][N-2]
 			y = path[0][1][N-1]
@@ -1624,13 +1623,14 @@ def cleanPath(element) :
 	for (cmd,data) in path[1:]:
 		# flush the previous command if it is not the same type as the current command
 		if prevCmd != '':
-			if cmd != prevCmd:
+			if cmd != prevCmd or cmd == 'm':
 				newPath.append( (prevCmd, prevData) )
 				prevCmd = ''
 				prevData = []
 		
 		# if the previous and current commands are the same type, collapse
-		if cmd == prevCmd: 
+		# but only if they are not move commands (since move can contain implicit lineto commands)
+		if cmd == prevCmd and cmd != 'm':
 			for coord in data:
 				prevData.append(coord)
 		
@@ -1757,13 +1757,13 @@ def cleanPath(element) :
 	for (cmd,data) in path[1:]:
 		# flush the previous command if it is not the same type as the current command
 		if prevCmd != '':
-			if cmd != prevCmd:
+			if cmd != prevCmd or cmd == 'm':
 				newPath.append( (prevCmd, prevData) )
 				prevCmd = ''
 				prevData = []
 		
 		# if the previous and current commands are the same type, collapse
-		if cmd == prevCmd: 
+		if cmd == prevCmd and cmd != 'm':
 			for coord in data:
 				prevData.append(coord)
 		
@@ -2480,5 +2480,3 @@ if __name__ == '__main__':
 	sizediff = (newsize / oldsize) * 100
 	print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
 		'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
-
-

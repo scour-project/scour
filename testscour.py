@@ -1019,6 +1019,12 @@ class DoNotStripDoctype(unittest.TestCase):
 		self.assertEquals( doc.childNodes[1].nodeType, 10, 'Second node not a doctype')
 		self.assertEquals( doc.childNodes[2].nodeType, 1, 'Third node not the root node')
 
+class PathImplicitLineWithMoveCommands(unittest.TestCase):
+	def runTest(self):
+		path = scour.scourXmlFile('unittests/path-implicit-line.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
+		self.assertEquals( path.getAttribute('d'), "M100,100,100,200m200-100-200,0m200,100,0-100",
+			"Implicit line segments after move not preserved")
+
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
