@@ -17,6 +17,7 @@
 	<ul>
 		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/541889">Bug 541889</a> to parse polygon/polyline points missing whitespace/comma separating a negative value.  Always output points attributes as comma-separated.</li>
 		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/519698">Bug 519698</a> to properly parse move commands that have line segments.</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/577940">Bug 577940</a> to include stroke-dasharray into list of style properties turned into XML attributes.</li>
 	</ul>
 </section>
 
@@ -225,7 +226,7 @@
 		<li>Convert lines to horiz/vertical line segments where possible</li>
 		<li>Remove some more default styles (display:none, visibility:visible, overflow:visible,
 		    marker:none)</li>
-	</ul>	
+	</ul>
 </section>
 
 <section id="0.09">
@@ -239,7 +240,7 @@
 		<li>Added option to prevent group collapsing</li>
 		<li>Prevent groups with title/desc children from being collapsed</li>
 		<li>Remove stroke="none"</li>
-	</ul>	
+	</ul>
 </section>
 
 <section id="0.08">
@@ -251,7 +252,7 @@
 		<li>Remove unnecessary nested &lt;g&gt; elements</li>
 		<li>Remove duplicate gradient stops (same offset, stop-color, stop-opacity)</li>
 		<li>Always keep fonts inside &lt;defs&gt;, always keep ids on fonts</li>
-		<li>made ID stripping optional (disabled by default)</li>	  
+		<li>made ID stripping optional (disabled by default)</li>
 	</ul>
 </section>
 
@@ -303,7 +304,7 @@
 		</ul></li>
 		<li>Convert style properties into SVG attributes</li>
 	</ul>
-	
+
 </section>
 
 </body>

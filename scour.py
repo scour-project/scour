@@ -115,6 +115,7 @@ svgAttributes = [
 				'stop-color',
 				'stop-opacity',
 				'stroke',
+				'stroke-dasharray',
 				'stroke-dashoffset',
 				'stroke-linecap',
 				'stroke-linejoin',
