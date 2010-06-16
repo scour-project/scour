@@ -2239,15 +2239,17 @@ def embedRasters(element, options) :
 					numRastersEmbedded += 1
 					del b64eRaster				
 
-def properlySizeDoc(docElement):
+def properlySizeDoc(docElement, options):
 	# get doc width and height
 	w = SVGLength(docElement.getAttribute('width'))
 	h = SVGLength(docElement.getAttribute('height'))
 
-	# if width/height are not unitless or px then it is not ok to rewrite them into a viewBox	
-	if ((w.units != Unit.NONE and w.units != Unit.PX) or
-		(w.units != Unit.NONE and w.units != Unit.PX)):
-	    return
+	# if width/height are not unitless or px then it is not ok to rewrite them into a viewBox.
+	# well, it may be OK for Web browsers and vector editors, but not for librsvg.
+	if options.renderer_workaround:
+		if ((w.units != Unit.NONE and w.units != Unit.PX) or
+			(h.units != Unit.NONE and h.units != Unit.PX)):
+		    return
 
 	# else we have a statically sized image and we should try to remedy that	
 
@@ -2592,7 +2594,7 @@ def scourString(in_string, options=None):
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
 	if options.enable_viewboxing:
-		properlySizeDoc(doc.documentElement)
+		properlySizeDoc(doc.documentElement, options)
 
 	# output the document as a pretty string with a single space for indent
 	# NOTE: removed pretty printing because of this problem:
