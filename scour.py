@@ -2557,7 +2557,7 @@ def scourString(in_string, options=None):
 
 	# scour points of polyline
 	for polyline in doc.documentElement.getElementsByTagName('polyline') :
-		cleanPolygon(polyline, options)
+		cleanPolyline(polyline, options)
 
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagName('path') :
