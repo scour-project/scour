@@ -749,15 +749,18 @@ def removeNestedGroups(node):
 	num = 0
 	
 	groupsToRemove = []
-	for child in node.childNodes:
-		if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
-			# only collapse group if it does not have a title or desc as a direct descendant
-			for grandchild in child.childNodes:
-				if grandchild.nodeType == 1 and grandchild.namespaceURI == NS['SVG'] and \
-						grandchild.nodeName in ['title','desc']:
-					break
-			else:
-				groupsToRemove.append(child)
+	# Only consider <g> elements for promotion if this element isn't a <switch>.
+	# (partial fix for bug 594930, required by the SVG spec however)
+	if not (node.nodeType == 1 and node.nodeName == 'switch'):
+		for child in node.childNodes:
+			if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
+				# only collapse group if it does not have a title or desc as a direct descendant,
+				for grandchild in child.childNodes:
+					if grandchild.nodeType == 1 and grandchild.namespaceURI == NS['SVG'] and \
+							grandchild.nodeName in ['title','desc']:
+						break
+				else:
+					groupsToRemove.append(child)
 
 	for g in groupsToRemove:
 		while g.childNodes.length > 0:
