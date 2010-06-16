@@ -22,12 +22,18 @@ class ScourInkscape (inkex.Effect):
         self.OptionParser.add_option("--enable-id-stripping", type="inkbool",
             action="store", dest="strip_ids", default=False,
             help="remove all un-referenced ID attributes")
+        self.OptionParser.add_option("--shorten-ids", type="inkbool",
+            action="store", dest="shorten_ids", default=False,
+            help="shorten all ID attributes to the least number of letters possible")
         self.OptionParser.add_option("--embed-rasters", type="inkbool",
             action="store", dest="embed_rasters", default=True,
             help="won't embed rasters as base64-encoded data")
         self.OptionParser.add_option("--keep-editor-data", type="inkbool",
             action="store", dest="keep_editor_data", default=False,
             help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
+        self.OptionParser.add_option("--remove-metadata", type="inkbool",
+            action="store", dest="remove_metadata", default=False,
+            help="remove <metadata> elements (which may contain license metadata etc.)")
         self.OptionParser.add_option("--strip-xml-prolog", type="inkbool",
             action="store", dest="strip_xml_prolog", default=False,
             help="won't output the <?xml ?> prolog")
@@ -40,7 +46,12 @@ class ScourInkscape (inkex.Effect):
         self.OptionParser.add_option("--enable-viewboxing", type="inkbool",
             action="store", dest="enable_viewboxing", default=False,
             help="changes document width/height to 100%/100% and creates viewbox coordinates")
-
+        self.OptionParser.add_option("--enable-comment-stripping", type="inkbool",
+            action="store", dest="strip_comments", default=False,
+            help="remove all <!-- --> comments")
+        self.OptionParser.add_option("--renderer-workaround", type="inkbool",
+            action="store", dest="renderer_workaround", default=False,
+            help="work around various renderer bugs (currently only librsvg)")
 
     def effect(self):   
         input = file(sys.argv[12], "r")

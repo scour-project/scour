@@ -39,7 +39,6 @@
 # - investigate point-reducing algorithms
 # - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
-# - option to remove metadata
 
 # necessary to get true division
 from __future__ import division
@@ -49,10 +48,8 @@ import sys
 import xml.dom.minidom
 import re
 import math
-import base64
-import urllib
 from svg_regex import svg_parser
-import gzip
+from svg_transform import svg_transform_parser
 import optparse
 from yocto_css import parseCssString
 
@@ -60,8 +57,7 @@ from yocto_css import parseCssString
 try:
 	from decimal import *
 except ImportError:
-	from fixedpoint import *
-	Decimal = FixedPoint	
+	print >>sys.stderr, "Scour requires Python 2.4."
 
 # Import Psyco if available
 try:
@@ -276,14 +272,14 @@ colors = {
 	}
 	
 def isSameSign(a,b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
-	
-coord = re.compile("\\-?\\d+\\.?\\d*")
-scinumber = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+[eE][\\-\\+]?\\d+")
-number = re.compile("[\\-\\+]?(\\d*\\.?)?\\d+")
-sciExponent = re.compile("[eE]([\\-\\+]?\\d+)")
-unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|\\%){1,1}$")
+
+scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
+number = re.compile(r"[-+]?(\d*\.?)?\d+")
+sciExponent = re.compile(r"[eE]([-+]?\d+)")
+unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|%){1,1}$")
 
 class Unit(object):
+	# Integer constants for units.
 	INVALID = -1
 	NONE = 0
 	PCT = 1
@@ -296,35 +292,48 @@ class Unit(object):
 	MM = 8
 	IN = 9
 	
+	# String to Unit. Basically, converts unit strings to their integer constants.
+	s2u = {
+		'': NONE,
+		'%': PCT,
+		'px': PX,
+		'pt': PT,
+		'pc': PC,
+		'em': EM,
+		'ex': EX,
+		'cm': CM,
+		'mm': MM,
+		'in': IN,
+	}
+	
+	# Unit to String. Basically, converts unit integer constants to their corresponding strings.
+	u2s = {
+		NONE: '',
+		PCT: '%',
+		PX: 'px',
+		PT: 'pt',
+		PC: 'pc',
+		EM: 'em',
+		EX: 'ex',
+		CM: 'cm',
+		MM: 'mm',
+		IN: 'in',
+	}
+	
 #	@staticmethod
-	def get(str):
-		# GZ: shadowing builtins like 'str' is generally bad form
-		# GZ: encoding stuff like this in a dict makes for nicer code
-		if str == None or str == '': return Unit.NONE
-		elif str == '%': return Unit.PCT
-		elif str == 'px': return Unit.PX
-		elif str == 'pt': return Unit.PT
-		elif str == 'pc': return Unit.PC
-		elif str == 'em': return Unit.EM
-		elif str == 'ex': return Unit.EX
-		elif str == 'cm': return Unit.CM
-		elif str == 'mm': return Unit.MM
-		elif str == 'in': return Unit.IN
-		return Unit.INVALID
+	def get(unitstr):
+		if unitstr is None: return Unit.NONE
+		try:
+			return Unit.s2u[unitstr]
+		except KeyError:
+			return Unit.INVALID
 
 #	@staticmethod
-	def str(u):
-		if u == Unit.NONE: return ''
-		elif u == Unit.PCT: return '%'
-		elif u == Unit.PX: return 'px'
-		elif u == Unit.PT: return 'pt'
-		elif u == Unit.PC: return 'pc'
-		elif u == Unit.EM: return 'em'
-		elif u == Unit.EX: return 'ex'
-		elif u == Unit.CM: return 'cm'
-		elif u == Unit.MM: return 'mm'
-		elif u == Unit.IN: return 'in'
-		return 'INVALID'
+	def str(unitint):
+		try:
+			return Unit.u2s[unitint]
+		except KeyError:
+			return 'INVALID'
 		
 	get = staticmethod(get)
 	str = staticmethod(str)
@@ -370,26 +379,6 @@ class SVGLength(object):
 				# TODO: this needs to set the default for the given attribute (how?)
 				self.value = 0 
 				self.units = Unit.INVALID
-
-# returns the length of a property
-# TODO: eventually use the above class once it is complete
-def getSVGLength(value):
-	try:
-		v = float(value)
-	except ValueError:
-		coordMatch = coord.match(value)
-		if coordMatch != None:
-			unitMatch = unit.search(value, coordMatch.start(0))
-		v = value
-	return v
-
-def findElementById(node, id):
-	if node == None or node.nodeType != 1: return None
-	if node.getAttribute('id') == id: return node
-	for child in node.childNodes :
-		e = findElementById(child,id)
-		if e != None: return e
-	return None
 
 def findElementsWithId(node, elems=None):
 	"""
@@ -499,7 +488,11 @@ numPathSegmentsReduced = 0
 numCurvesStraightened = 0
 numBytesSavedInPathData = 0
 numBytesSavedInColors = 0
+numBytesSavedInIDs = 0
+numBytesSavedInLengths = 0
+numBytesSavedInTransforms = 0
 numPointsRemovedFromPolygon = 0
+numCommentBytes = 0
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 	if elemsToRemove is None:
@@ -539,7 +532,7 @@ def removeUnreferencedElements(doc):
 
 	for id in identifiedElements:
 		if not id in referencedIDs:
-			goner = findElementById(doc.documentElement, id)
+			goner = identifiedElements[id]
 			if goner != None and goner.parentNode != None and goner.nodeName in removeTags:
 				goner.parentNode.removeChild(goner)
 				num += 1
@@ -554,6 +547,125 @@ def removeUnreferencedElements(doc):
 			elem.parentNode.removeChild(elem)
 			numElemsRemoved += 1
 			num += 1
+	return num
+
+def shortenIDs(doc):
+	"""
+	Shortens ID names used in the document. ID names referenced the most often are assigned the
+	shortest ID names.
+	
+	Returns the number of bytes saved by shortening ID names in the document.
+	"""
+	num = 0
+
+	identifiedElements = findElementsWithId(doc.documentElement)
+	referencedIDs = findReferencedElements(doc.documentElement)
+
+	# Make idList (list of idnames) sorted by reference count
+	# descending, so the highest reference count is first.
+	# First check that there's actually a defining element for the current ID name.
+	# (Cyn: I've seen documents with #id references but no element with that ID!)
+	idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs  if rid in identifiedElements]
+	idList.sort(reverse=True)
+	idList = [rid for count, rid in idList]
+	
+	curIdNum = 1
+	
+	for rid in idList:
+		curId = intToID(curIdNum)
+		# First make sure that *this* element isn't already using
+		# the ID name we want to give it.
+		if curId != rid:
+			# Then, skip ahead if the new ID is already in identifiedElement.
+			while curId in identifiedElements:
+				curIdNum += 1
+				curId = intToID(curIdNum)
+			# Then go rename it.
+			num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
+		curIdNum += 1
+	
+	return num
+
+def intToID(idnum):
+	"""
+	Returns the ID name for the given ID number, spreadsheet-style, i.e. from a to z,
+	then from aa to az, ba to bz, etc., until zz.
+	"""
+	rid = ''
+	
+	while idnum > 0:
+		idnum -= 1
+		rid = chr((idnum % 26) + ord('a')) + rid
+		idnum = int(idnum / 26)
+	
+	return rid
+
+def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
+	"""
+	Changes the ID name from idFrom to idTo, on the declaring element
+	as well as all references in the document doc.
+	
+	Updates identifiedElements and referencedIDs.
+	Does not handle the case where idTo is already the ID name
+	of another element in doc.
+	
+	Returns the number of bytes saved by this replacement.
+	"""
+	
+	num = 0
+	
+	definingNode = identifiedElements[idFrom]
+	definingNode.setAttribute("id", idTo)
+	del identifiedElements[idFrom]
+	identifiedElements[idTo] = definingNode
+	
+	referringNodes = referencedIDs[idFrom]
+	
+	# Look for the idFrom ID name in each of the referencing elements,
+	# exactly like findReferencedElements would. 
+	# Cyn: Duplicated processing!
+
+	for node in referringNodes[1]:
+		# if this node is a style element, parse its text into CSS
+		if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
+			# node.firstChild will be either a CDATA or a Text node
+			if node.firstChild != None:
+				oldValue = node.firstChild.nodeValue
+				# not going to reparse the whole thing
+				newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+				newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
+				newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+				node.firstChild.nodeValue = newValue
+				num += len(oldValue) - len(newValue)
+	
+		# if xlink:href is set to #idFrom, then change the id
+		href = node.getAttributeNS(NS['XLINK'],'href')
+		if href == '#' + idFrom:
+			node.setAttributeNS(NS['XLINK'],'href', '#' + idTo)
+			num += len(idFrom) - len(idTo)
+
+		# if the style has url(#idFrom), then change the id
+		styles = node.getAttribute('style')
+		if styles != '':
+			newValue = styles.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+			newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
+			newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+			node.setAttribute('style', newValue)
+			num += len(styles) - len(newValue)
+			
+		# now try the fill, stroke, filter attributes
+		for attr in referencingProps:
+			oldValue = node.getAttribute(attr)
+			if oldValue != '':
+				newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+				newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
+				newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+				node.setAttribute(attr, newValue)
+				num += len(oldValue) - len(newValue)
+				
+	del referencedIDs[idFrom]
+	referencedIDs[idTo] = referringNodes
+	
 	return num
 
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
@@ -580,7 +692,7 @@ def removeNamespacedAttributes(node, namespaces):
 		# remove all namespace'd attributes from this element
 		attrList = node.attributes
 		attrsToRemove = []
-		for attrNum in range(attrList.length):
+		for attrNum in xrange(attrList.length):
 			attr = attrList.item(attrNum)
 			if attr != None and attr.namespaceURI in namespaces:
 				attrsToRemove.append(attr.nodeName)
@@ -612,6 +724,19 @@ def removeNamespacedElements(node, namespaces):
 		# now recurse for children
 		for child in node.childNodes:
 			num += removeNamespacedElements(child, namespaces)
+	return num
+	
+def removeMetadataElements(doc):
+	global numElemsRemoved
+	num = 0
+	# clone the list, as the tag list is live from the DOM
+	elementsToRemove = [element for element in doc.documentElement.getElementsByTagName('metadata')]
+	
+	for element in elementsToRemove:
+		element.parentNode.removeChild(element)
+		num += 1
+		numElemsRemoved += 1
+	
 	return num
 
 def removeNestedGroups(node):
@@ -676,7 +801,7 @@ def moveCommonAttributesToParentGroup(elem):
 	# its fill attribute is not what we want to look at, we should look for the first
 	# non-animate/set element
 	attrList = childElements[0].attributes
-	for num in range(attrList.length):
+	for num in xrange(attrList.length):
 		attr = attrList.item(num)
 		# this is most of the inheritable properties from http://www.w3.org/TR/SVG11/propidx.html
 		# and http://www.w3.org/TR/SVGTiny12/attributeTable.html
@@ -695,7 +820,7 @@ def moveCommonAttributesToParentGroup(elem):
 			commonAttrs[attr.nodeName] = attr.nodeValue
 	
 	# for each subsequent child element
-	for childNum in range(len(childElements)):
+	for childNum in xrange(len(childElements)):
 		# skip first child
 		if childNum == 0: 
 			continue
@@ -745,7 +870,7 @@ def removeUnusedAttributesOnParent(elem):
 	# get all attribute values on this parent
 	attrList = elem.attributes
 	unusedAttrs = {}
-	for num in range(attrList.length):
+	for num in xrange(attrList.length):
 		attr = attrList.item(num)
 		if attr.nodeName in ['clip-rule',
 					'display-align', 
@@ -761,7 +886,7 @@ def removeUnusedAttributesOnParent(elem):
 			unusedAttrs[attr.nodeName] = attr.nodeValue
 	
 	# for each child, if at least one child inherits the parent's attribute, then remove
-	for childNum in range(len(childElements)):
+	for childNum in xrange(len(childElements)):
 		child = childElements[childNum]
 		inheritedAttrs = []
 		for name in unusedAttrs.keys():
@@ -819,12 +944,16 @@ def collapseSinglyReferencedGradients(doc):
 	global numElemsRemoved
 	num = 0
 	
+	identifiedElements = findElementsWithId(doc.documentElement)
+	
 	# make sure to reset the ref'ed ids for when we are running this in testscour
 	for rid,nodeCount in findReferencedElements(doc.documentElement).iteritems():
 		count = nodeCount[0]
 		nodes = nodeCount[1]
-		if count == 1:
-			elem = findElementById(doc.documentElement,rid)
+		# Make sure that there's actually a defining element for the current ID name.
+		# (Cyn: I've seen documents with #id references but no element with that ID!)
+		if count == 1 and rid in identifiedElements:
+			elem = identifiedElements[rid]
 			if elem != None and elem.nodeType == 1 and elem.nodeName in ['linearGradient', 'radialGradient'] \
 					and elem.namespaceURI == NS['SVG']:
 				# found a gradient that is referenced by only 1 other element
@@ -905,7 +1034,7 @@ def removeDuplicateGradients(doc):
 
 				# now compare stops
 				stopsNotEqual = False
-				for i in range(stops.length):
+				for i in xrange(stops.length):
 					if stopsNotEqual: break
 					stop = stops.item(i)
 					ostop = ostops.item(i)
@@ -1045,8 +1174,8 @@ def repairStyle(node, options):
 
 		# stroke-width: 0
 		if styleMap.has_key('stroke-width') :
-			strokeWidth = getSVGLength(styleMap['stroke-width']) 
-			if strokeWidth == 0.0 :
+			strokeWidth = SVGLength(styleMap['stroke-width']) 
+			if strokeWidth.value == 0.0 :
 				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap', 
 							'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
 					if styleMap.has_key(uselessStrokeStyle): 
@@ -1201,8 +1330,8 @@ def removeDefaultAttributeValues(node, options):
 	
 	return num
 
-rgb = re.compile("\\s*rgb\\(\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\,\\s*(\\d+)\\s*\\)\\s*")
-rgbp = re.compile("\\s*rgb\\(\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\,\\s*(\\d*\\.?\\d+)\\%\\s*\\)\\s*")
+rgb = re.compile(r"\s*rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*")
+rgbp = re.compile(r"\s*rgb\(\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*\)\s*")
 def convertColor(value):
 	"""
 		Converts the input color string and returns a #RRGGBB (or #RGB if possible) string
@@ -1217,21 +1346,19 @@ def convertColor(value):
 		r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
 		g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
 		b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
-		s  = 'rgb(%d,%d,%d)' % (r,g,b)
+		s  = '#%02x%02x%02x' % (r, g, b)
+	else:
+		rgbMatch = rgb.match(s)
+		if rgbMatch != None :
+			r = int( rgbMatch.group(1) )
+			g = int( rgbMatch.group(2) )
+			b = int( rgbMatch.group(3) )
+			s = '#%02x%02x%02x' % (r, g, b)
 	
-	rgbMatch = rgb.match(s)
-	if rgbMatch != None :
-		r = hex( int( rgbMatch.group(1) ) )[2:].upper()
-		g = hex( int( rgbMatch.group(2) ) )[2:].upper()
-		b = hex( int( rgbMatch.group(3) ) )[2:].upper()
-		if len(r) == 1: r='0'+r
-		if len(g) == 1: g='0'+g
-		if len(b) == 1: b='0'+b
-		s = '#'+r+g+b
-	
-	if s[0] == '#' and len(s)==7 and s[1]==s[2] and s[3]==s[4] and s[5]==s[6]:
-		s = s.upper()
-		s = '#'+s[1]+s[3]+s[5]
+	if s[0] == '#':
+		s = s.lower()
+		if len(s)==7 and s[1]==s[2] and s[3]==s[4] and s[5]==s[6]:
+			s = '#'+s[1]+s[3]+s[5]
 
 	return s
 	
@@ -1273,7 +1400,7 @@ def convertColors(element) :
 # TODO: go over what this method does and see if there is a way to optimize it
 # TODO: go over the performance of this method and see if I can save memory/speed by
 #       reusing data structures, etc
-def cleanPath(element) :
+def cleanPath(element, options) :
 	"""
 		Cleans the path string (d attribute) of the element 
 	"""
@@ -1283,292 +1410,155 @@ def cleanPath(element) :
 	
 	# this gets the parser object from svg_regex.py
 	oldPathStr = element.getAttribute('d')
-	pathObj = svg_parser.parse(oldPathStr)
-	
-	# however, this parser object has some ugliness in it (lists of tuples of tuples of 
-	# numbers and booleans).  we just need a list of (cmd,[numbers]):
-	path = []
-	for (cmd,dataset) in pathObj:
-		if cmd in ['M','m','L','l','T','t']:
-			# one or more tuples, each containing two numbers
-			nums = []
-			for t in dataset:
-				# convert to a Decimal
-				nums.append(Decimal(str(t[0])) * Decimal(1))
-				nums.append(Decimal(str(t[1])) * Decimal(1))
-					
-			# only create this segment if it is not empty
-			if nums:
-				path.append( (cmd, nums) )
-			
-		elif cmd in ['V','v','H','h']:
-			# one or more numbers
-			nums = []
-			for n in dataset:
-				nums.append(Decimal(str(n)))
-			if nums:
-				path.append( (cmd, nums) )
-			
-		elif cmd in ['C','c']:
-			# one or more tuples, each containing three tuples of two numbers each
-			nums = []
-			for t in dataset:
-				for pair in t:
-					nums.append(Decimal(str(pair[0])) * Decimal(1))
-					nums.append(Decimal(str(pair[1])) * Decimal(1))
-			path.append( (cmd, nums) )
-			
-		elif cmd in ['S','s','Q','q']:
-			# one or more tuples, each containing two tuples of two numbers each
-			nums = []
-			for t in dataset:
-				for pair in t:
-					nums.append(Decimal(str(pair[0])) * Decimal(1))
-					nums.append(Decimal(str(pair[1])) * Decimal(1))
-			path.append( (cmd, nums) )
-			
-		elif cmd in ['A','a']:
-			# one or more tuples, each containing a tuple of two numbers, a number, a boolean,
-			# another boolean, and a tuple of two numbers
-			nums = []
-			for t in dataset:
-				nums.append( Decimal(str(t[0][0])) * Decimal(1) )
-				nums.append( Decimal(str(t[0][1])) * Decimal(1) )
-				nums.append( Decimal(str(t[1])) * Decimal(1))
-				
-				if t[2]: nums.append( Decimal(1) )
-				else: nums.append( Decimal(0) )
+	path = svg_parser.parse(oldPathStr)
 
-				if t[3]: nums.append( Decimal(1) )
-				else: nums.append( Decimal(0) )
-				
-				nums.append( Decimal(str(t[4][0])) * Decimal(1) )
-				nums.append( Decimal(str(t[4][1])) * Decimal(1) )
-			path.append( (cmd, nums) )
-		
-		elif cmd in ['Z','z']:
-			path.append( (cmd, []) )
-
-	# calculate the starting x,y coord for the second path command
-	if len(path[0][1]) == 2:
-		(x,y) = path[0][1]
-	else:
-		# we have a move and then 1 or more coords for lines
-		N = len(path[0][1])
-		if path[0][0] == 'M':
-			# take the last pair of coordinates for the starting point
-			x = path[0][1][N-2]
-			y = path[0][1][N-1]
-		else: # relative move, accumulate coordinates for the starting point
-			(x,y) = path[0][1][0],path[0][1][1]
-			n = 2
-			while n < N:
-				x += path[0][1][n]
-				y += path[0][1][n+1]
-				n += 2
+	# The first command must be a moveto, and whether it's relative (m)
+	# or absolute (M), the first set of coordinates *is* absolute. So
+	# the first iteration of the loop below will get x,y and startx,starty.
 	
-	# now we have the starting point at x,y so let's save it 
-	(startx,starty) = (x,y)
-	
-	# convert absolute coordinates into relative ones (start with the second subcommand
-	# and leave the first M as absolute)
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
+	# convert absolute coordinates into relative ones.
+	# Reuse the data structure 'path', since we're not adding or removing subcommands.
+	# Also reuse the coordinate lists since we're not adding or removing any.
+	for pathIndex in xrange(0, len(path)):
+		cmd, data = path[pathIndex] # Changes to cmd don't get through to the data structure
 		i = 0
-		newCmd = cmd
-		newData = data
 		# adjust abs to rel
 		# only the A command has some values that we don't want to adjust (radii, rotation, flags)
 		if cmd == 'A':
-			newCmd = 'a'
-			newData = []
-			while i < len(data):
-				newData.append(data[i])
-				newData.append(data[i+1])
-				newData.append(data[i+2])
-				newData.append(data[i+3])
-				newData.append(data[i+4])
-				newData.append(data[i+5]-x)
-				newData.append(data[i+6]-y)
-				x = data[i+5]
-				y = data[i+6]
-				i += 7
-		elif cmd == 'a':
-			while i < len(data):
+			for i in xrange(i, len(data), 7):
+				data[i+5] -= x
+				data[i+6] -= y
 				x += data[i+5]
 				y += data[i+6]
-				i += 7			
+			path[pathIndex] = ('a', data)
+		elif cmd == 'a':
+			x += sum(data[5::7])
+			y += sum(data[6::7])
 		elif cmd == 'H':
-			newCmd = 'h'
-			newData = []
-			while i < len(data):
-				newData.append(data[i]-x)
-				x = data[i]
-				i += 1
+			for i in xrange(i, len(data)):
+				data[i] -= x
+				x += data[i]
+			path[pathIndex] = ('h', data)
 		elif cmd == 'h':
-			while i < len(data):
-				x += data[i]
-				i += 1
+			x += sum(data)
 		elif cmd == 'V':
-			newCmd = 'v'
-			newData = []
-			while i < len(data):
-				newData.append(data[i] - y)
-				y = data[i]
-				i += 1
-		elif cmd == 'v':
-			while i < len(data):
+			for i in xrange(i, len(data)):
+				data[i] -= y
 				y += data[i]
-				i += 1
-		elif cmd in ['M']:
-			newCmd = cmd.lower()
-			newData = []
-			startx = data[0]
-			starty = data[1]
-			while i < len(data):
-				newData.append( data[i] - x )
-				newData.append( data[i+1] - y )
-				x = data[i]
-				y = data[i+1]
-				i += 2
+			path[pathIndex] = ('v', data)
+		elif cmd == 'v':
+			y += sum(data)
+		elif cmd == 'M':
+			startx, starty = data[0], data[1]
+			# If this is a path starter, don't convert its first
+			# coordinate to relative; that would just make it (0, 0)
+			if pathIndex != 0:
+				data[0] -= x
+				data[1] -= y
+			
+			x, y = startx, starty
+			i = 2
+			for i in xrange(i, len(data), 2):
+				data[i] -= x
+				data[i+1] -= y
+				x += data[i]
+				y += data[i+1]
+			path[pathIndex] = ('m', data)
 		elif cmd in ['L','T']:
-			newCmd = cmd.lower()
-			newData = []
-			while i < len(data):
-				newData.append( data[i] - x )
-				newData.append( data[i+1] - y )
-				x = data[i]
-				y = data[i+1]
-				i += 2
+			for i in xrange(i, len(data), 2):
+				data[i] -= x
+				data[i+1] -= y
+				x += data[i]
+				y += data[i+1]
+			path[pathIndex] = (cmd.lower(), data)
 		elif cmd in ['m']:
-			startx += data[0]
-			starty += data[1]
-			while i < len(data):
+			if pathIndex == 0:
+				# START OF PATH - this is an absolute moveto
+				# followed by relative linetos
+				startx, starty = data[0], data[1]
+				x, y = startx, starty
+				i = 2
+			else:
+				startx = x + data[0]
+				starty = y + data[1]
+			for i in xrange(i, len(data), 2):
 				x += data[i]
 				y += data[i+1]
-				i += 2
 		elif cmd in ['l','t']:
-			while i < len(data):
-				x += data[i]
-				y += data[i+1]
-				i += 2
+			x += sum(data[0::2])
+			y += sum(data[1::2])
 		elif cmd in ['S','Q']:
-			newCmd = cmd.lower()
-			newData = []
-			while i < len(data):
-				newData.append( data[i] - x )
-				newData.append( data[i+1] - y )
-				newData.append( data[i+2] - x )
-				newData.append( data[i+3] - y )
-				x = data[i+2]
-				y = data[i+3]
-				i += 4
-		elif cmd in ['s','q']:
-			while i < len(data):
+			for i in xrange(i, len(data), 4):
+				data[i] -= x
+				data[i+1] -= y
+				data[i+2] -= x
+				data[i+3] -= y
 				x += data[i+2]
 				y += data[i+3]
-				i += 4
+			path[pathIndex] = (cmd.lower(), data)
+		elif cmd in ['s','q']:
+			x += sum(data[2::4])
+			y += sum(data[3::4])
 		elif cmd == 'C':
-			newCmd = 'c'
-			newData = []
-			while i < len(data):
-				newData.append( data[i] - x )
-				newData.append( data[i+1] - y )
-				newData.append( data[i+2] - x )
-				newData.append( data[i+3] - y )
-				newData.append( data[i+4] - x )
-				newData.append( data[i+5] - y )
-				x = data[i+4]
-				y = data[i+5]
-				i += 6
-		elif cmd == 'c':
-			while i < len(data):
+			for i in xrange(i, len(data), 6):
+				data[i] -= x
+				data[i+1] -= y
+				data[i+2] -= x
+				data[i+3] -= y
+				data[i+4] -= x
+				data[i+5] -= y
 				x += data[i+4]
 				y += data[i+5]
-				i += 6
+			path[pathIndex] = ('c', data)
+		elif cmd == 'c':
+			x += sum(data[4::6])
+			y += sum(data[5::6])
 		elif cmd in ['z','Z']:
-			x = startx
-			y = starty
-			newCmd = 'z'
-		newPath.append( (newCmd, newData) )
-	path = newPath
+			x, y = startx, starty
+			path[pathIndex] = ('z', data)
 	
 	# remove empty segments
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
+	# Reuse the data structure 'path' and the coordinate lists, even if we're
+	# deleting items, because these deletions are relatively cheap.
+	for pathIndex in xrange(0, len(path)):
+		cmd, data = path[pathIndex]
+		i = 0
 		if cmd in ['m','l','t']:
-			newData = []
-			i = 0
+			if cmd == 'm': i = 2
 			while i < len(data):
-				if data[i] != 0 or data[i+1] != 0:
-					newData.append(data[i])
-					newData.append(data[i+1])
-				else:
+				if data[i] == data[i+1] == 0:
+					del data[i:i+2]
 					numPathSegmentsReduced += 1
-				i += 2
-			if newData:
-				newPath.append( (cmd,newData) )
+				else:
+					i += 2
 		elif cmd == 'c':
-			newData = []
-			i = 0
 			while i < len(data):
-				if data[i+4] != 0 or data[i+5] != 0:
-					newData.append(data[i])
-					newData.append(data[i+1])
-					newData.append(data[i+2])
-					newData.append(data[i+3])
-					newData.append(data[i+4])
-					newData.append(data[i+5])
-				else:
+				if data[i+4] == data[i+5] == 0:
+					del data[i:i+6]
 					numPathSegmentsReduced += 1
-				i += 6
-			if newData:
-				newPath.append( (cmd,newData) )
+				else:
+					i += 6
 		elif cmd == 'a':
-			newData = []
-			i = 0
 			while i < len(data):
-				if data[i+5] != 0 or data[i+6] != 0:
-					newData.append(data[i])
-					newData.append(data[i+1])
-					newData.append(data[i+2])
-					newData.append(data[i+3])
-					newData.append(data[i+4])
-					newData.append(data[i+5])
-					newData.append(data[i+6])
-				else:
+				if data[i+5] == data[i+6] == 0:
+					del data[i:i+7]
 					numPathSegmentsReduced += 1
-				i += 7
-			if newData:
-				newPath.append( (cmd,newData) )
+				else:
+					i += 7
 		elif cmd == 'q':
-			newData = []
-			i = 0
 			while i < len(data):
-				if data[i+2] != 0 or data[i+3] != 0:
-					newData.append(data[i])
-					newData.append(data[i+1])
-					newData.append(data[i+2])
-					newData.append(data[i+3])
-				else:
+				if data[i+2] == data[i+3] == 0:
+					del data[i:i+4]
 					numPathSegmentsReduced += 1
-				i += 4
-			if newData:
-				newPath.append( (cmd,newData) )
+				else:
+					i += 4
 		elif cmd in ['h','v']:
-			newData = []
-			i = 0
-			while i < len(data):
-				if data[i] != 0:
-					newData.append(data[i])
-				else:
-					numPathSegmentsReduced += 1
-				i += 1
-			if newData:
-				newPath.append( (cmd,newData) )
-		else:
-			newPath.append( (cmd,data) )
-	path = newPath
+			oldLen = len(data)
+			path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
+			numPathSegmentsReduced += len(path[pathIndex][1]) - oldLen
+	
+	# fixup: Delete subcommands having no coordinates.
+	path = [elem for elem in path if len(elem[1]) > 0 or elem[0] == 'z']
 	
 	# convert straight curves into lines
 	newPath = [path[0]]
@@ -1605,12 +1595,7 @@ def cleanPath(element) :
 					newPath.append( ('l', [dx,dy]) )
 					numCurvesStraightened += 1
 				else:
-					newData.append(data[i])
-					newData.append(data[i+1])
-					newData.append(data[i+2])
-					newData.append(data[i+3])
-					newData.append(data[i+4])
-					newData.append(data[i+5])
+					newData.extend(data[i:i+6])
 					
 				i += 6
 		if newData or cmd == 'z' or cmd == 'Z':
@@ -1620,8 +1605,8 @@ def cleanPath(element) :
 	# collapse all consecutive commands of the same type into one command
 	prevCmd = ''
 	prevData = []
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
+	newPath = []
+	for (cmd,data) in path:
 		# flush the previous command if it is not the same type as the current command
 		if prevCmd != '':
 			if cmd != prevCmd or cmd == 'm':
@@ -1629,11 +1614,11 @@ def cleanPath(element) :
 				prevCmd = ''
 				prevData = []
 		
-		# if the previous and current commands are the same type, collapse
+		# if the previous and current commands are the same type,
+		# or the previous command is moveto and the current is lineto, collapse,
 		# but only if they are not move commands (since move can contain implicit lineto commands)
-		if cmd == prevCmd and cmd != 'm':
-			for coord in data:
-				prevData.append(coord)
+		if (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')) and cmd != 'm':
+			prevData.extend(data)
 		
 		# save last command and data
 		else:
@@ -1645,9 +1630,9 @@ def cleanPath(element) :
 	path = newPath
 
 	# convert to shorthand path segments where possible
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
-		# convert line segments into h,v where possible	
+	newPath = []
+	for (cmd,data) in path:
+		# convert line segments into h,v where possible
 		if cmd == 'l':
 			i = 0
 			lineTuples = []
@@ -1669,11 +1654,38 @@ def cleanPath(element) :
 					newPath.append( ('h', [data[i]]) )
 					numPathSegmentsReduced += 1
 				else:
-					lineTuples.append(data[i])
-					lineTuples.append(data[i+1])
+					lineTuples.extend(data[i:i+2])
 				i += 2
 			if lineTuples:
 				newPath.append( ('l', lineTuples) )
+		# also handle implied relative linetos
+		elif cmd == 'm':
+			i = 2
+			lineTuples = [data[0], data[1]]
+			while i < len(data):
+				if data[i] == 0:
+					# vertical
+					if lineTuples:
+						# flush the existing m/l command
+						newPath.append( (cmd, lineTuples) )
+						lineTuples = []
+						cmd = 'l' # dealing with linetos now
+					# append the v and then the remaining line coords						
+					newPath.append( ('v', [data[i+1]]) )
+					numPathSegmentsReduced += 1
+				elif data[i+1] == 0:
+					if lineTuples:
+						# flush the m/l command, then append the h and then the remaining line coords
+						newPath.append( (cmd, lineTuples) )
+						lineTuples = []
+						cmd = 'l' # dealing with linetos now
+					newPath.append( ('h', [data[i]]) )
+					numPathSegmentsReduced += 1
+				else:
+					lineTuples.extend(data[i:i+2])
+				i += 2
+			if lineTuples:
+				newPath.append( (cmd, lineTuples) )
 		# convert Bézier curve segments into s where possible	
 		elif cmd == 'c':
 			bez_ctl_pt = (0,0)
@@ -1732,23 +1744,20 @@ def cleanPath(element) :
 		
 	# for each h or v, collapse unnecessary coordinates that run in the same direction
 	# i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
-	newPath = [path[0]]
-	for (cmd,data) in path[1:]:
+	# Reuse the data structure 'path', since we're not adding or removing subcommands.
+	# Also reuse the coordinate lists, even if we're deleting items, because these
+	# deletions are relatively cheap.
+	for pathIndex in xrange(1, len(path)):
+		cmd, data = path[pathIndex]
 		if cmd in ['h','v'] and len(data) > 1:
-			newData = []
-			prevCoord = data[0]
-			for coord in data[1:]:
-				if isSameSign(prevCoord, coord):
-					prevCoord += coord
+			coordIndex = 1
+			while coordIndex < len(data):
+				if isSameSign(data[coordIndex - 1], data[coordIndex]):
+					data[coordIndex - 1] += data[coordIndex]
+					del data[coordIndex]
 					numPathSegmentsReduced += 1
 				else:
-					newData.append(prevCoord)
-					prevCoord = coord
-			newData.append(prevCoord)
-			newPath.append( (cmd, newData) )
-		else:
-			newPath.append( (cmd, data) )
-	path = newPath
+					coordIndex += 1
 	
 	# it is possible that we have consecutive h, v, c, t commands now
 	# so again collapse all consecutive commands of the same type into one command
@@ -1765,8 +1774,7 @@ def cleanPath(element) :
 		
 		# if the previous and current commands are the same type, collapse
 		if cmd == prevCmd and cmd != 'm':
-			for coord in data:
-				prevData.append(coord)
+				prevData.extend(data)
 		
 		# save last command and data
 		else:
@@ -1777,7 +1785,7 @@ def cleanPath(element) :
 		newPath.append( (prevCmd, prevData) )
 	path = newPath
 	
-	newPathStr = serializePath(path)
+	newPathStr = serializePath(path, options)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
 	element.setAttribute('d', newPathStr)
 
@@ -1799,7 +1807,7 @@ def parseListOfPoints(s):
 	
 	# also, if 100-100 is found, split it into two also
     #  <polygon points="100,-100,100-100,100-100-100,-100-100" />
-	for i in range(len(ws_nums)):
+	for i in xrange(len(ws_nums)):
 		negcoords = re.split("\\-", ws_nums[i]);
 		
 		# this string didn't have any negative coordinates
@@ -1807,7 +1815,7 @@ def parseListOfPoints(s):
 			nums.append(negcoords[0])
 		# we got negative coords
 		else:
-			for j in range(len(negcoords)):
+			for j in xrange(len(negcoords)):
 				# first number could be positive
 				if j == 0:
 					if negcoords[0] != '':
@@ -1838,7 +1846,7 @@ def parseListOfPoints(s):
 
 	return points
 	
-def cleanPolygon(elem):
+def cleanPolygon(elem, options):
 	"""
 		Remove unnecessary closing point of polygon points attribute
 	"""
@@ -1852,79 +1860,331 @@ def cleanPolygon(elem):
 		if startx == endx and starty == endy:
 			pts = pts[:-2]
 			numPointsRemovedFromPolygon += 1		
-	elem.setAttribute('points', scourCoordinates(pts,True))
+	elem.setAttribute('points', scourCoordinates(pts, options, True))
 
-def cleanPolyline(elem):
+def cleanPolyline(elem, options):
 	"""
 		Scour the polyline points attribute
 	"""
 	pts = parseListOfPoints(elem.getAttribute('points'))		
-	elem.setAttribute('points', scourCoordinates(pts,True))
-	
-def serializePath(pathObj):
+	elem.setAttribute('points', scourCoordinates(pts, options, True))
+
+def serializePath(pathObj, options):
 	"""
 		Reserializes the path data with some cleanups.
 	"""
-	pathStr = ""
-	for (cmd,data) in pathObj:
-		pathStr += cmd
-		# elliptical arc commands must have comma/wsp separating the coordinates
-		# this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-		pathStr += scourCoordinates(data, (cmd == 'a'))
-	return pathStr
+	# elliptical arc commands must have comma/wsp separating the coordinates
+	# this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
+	return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a'))  for cmd, data  in pathObj])
 
-def scourCoordinates(data, forceCommaWsp = False):
+def serializeTransform(transformObj):
+	"""
+		Reserializes the transform data with some cleanups.
+	"""
+	return ' '.join(
+		[command + '(' + ' '.join(
+			[scourUnitlessLength(number) for number in numbers]
+		) + ')'
+		for command, numbers in transformObj]
+	)
+
+def scourCoordinates(data, options, forceCommaWsp = False):
 	"""
 		Serializes coordinate data with some cleanups:
 			- removes all trailing zeros after the decimal
 			- integerize coordinates if possible
 			- removes extraneous whitespace
-			- adds commas between values in a subcommand if required (or if forceCommaWsp is True)
+			- adds spaces between values in a subcommand if required (or if forceCommaWsp is True)
 	"""
-	coordsStr = ""
 	if data != None:
+		newData = []
 		c = 0
+		previousCoord = ''
 		for coord in data:
+			scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround)
+			# only need the comma if the current number starts with a digit
+			# (numbers can start with - without needing a comma before)
+			# or if forceCommaWsp is True
+			# or if this number starts with a dot and the previous number
+			#   had *no* dot or exponent (so we can go like -5.5.5 for -5.5,0.5
+			#   and 4e4.5 for 40000,0.5)
+			if c > 0 and (forceCommaWsp
+				or scouredCoord[0].isdigit()
+				or (scouredCoord[0] == '.' and not ('.' in previousCoord or 'e' in previousCoord))
+				):
+				newData.append( ' ' )
+				
 			# add the scoured coordinate to the path string
-			coordsStr += scourLength(coord)
-			
-			# only need the comma if the next number is non-negative or if forceCommaWsp is True
-			if c < len(data)-1 and (forceCommaWsp or Decimal(data[c+1]) >= 0):
-				coordsStr += ','
+			newData.append( scouredCoord )
+			previousCoord = scouredCoord
 			c += 1
-	return coordsStr
-
-def scourLength(str):
-	length = SVGLength(str)
-	coord = length.value
 	
+		# What we need to do to work around GNOME bugs 548494, 563933 and
+		# 620565, which are being fixed and unfixed in Ubuntu, is
+		# to make sure that a dot doesn't immediately follow a command
+		# (so 'h50' and 'h0.5' are allowed, but not 'h.5').
+		# Then, we need to add a space character after any coordinates
+		# having an 'e' (scientific notation), so as to have the exponent
+		# separate from the next number.
+		if options.renderer_workaround:
+			if len(newData) > 0:
+				for i in xrange(1, len(newData)):
+					if newData[i][0] == '-' and 'e' in newData[i - 1]:
+						newData[i] += ' '
+				return ''.join(newData)
+		else:
+			return ''.join(newData)
+	
+	return ''
+
+def scourLength(length):
+	"""
+	Scours a length. Accepts units.
+	"""
+	length = SVGLength(length)
+	
+	return scourUnitlessLength(length.value) + Unit.str(length.units)
+
+def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a numeric type
+	"""
+	Scours the numeric part of a length only. Does not accept units.
+	
+	This is faster than scourLength on elements guaranteed not to
+	contain units.
+	"""
 	# reduce to the proper number of digits
-	coord = Decimal(unicode(coord)) * Decimal(1)
+	if not isinstance(length, Decimal):
+		length = getcontext().create_decimal(str(length))
+	# if the value is an integer, it may still have .0[...] attached to it for some reason
+	# remove those
+	if int(length) == length:
+		length = getcontext().create_decimal(int(length))
 	
-	# integerize if we can
-	if int(coord) == coord: coord = Decimal(unicode(int(coord)))
-
-	# Decimal.trim() is available in Python 2.6+ to trim trailing zeros
-	try:
-		coord = coord.trim()
-	except AttributeError:
-		# trim it ourselves
-		s = unicode(coord)
-		dec = s.find('.')
-		if dec != -1:
-			while s[-1] == '0':
-				s = s[:-1]
-		coord = Decimal(s)
-
-		# Decimal.normalize() will uses scientific notation - if that
-		# string is smaller, then use it
-		normd = coord.normalize()
-		if len(unicode(normd)) < len(unicode(coord)):
-			coord = normd
+	# gather the non-scientific notation version of the coordinate.
+	# this may actually be in scientific notation if the value is
+	# sufficiently large or small, so this is a misnomer.
+	nonsci = unicode(length).lower().replace("e+", "e")
+	if not needsRendererWorkaround:
+		if len(nonsci) > 2 and nonsci[:2] == '0.':
+			nonsci = nonsci[1:] # remove the 0, leave the dot
+		elif len(nonsci) > 3 and nonsci[:3] == '-0.':
+			nonsci = '-' + nonsci[2:] # remove the 0, leave the minus and dot
 	
-	return unicode(coord)+Unit.str(length.units)
+	if len(nonsci) > 3: # avoid calling normalize unless strictly necessary
+		# and then the scientific notation version, with E+NUMBER replaced with
+		# just eNUMBER, since SVG accepts this.
+		sci = unicode(length.normalize()).lower().replace("e+", "e")
+	
+		if len(sci) < len(nonsci): return sci
+		else: return nonsci
+	else: return nonsci
+
+def reducePrecision(element) :
+	"""
+	Because opacities, letter spacings, stroke widths and all that don't need
+	to be preserved in SVG files with 9 digits of precision.
+	
+	Takes all of these attributes, in the given element node and its children,
+	and reduces their precision to the current Decimal context's precision.
+	Also checks for the attributes actually being lengths, not 'inherit', 'none'
+	or anything that isn't an SVGLength.
+	
+	Returns the number of bytes saved after performing these reductions.
+	"""
+	num = 0
+	
+	for lengthAttr in ['opacity', 'flood-opacity', 'fill-opacity', 'stroke-opacity', 'stop-opacity', 'stroke-miterlimit', 'stroke-dashoffset', 'letter-spacing', 'word-spacing', 'kerning', 'font-size-adjust', 'font-size', 'stroke-width']:
+		val = element.getAttribute(lengthAttr)
+		if val != '':
+			valLen = SVGLength(val)
+			if valLen.units != Unit.INVALID: # not an absolute/relative size or inherit, can be % though
+				newVal = scourLength(val)
+				if len(newVal) < len(val):
+					num += len(val) - len(newVal)
+					element.setAttribute(lengthAttr, newVal)
+	
+	for child in element.childNodes:
+		if child.nodeType == 1:
+			num += reducePrecision(child)
+	
+	return num
+
+def optimizeTransform(transform):
+	"""
+	Optimises a series of transformations parsed from a single
+	transform="" attribute.
+	
+	The transformation list is modified in-place.
+	"""
+	# if there's only one transformation and it's a matrix,
+	# try to make it a shorter non-matrix transformation
+	if len(transform) == 1 and transform[0][0] == 'matrix':
+		# |¯  1  0  0  ¯|
+		# |   0  1  0   |  Identity matrix (no transformation)
+		# |_  0  0  1  _|
+		if transform[0][1] == [1, 0, 0, 0, 1, 0]:
+			del transform[0]
+		# |¯  1  0  X  ¯|
+		# |   0  1  Y   |  Translation by (X, Y).
+		# |_  0  0  1  _|
+		if (transform[0][1][0] == 1 and
+		    transform[0][1][1] == 0 and
+		    transform[0][1][3] == 0 and
+		    transform[0][1][4] == 1):
+			transform[0] = ('translate', [
+				transform[0][1][2], transform[0][1][5]
+			])
+		# |¯  X  0  0  ¯|
+		# |   0  Y  0   |  Scaling by (X, Y).
+		# |_  0  0  1  _|
+		elif (transform[0][1][1] == 0 and
+		      transform[0][1][2] == 0 and
+		      transform[0][1][3] == 0 and
+		      transform[0][1][5] == 0):
+			transform[0] = ('scale', [
+				transform[0][1][0], transform[0][1][4]
+			])
+		# |¯  cos(A) -sin(A)    0    ¯|  Rotation by angle A,
+		# |   sin(A)  cos(A)    0     |  clockwise, about the origin.
+		# |_    0       0       1    _|  A is in degrees.
+		elif (transform[0][1][0] ==  transform[0][1][4]                and
+		      transform[0][1][1] == -transform[0][1][3]                and
+		      transform[0][1][0] >=  0                                 and
+		      transform[0][1][0] <=  1                                 and
+		      transform[0][1][3] ==  sqrt(1 - transform[0][1][0] ** 2) and
+		      transform[0][1][2] ==  0                                 and
+		      transform[0][1][5] ==  0):
+			transform[0] = ('rotate', [
+				# What allows us to get the angle from the matrix
+				# is the inverse sine of sin(A), which is the 4th
+				# matrix component, or the inverse cosine of cos(A),
+				# which is the 1st matrix component. I chose sin(A).
+				# math.asin returns radians, so convert.
+				# SVG demands degrees.
+				Decimal(math.degrees(math.asin(transform[0][1][4])))
+			])
+	
+	# Simplify transformations where numbers are optional.
+	for singleTransform in transform:
+		if singleTransform[0] == 'translate':
+			# Only the X coordinate is required for translations.
+			# If the Y coordinate is unspecified, it's 0.
+			if (len(singleTransform[1]) == 2 and
+			    singleTransform[1][1] == 0):
+				del singleTransform[1][1]
+		elif singleTransform[0] == 'rotate':
+			# Only the angle is required for rotations.
+			# If the coordinates are unspecified, it's the origin (0, 0).
+			if (len(singleTransform[1]) == 3 and
+			    singleTransform[1][1] == 0 and
+			    singleTransform[1][2] == 0):
+				del singleTransform[1][1:]
+		elif singleTransform[0] == 'scale':
+			# Only the X scaling factor is required.
+			# If the Y factor is unspecified, it's the same as X.
+			if (len(singleTransform[1]) == 2 and
+			    singleTransform[1][0] == singleTransform[1][1]):
+				del singleTransform[1][1]
+	
+	# Attempt to coalesce runs of the same transformation.
+	# Translations followed immediately by other translations,
+	# rotations followed immediately by other rotations,
+	# scaling followed immediately by other scaling,
+	# are safe to add.
+	# A matrix followed immediately by another matrix
+	# would be safe to multiply together, too.
+	i = 1
+	while i < len(transform):
+		if transform[i][0] == transform[i - 1][0] == 'translate':
+			transform[i - 1][1][0] += transform[i][1][0] # x
+			# for y, only add if the second translation has an explicit y
+			if len(transform[i][1]) == 2:
+				if len(transform[i - 1][1]) == 2:
+					transform[i - 1][1][1] += transform[i][1][1] # y
+				elif len(transform[i - 1][1]) == 1:
+					transform[i - 1][1].append(transform[i][1][1]) # y
+			del transform[i]
+			if transform[i - 1][1][0] == transform[i - 1][1][1] == 0:
+				# Identity translation!
+				i -= 1
+				del transform[i]
+		elif (transform[i][0] == transform[i - 1][0] == 'rotate'
+		      and len(transform[i - 1][1]) == len(transform[i][1]) == 1):
+			# Only coalesce if both rotations are from the origin.
+			transform[i - 1][1][0] += transform[i][1][0] # angle
+			del transform[i]
+		elif transform[i][0] == transform[i - 1][0] == 'scale':
+			transform[i - 1][1][0] *= transform[i][1][0] # x
+			# handle an implicit y
+			if len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 2:
+				# y1 * y2
+				transform[i - 1][1][1] *= transform[i][1][1]
+			elif len(transform[i - 1][1]) == 1 and len(transform[i][1]) == 2:
+				# create y2 = uniformscalefactor1 * y2
+				transform[i - 1][1].append(transform[i - 1][1][0] * transform[i][1][1])
+			elif len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 1:
+				# y1 * uniformscalefactor2
+				transform[i - 1][1][1] *= transform[i][1][0]
+			del transform[i]
+			if transform[i - 1][1][0] == transform[i - 1][1][1] == 1:
+				# Identity scale!
+				i -= 1
+				del transform[i]
+		else:
+			i += 1
+
+def optimizeTransforms(element, options) :
+	"""
+	Attempts to optimise transform specifications on the given node and its children.
+	
+	Returns the number of bytes saved after performing these reductions.
+	"""
+	num = 0
+	
+	for transformAttr in ['transform', 'patternTransform', 'gradientTransform']:
+		val = element.getAttribute(transformAttr)
+		if val != '':
+			transform = svg_transform_parser.parse(val)
+			
+			optimizeTransform(transform)
+			
+			newVal = serializeTransform(transform)
+			
+			if len(newVal) < len(val):
+				element.setAttribute(transformAttr, newVal)
+				num += len(val) - len(newVal)
+	
+	for child in element.childNodes:
+		if child.nodeType == 1:
+			num += optimizeTransforms(child, options)
+	
+	return num
+
+def removeComments(element) :
+	"""
+		Removes comments from the element and its children.
+	"""
+	global numCommentBytes
+
+	if isinstance(element, xml.dom.minidom.Document):
+		# must process the document object separately, because its
+		# documentElement's nodes have None as their parentNode
+		for subelement in element.childNodes:
+			if isinstance(element, xml.dom.minidom.Comment):
+				numCommentBytes += len(element.data)
+				element.documentElement.removeChild(subelement)
+			else:
+				removeComments(subelement)
+	elif isinstance(element, xml.dom.minidom.Comment):
+		numCommentBytes += len(element.data)
+		element.parentNode.removeChild(element)
+	else:
+		for subelement in element.childNodes:
+			removeComments(subelement)
 
 def embedRasters(element, options) :
+	import base64
+	import urllib
 	"""
 		Converts raster references to inline images.
 		NOTE: there are size limits to base64-encoding handling in browsers 
@@ -2035,7 +2295,7 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 			
 		# add all the attributes
 		attrList = node.attributes
-		for i in range(attrList.length):
+		for i in xrange(attrList.length):
 			attr = attrList.item(i)
 			newNode.setAttributeNS( attr.namespaceURI, attr.localName, attr.nodeValue)
 	
@@ -2093,7 +2353,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 	
 	# now serialize the other attributes
 	attrList = element.attributes
-	for num in range(attrList.length) :
+	for num in xrange(attrList.length) :
 		attr = attrList.item(num)
 		if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
 		# if the attribute value contains a double-quote, use single-quotes
@@ -2172,6 +2432,10 @@ def scourString(in_string, options=None):
 	global numStylePropsFixed
 	global numElemsRemoved
 	global numBytesSavedInColors
+	global numCommentsRemoved
+	global numBytesSavedInIDs
+	global numBytesSavedInLengths
+	global numBytesSavedInTransforms
 	doc = xml.dom.minidom.parseString(in_string)
 
 	# for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
@@ -2186,7 +2450,7 @@ def scourString(in_string, options=None):
 		# remove the xmlns: declarations now
 		xmlnsDeclsToRemove = []
 		attrList = doc.documentElement.attributes
-		for num in range(attrList.length) :
+		for num in xrange(attrList.length) :
 			if attrList.item(num).nodeValue in unwanted_ns :
 				xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
 		
@@ -2204,7 +2468,7 @@ def scourString(in_string, options=None):
 	attrList = doc.documentElement.attributes
 	xmlnsDeclsToRemove = []
 	redundantPrefixes = []
-	for i in range(attrList.length):
+	for i in xrange(attrList.length):
 		attr = attrList.item(i)
 		name = attr.nodeName
 		val = attr.nodeValue
@@ -2218,12 +2482,19 @@ def scourString(in_string, options=None):
 	for prefix in redundantPrefixes:
 		remapNamespacePrefix(doc.documentElement, prefix, '')
 
+	if options.strip_comments:
+		numCommentsRemoved = removeComments(doc)
+
 	# repair style (remove unnecessary style properties and change them into XML attributes)
 	numStylePropsFixed = repairStyle(doc.documentElement, options)
 
 	# convert colors to #RRGGBB format
 	if options.simple_colors:
 		numBytesSavedInColors = convertColors(doc.documentElement)
+	
+	# remove <metadata> if the user wants to
+	if options.remove_metadata:
+		removeMetadataElements(doc)
 	
 	# remove empty defs, metadata, g
 	# NOTE: these elements will be removed even if they have (invalid) text nodes
@@ -2268,37 +2539,51 @@ def scourString(in_string, options=None):
 		pass
 	
 	# move common attributes to parent group
-	numAttrsRemoved += moveCommonAttributesToParentGroup(doc.documentElement)
+	# NOTE: the if the <svg> element's immediate children
+	# all have the same value for an attribute, it must not
+	# get moved to the <svg> element. The <svg> element
+	# doesn't accept fill=, stroke= etc.!
+	for child in doc.documentElement.childNodes:
+		numAttrsRemoved += moveCommonAttributesToParentGroup(child)
 	
 	# remove unused attributes from parent
 	numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
+
+	# remove unnecessary closing point of polygons and scour points
+	for polygon in doc.documentElement.getElementsByTagName('polygon') :
+		cleanPolygon(polygon, options)
+
+	# scour points of polyline
+	for polyline in doc.documentElement.getElementsByTagName('polyline') :
+		cleanPolygon(polyline, options)
 
 	# clean path data
 	for elem in doc.documentElement.getElementsByTagName('path') :
 		if elem.getAttribute('d') == '':
 			elem.parentNode.removeChild(elem)
 		else:
-			cleanPath(elem)
-
-	# remove unnecessary closing point of polygons and scour points
-	for polygon in doc.documentElement.getElementsByTagName('polygon') :
-		cleanPolygon(polygon)
-
-	# scour points of polyline
-	for polyline in doc.documentElement.getElementsByTagName('polyline') :
-		cleanPolygon(polyline)
+			cleanPath(elem, options)
 	
-	# scour lengths (including coordinates)
-	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop']:
-		for elem in doc.getElementsByTagName(type):
-			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 
-						'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset', 'opacity',
-						'fill-opacity', 'stroke-opacity', 'stroke-width', 'stroke-miterlimit']:
-				if elem.getAttribute(attr) != '':
-					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
+	# shorten ID names as much as possible
+	if options.shorten_ids:
+		numBytesSavedInIDs += shortenIDs(doc)
 
 	# remove default values of attributes
-	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)		
+	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)	
+	
+	# scour lengths (including coordinates)
+	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
+		for elem in doc.getElementsByTagName(type):
+			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 
+						'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
+				if elem.getAttribute(attr) != '':
+					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))	
+	
+	# more length scouring in this function
+	numBytesSavedInLengths = reducePrecision(doc.documentElement)
+	
+	# reduce the length of transformation attributes
+	numBytesSavedInTransforms = optimizeTransforms(doc.documentElement, options)
 	
 	# convert rasters references to base64-encoded strings 
 	if options.embed_rasters:
@@ -2378,12 +2663,24 @@ _options_parser.add_option("--disable-group-collapsing",
 _options_parser.add_option("--enable-id-stripping",
 	action="store_true", dest="strip_ids", default=False,
 	help="remove all un-referenced ID attributes")
+_options_parser.add_option("--enable-comment-stripping",
+	action="store_true", dest="strip_comments", default=False,
+	help="remove all <!-- --> comments")
+_options_parser.add_option("--shorten-ids",
+	action="store_true", dest="shorten_ids", default=False,
+	help="shorten all ID attributes to the least number of letters possible")
 _options_parser.add_option("--disable-embed-rasters",
 	action="store_false", dest="embed_rasters", default=True,
 	help="won't embed rasters as base64-encoded data")
 _options_parser.add_option("--keep-editor-data",
 	action="store_true", dest="keep_editor_data", default=False,
 	help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
+_options_parser.add_option("--remove-metadata",
+	action="store_true", dest="remove_metadata", default=False,
+	help="remove <metadata> elements (which may contain license metadata etc.)")
+_options_parser.add_option("--renderer-workaround",
+	action="store_true", dest="renderer_workaround", default=False,
+	help="work around various renderer bugs (currently only librsvg)")
 _options_parser.add_option("--strip-xml-prolog",
 	action="store_true", dest="strip_xml_prolog", default=False,
 	help="won't output the <?xml ?> prolog")
@@ -2400,12 +2697,16 @@ _options_parser.add_option("-i",
 	action="store", dest="infilename", help=optparse.SUPPRESS_HELP)
 _options_parser.add_option("-o",
 	action="store", dest="outfilename", help=optparse.SUPPRESS_HELP)
+_options_parser.add_option("-q", "--quiet",
+	action="store_true", dest="quiet", default=False,
+	help="suppress non-error output")
 _options_parser.add_option("--indent",
 	action="store", type="string", dest="indent_type", default="space",
 	help="indentation of the output: none, space, tab (default: %default)")
 
 def maybe_gziped_file(filename, mode="r"):
 	if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
+		import gzip
 		return gzip.GzipFile(filename, mode)
 	return file(filename, mode)
 
@@ -2443,7 +2744,11 @@ def getReport():
 		' Number of path segments reduced/removed: ' + str(numPathSegmentsReduced) + os.linesep + \
 		' Number of bytes saved in path data: ' + str(numBytesSavedInPathData) + os.linesep + \
 		' Number of bytes saved in colors: ' + str(numBytesSavedInColors) + os.linesep + \
-		' Number of points removed from polygons: ' + str(numPointsRemovedFromPolygon)
+		' Number of points removed from polygons: ' + str(numPointsRemovedFromPolygon) + os.linesep + \
+		' Number of bytes saved in comments: ' + str(numCommentBytes) + os.linesep + \
+		' Number of bytes saved in id attributes: ' + str(numBytesSavedInIDs) + os.linesep + \
+		' Number of bytes saved in lengths: ' + str(numBytesSavedInLengths) + os.linesep + \
+		' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
 
 if __name__ == '__main__':
 	if sys.platform == "win32":
@@ -2457,7 +2762,8 @@ if __name__ == '__main__':
 	
 	options, (input, output) = parse_args()
 	
-	print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
+	if not options.quiet:
+		print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
 
 	# do the work
 	in_string = input.read()
@@ -2470,14 +2776,14 @@ if __name__ == '__main__':
 
 	end = get_tick()
 
-	# GZ: unless silenced by -q or something?
 	# GZ: not using globals would be good too
-	print >>sys.stderr, ' File:', input.name, \
-		os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
-		getReport()
+	if not options.quiet:
+		print >>sys.stderr, ' File:', input.name, \
+			os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
+			getReport()
 	
-	oldsize = len(in_string)
-	newsize = len(out_string)
-	sizediff = (newsize / oldsize) * 100
-	print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
-		'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
+		oldsize = len(in_string)
+		newsize = len(out_string)
+		sizediff = (newsize / oldsize) * 100
+		print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
+			'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'

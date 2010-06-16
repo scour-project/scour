@@ -48,6 +48,9 @@ class ScourOptions:
 	strip_xml_prolog = False
 	indent_type = "space"
 	enable_viewboxing = False
+	shorten_ids = False
+	strip_comments = False
+	remove_metadata = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -445,7 +448,7 @@ class ConvertFillPropertyToAttr(unittest.TestCase):
 class ConvertFillOpacityPropertyToAttr(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/fill-none.svg')
-		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill-opacity'), '0.5',
+		self.assertEquals(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill-opacity'), '.5',
 			'fill-opacity property not converted to XML attribute' )
 
 class ConvertFillRuleOpacityPropertyToAttr(unittest.TestCase):
@@ -483,14 +486,14 @@ class RemoveTrailingZerosFromPath(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-truncate-zeros.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
-		self.assertEquals(path[:4] == 'M300' and path[4] != '.', True,
+		self.assertEquals(path[:4] == 'm300' and path[4] != '.', True,
 			'Trailing zeros not removed from path data' )
 
 class RemoveTrailingZerosFromPathAfterCalculation(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-truncate-zeros-calc.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
-		self.assertEquals(path, 'M5.81,0h0.1',
+		self.assertEquals(path, 'm5.81 0h0.1',
 			'Trailing zeros not removed from path data after calculation' )
 
 class RemoveDelimiterBeforeNegativeCoordsInPath(unittest.TestCase):
@@ -504,7 +507,7 @@ class UseScientificNotationToShortenCoordsInPath(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-use-scientific-notation.svg')
 		path = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
-		self.assertEquals(path, 'M1E+4,0',
+		self.assertEquals(path, 'm1e4 0',
 			'Not using scientific notation for path coord when representation is shorter')
 
 class ConvertAbsoluteToRelativePathCommands(unittest.TestCase):
@@ -513,23 +516,23 @@ class ConvertAbsoluteToRelativePathCommands(unittest.TestCase):
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
 		self.assertEquals(path[1][0], 'v',
 			'Absolute V command not converted to relative v command')
-		self.assertEquals(path[1][1][0], -20.0,
+		self.assertEquals(float(path[1][1][0]), -20.0,
 			'Absolute V value not converted to relative v value')
 
 class RoundPathData(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-precision.svg')
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
-		self.assertEquals(path[0][1][0][0], 100.0,
+		self.assertEquals(float(path[0][1][0]), 100.0,
 			'Not rounding down' )
-		self.assertEquals(path[0][1][0][1], 100.0,
+		self.assertEquals(float(path[0][1][1]), 100.0,
 			'Not rounding up' )
 			
 class LimitPrecisionInPathData(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-precision.svg')
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
-		self.assertEquals(path[1][1][0], 100.01,
+		self.assertEquals(float(path[1][1][0]), 100.01,
 			'Not correctly limiting precision on path data' )
 
 class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
@@ -545,7 +548,7 @@ class ChangeLineToHorizontalLineSegmentInPath(unittest.TestCase):
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
 		self.assertEquals(path[1][0], 'h',
 			'Did not change line to horizontal line segment in path' )
-		self.assertEquals(path[1][1][0], 200.0,
+		self.assertEquals(float(path[1][1][0]), 200.0,
 			'Did not calculate horizontal line segment in path correctly' )
 
 class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
@@ -554,19 +557,19 @@ class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
 		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
 		self.assertEquals(path[2][0], 'v',
 			'Did not change line to vertical line segment in path' )
-		self.assertEquals(path[2][1][0], 100.0,
+		self.assertEquals(float(path[2][1][0]), 100.0,
 			'Did not calculate vertical line segment in path correctly' )
 
 class ChangeBezierToShorthandInPath(unittest.TestCase):
 	def runTest(self):
 		path = scour.scourXmlFile('unittests/path-bez-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals(path.getAttribute('d'), 'm10,100c50-50,50,50,100,0s50,50,100,0',
+		self.assertEquals(path.getAttribute('d'), 'm10 100c50-50 50 50 100 0s50 50 100 0',
 			'Did not change bezier curves into shorthand curve segments in path')
 
 class ChangeQuadToShorthandInPath(unittest.TestCase):
 	def runTest(self):
 		path = scour.scourXmlFile('unittests/path-quad-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals(path.getAttribute('d'), 'm10,100q50-50,100,0t100,0',
+		self.assertEquals(path.getAttribute('d'), 'm10 100q50-50 100 0t100 0',
 			'Did not change quadratic curves into shorthand curve segments in path')
 
 class HandleNonAsciiUtf8(unittest.TestCase):
@@ -585,31 +588,31 @@ class HandleSciNoInPathData(unittest.TestCase):
 class TranslateRGBIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
-		self.assertEquals( elem.getAttribute('fill'), '#0F1011',
+		self.assertEquals( elem.getAttribute('fill'), '#0f1011',
 			'Not converting rgb into hex')
 
 class TranslateRGBPctIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'stop')[0]
-		self.assertEquals( elem.getAttribute('stop-color'), '#7F0000',
+		self.assertEquals( elem.getAttribute('stop-color'), '#7f0000',
 			'Not converting rgb pct into hex')
 
 class TranslateColorNamesIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
-		self.assertEquals( elem.getAttribute('stroke'), '#A9A9A9',
+		self.assertEquals( elem.getAttribute('stroke'), '#a9a9a9',
 			'Not converting standard color names into hex')
 
 class TranslateExtendedColorNamesIntoHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'solidColor')[0]
-		self.assertEquals( elem.getAttribute('solid-color'), '#FAFAD2',
+		self.assertEquals( elem.getAttribute('solid-color'), '#fafad2',
 			'Not converting extended color names into hex')
 
 class TranslateLongHexColorIntoShortHex(unittest.TestCase):
 	def runTest(self):
 		elem = scour.scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'ellipse')[0]
-		self.assertEquals( elem.getAttribute('fill'), '#FFF',
+		self.assertEquals( elem.getAttribute('fill'), '#fff',
 			'Not converting long hex color into short hex')
 
 class DoNotConvertShortColorNames(unittest.TestCase):
@@ -633,62 +636,62 @@ class RemoveFontStylesFromNonTextShapes(unittest.TestCase):
 class CollapseConsecutiveHLinesSegments(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals( p.getAttribute('d'), 'M100,100h200v100h-200z',
+		self.assertEquals( p.getAttribute('d'), 'm100 100h200v100h-200z',
 			'Did not collapse consecutive hlines segments')
 
 class CollapseConsecutiveHLinesCoords(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[1]
-		self.assertEquals( p.getAttribute('d'), 'M100,300h200v100h-200z',
+		self.assertEquals( p.getAttribute('d'), 'm100 300h200v100h-200z',
 			'Did not collapse consecutive hlines coordinates')
 			
 class DoNotCollapseConsecutiveHLinesSegsWithDifferingSigns(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[2]
-		self.assertEquals( p.getAttribute('d'), 'M100,500h300-100v100h-200z',
+		self.assertEquals( p.getAttribute('d'), 'm100 500h300-100v100h-200z',
 			'Collapsed consecutive hlines segments with differing signs')
 
 class ConvertStraightCurvesToLines(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/straight-curve.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals(p.getAttribute('d'), 'M10,10l40,40,40-40z', 
+		self.assertEquals(p.getAttribute('d'), 'm10 10l40 40 40-40z', 
 			'Did not convert straight curves into lines')
 			
 class RemoveUnnecessaryPolygonEndPoint(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
-		self.assertEquals(p.getAttribute('points'), '50,50,150,50,150,150,50,150',
+		self.assertEquals(p.getAttribute('points'), '50 50 150 50 150 150 50 150',
 			'Unnecessary polygon end point not removed' )
 
 class DoNotRemovePolgonLastPoint(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon.svg').getElementsByTagNameNS(SVGNS, 'polygon')[1]
-		self.assertEquals(p.getAttribute('points'), '200,50,300,50,300,150,200,150',
+		self.assertEquals(p.getAttribute('points'), '200 50 300 50 300 150 200 150',
 			'Last point of polygon removed' )
 			
 class ScourPolygonCoordsSciNo(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon-coord.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
-		self.assertEquals(p.getAttribute('points'), '1E+4,50',
+		self.assertEquals(p.getAttribute('points'), '1e4 50',
 			'Polygon coordinates not scoured')
 
 class ScourPolylineCoordsSciNo(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polyline-coord.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
-		self.assertEquals(p.getAttribute('points'), '1E+4,50',
+		self.assertEquals(p.getAttribute('points'), '1e4 50',
 			'Polyline coordinates not scoured')
 
 class ScourPolygonNegativeCoords(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polygon-coord-neg.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
 		#  points="100,-100,100-100,100-100-100,-100-100,200" />
-		self.assertEquals(p.getAttribute('points'), '100,-100,100,-100,100,-100,-100,-100,-100,200',
+		self.assertEquals(p.getAttribute('points'), '100 -100 100 -100 100 -100 -100 -100 -100 200',
 			'Negative polygon coordinates not properly parsed')
 
 class ScourPolylineNegativeCoords(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/polyline-coord-neg.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
-		self.assertEquals(p.getAttribute('points'), '100,-100,100,-100,100,-100,-100,-100,-100,200',
+		self.assertEquals(p.getAttribute('points'), '100 -100 100 -100 100 -100 -100 -100 -100 200',
 			'Negative polyline coordinates not properly parsed')
 
 class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
@@ -700,7 +703,7 @@ class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 class AlwaysKeepClosePathSegments(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/path-with-closepath.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals(p.getAttribute('d'), 'M10,10h100v100h-100z',
+		self.assertEquals(p.getAttribute('d'), 'm10 10h100v100h-100z',
 			'Path with closepath not preserved')
 
 class RemoveDuplicateLinearGradients(unittest.TestCase):
@@ -736,7 +739,7 @@ class RereferenceForRadialGradient(unittest.TestCase):
 class CollapseSamePathPoints(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
-		self.assertEquals(p.getAttribute('d'), "M100,100l100.12,100.12z",
+		self.assertEquals(p.getAttribute('d'), "m100 100l100.12 100.12z",
 			'Did not collapse same path points')
 
 class ScourUnitlessLengths(unittest.TestCase):
@@ -923,7 +926,7 @@ class PropagateCommonAttributesUp(unittest.TestCase):
 class PathEllipticalArcParsingCommaWsp(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/path-elliptical-arc-parsing.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals( p.getAttribute('d'), 'M100,100a100,100,0,1,1,-50,100z',
+		self.assertEquals( p.getAttribute('d'), 'm100 100a100 100 0 1 1 -50 100z',
 			'Did not parse elliptical arc command properly')
 
 class RemoveUnusedAttributesOnParent(unittest.TestCase):
@@ -1022,14 +1025,49 @@ class DoNotStripDoctype(unittest.TestCase):
 class PathImplicitLineWithMoveCommands(unittest.TestCase):
 	def runTest(self):
 		path = scour.scourXmlFile('unittests/path-implicit-line.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEquals( path.getAttribute('d'), "M100,100,100,200m200-100-200,0m200,100,0-100",
+		self.assertEquals( path.getAttribute('d'), "m100 100v100m200-100h-200m200 100v-100",
 			"Implicit line segments after move not preserved")
+
+class RemoveMetadataOption(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/full-metadata.svg',
+			scour.parse_args(['--remove-metadata'])[0])
+		self.assertEquals(doc.childNodes.length, 1,
+			'Did not remove <metadata> tag with --remove-metadata')
+
+class EnableCommentStrippingOption(unittest.TestCase):
+	def runTest(self):
+		docStr = file('unittests/comment-beside-xml-decl.svg').read()
+		docStr = scour.scourString(docStr,
+			scour.parse_args(['--enable-comment-stripping'])[0])
+		self.assertEquals(docStr.find('<!--'), -1,
+			'Did not remove document-level comment with --enable-comment-stripping')
+
+class StripXmlPrologOption(unittest.TestCase):
+	def runTest(self):
+		docStr = file('unittests/comment-beside-xml-decl.svg').read()
+		docStr = scour.scourString(docStr,
+			scour.parse_args(['--strip-xml-prolog'])[0])
+		self.assertEquals(docStr.find('<?xml'), -1,
+			'Did not remove <?xml?> with --strip-xml-prolog')
+
+class ShortenIDsOption(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/shorten-ids.svg',
+			scour.parse_args(['--shorten-ids'])[0])
+		gradientTag = doc.getElementsByTagName('linearGradient')[0]
+		self.assertEquals(gradientTag.getAttribute('id'), 'a',
+			"Did not shorten a linear gradient's ID with --shorten-ids")
+		rectTag = doc.getElementsByTagName('rect')[0]
+		self.assertEquals(rectTag.getAttribute('fill'), 'url(#a)',
+			'Did not update reference to shortened ID')
+
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
-# TODO: write tests for --strip-xml-prolog
+# TODO: write tests for scouring transformations
 
 if __name__ == '__main__':
 	testcss = __import__('testcss')
