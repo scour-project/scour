@@ -1062,6 +1062,19 @@ class ShortenIDsOption(unittest.TestCase):
 		self.assertEquals(rectTag.getAttribute('fill'), 'url(#a)',
 			'Did not update reference to shortened ID')
 
+class MustKeepGInSwitch(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/groups-in-switch.svg')
+		self.assertEquals(doc.getElementsByTagName('g').length, 1,
+			'Erroneously removed a <g> in a <switch>')
+
+class MustKeepGInSwitch2(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/groups-in-switch-with-id.svg',
+			scour.parse_args(['--enable-id-stripping'])[0])
+		self.assertEquals(doc.getElementsByTagName('g').length, 1,
+			'Erroneously removed a <g> in a <switch>')
+
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
