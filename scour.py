@@ -648,8 +648,8 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 		styles = node.getAttribute('style')
 		if styles != '':
 			newValue = styles.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
-			newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
-			newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+			newValue = newValue.replace("url('#" + idFrom + "')", 'url(#' + idTo + ')')
+			newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
 			node.setAttribute('style', newValue)
 			num += len(styles) - len(newValue)
 			
@@ -658,8 +658,8 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 			oldValue = node.getAttribute(attr)
 			if oldValue != '':
 				newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
-				newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
-				newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+				newValue = newValue.replace("url('#" + idFrom + "')", 'url(#' + idTo + ')')
+				newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
 				node.setAttribute(attr, newValue)
 				num += len(oldValue) - len(newValue)
 				
