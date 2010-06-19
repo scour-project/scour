@@ -1933,7 +1933,7 @@ def scourCoordinates(data, options, forceCommaWsp = False):
 			if len(newData) > 0:
 				for i in xrange(1, len(newData)):
 					if newData[i][0] == '-' and 'e' in newData[i - 1]:
-						newData[i] += ' '
+						newData[i - 1] += ' '
 				return ''.join(newData)
 		else:
 			return ''.join(newData)
