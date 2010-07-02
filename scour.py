@@ -853,6 +853,112 @@ def moveCommonAttributesToParentGroup(elem):
 	num += (len(childElements)-1) * len(commonAttrs)
 	return num
 
+def createGroupsForCommonAttributes(elem):
+	"""
+	Creates <g> elements to contain runs of 3 or more
+	consecutive child elements having at least one common attribute.
+	
+	Common attributes are not promoted to the <g> by this function.
+	This is handled by moveCommonAttributesToParentGroup.
+	
+	If all children have a common attribute, an extra <g> is not created.
+	
+	This function acts recursively on the given element.
+	"""
+	num = 0
+	global numElemsRemoved
+	
+	# TODO perhaps all of the Presentation attributes in http://www.w3.org/TR/SVG/struct.html#GElement
+	# could be added here
+	# Cyn: These attributes are the same as in moveAttributesToParentGroup, and must always be
+	for curAttr in ['clip-rule',
+				'display-align', 
+				'fill', 'fill-opacity', 'fill-rule', 
+				'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
+				'font-style', 'font-variant', 'font-weight',
+				'letter-spacing',
+				'pointer-events', 'shape-rendering',
+				'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
+				'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
+				'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+				'word-spacing', 'writing-mode']:
+		# Iterate through the children in reverse order, so item(i) for
+		# items we have yet to visit still returns the correct nodes.
+		curChild = elem.childNodes.length - 1
+		while curChild >= 0:
+			childNode = elem.childNodes.item(curChild)
+			
+			if childNode.nodeType == 1 and childNode.getAttribute(curAttr) != '':
+				# We're in a possible run! Track the value and run length.
+				value = childNode.getAttribute(curAttr)
+				runStart, runEnd = curChild, curChild
+				# Run elements includes only element tags, no whitespace/comments/etc.
+				# Later, we calculate a run length which includes these.
+				runElements = 1
+				
+				# Backtrack to get all the nodes having the same
+				# attribute value, preserving any nodes in-between.
+				while runStart > 0:
+					nextNode = elem.childNodes.item(runStart - 1)
+					if nextNode.nodeType == 1:
+						if nextNode.getAttribute(curAttr) != value: break
+						else:
+							runElements += 1
+							runStart -= 1
+					else: runStart -= 1
+				
+				if runElements >= 3:
+					# Include whitespace/comment/etc. nodes in the run.
+					while runEnd < elem.childNodes.length - 1:
+						if elem.childNodes.item(runEnd + 1).nodeType == 1: break
+						else: runEnd += 1
+					
+					runLength = runEnd - runStart + 1
+					if runLength == elem.childNodes.length: # Every child has this
+						# If the current parent is a <g> already,
+						if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
+							# do not act altogether on this attribute; all the
+							# children have it in common.
+							# Let moveCommonAttributesToParentGroup do it.
+							curChild = -1
+							continue
+						# otherwise, it might be an <svg> element, and
+						# even if all children have the same attribute value,
+						# it's going to be worth making the <g> since
+						# <svg> doesn't support attributes like 'stroke'.
+						# Fall through.
+					
+					# Create a <g> element from scratch.
+					# We need the Document for this.
+					document = elem.parentNode
+					while document.parentNode is not None:
+						document = document.parentNode
+					group = document.createElementNS(NS['SVG'], 'g')
+					# Move the run of elements to the group.
+					for dummy in xrange(runLength):
+						node = elem.childNodes.item(runStart)
+						elem.removeChild(node)
+						group.appendChild(node)
+					# Include the group in elem's children.
+					if elem.childNodes.length == runStart:
+						elem.appendChild(group)
+					else:
+						elem.insertBefore(group, elem.childNodes.item(runStart))
+					num += 1
+					curChild = runStart - 1
+					numElemsRemoved -= 1
+				else:
+					curChild -= 1
+			else:
+				curChild -= 1
+	
+	# each child gets the same treatment, recursively
+	for childNode in elem.childNodes:
+		if childNode.nodeType == 1:
+			num += createGroupsForCommonAttributes(childNode)
+
+	return num
+
 def removeUnusedAttributesOnParent(elem):
 	"""
 	This recursively calls this function on all children of the element passed in,
@@ -2527,10 +2633,6 @@ def scourString(in_string, options=None):
 			identifiedElements = findElementsWithId(doc.documentElement)
 			referencedIDs = findReferencedElements(doc.documentElement)
 			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
-	
-	if options.group_collapse:
-		while removeNestedGroups(doc.documentElement) > 0:
-			pass
 
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
@@ -2543,6 +2645,11 @@ def scourString(in_string, options=None):
 	while removeDuplicateGradients(doc) > 0:
 		pass
 	
+	# create <g> elements if there are runs of elements with the same attributes.
+	# this MUST be before moveCommonAttributesToParentGroup.
+	if options.group_create:
+		createGroupsForCommonAttributes(doc.documentElement)
+	
 	# move common attributes to parent group
 	# NOTE: the if the <svg> element's immediate children
 	# all have the same value for an attribute, it must not
@@ -2553,6 +2660,12 @@ def scourString(in_string, options=None):
 	
 	# remove unused attributes from parent
 	numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
+	
+	# Collapse groups LAST, because we've created groups. If done before
+	# moveAttributesToParentGroup, empty <g>'s may remain.
+	if options.group_collapse:
+		while removeNestedGroups(doc.documentElement) > 0:
+			pass
 
 	# remove unnecessary closing point of polygons and scour points
 	for polygon in doc.documentElement.getElementsByTagName('polygon') :
@@ -2665,6 +2778,9 @@ _options_parser.add_option("--disable-style-to-xml",
 _options_parser.add_option("--disable-group-collapsing",
 	action="store_false", dest="group_collapse", default=True,
 	help="won't collapse <g> elements")
+_options_parser.add_option("--create-groups",
+	action="store_true", dest="group_create", default=False,
+	help="create <g> elements for runs of elements with identical attributes")
 _options_parser.add_option("--enable-id-stripping",
 	action="store_true", dest="strip_ids", default=False,
 	help="remove all un-referenced ID attributes")

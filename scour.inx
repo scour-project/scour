@@ -10,6 +10,7 @@
             <param name="simplify-colors"  type="boolean" _gui-text="Shorten color values">true</param>
             <param name="style-to-xml"  type="boolean" _gui-text="Convert CSS attributes to XML attributes">true</param>
             <param name="group-collapsing"  type="boolean" _gui-text="Group collapsing">true</param>
+            <param name="create-groups"  type="boolean" _gui-text="Create groups for similar attributes">true</param>
             <param name="enable-id-stripping"  type="boolean" _gui-text="Remove unused ID names for elements">false</param>
             <param name="shorten-ids"  type="boolean" _gui-text="Shorten IDs">false</param>
             <param name="embed-rasters"  type="boolean" _gui-text="Embed rasters">true</param>
@@ -18,7 +19,7 @@
             <param name="enable-comment-stripping"  type="boolean" _gui-text="Remove comments">false</param>
             <param name="renderer-workaround"  type="boolean" _gui-text="Work around renderer bugs">false</param>
             <param name="enable-viewboxing" type="boolean" _gui-text="Enable viewboxing">false</param>
-            <param name="strip-xml-prolog"  type="boolean" _gui-text="Remove the <?xml?> declaration">false</param>
+            <param name="strip-xml-prolog"  type="boolean" _gui-text="Remove the &lt;?xml?&gt; declaration">false</param>
             <param name="set-precision"  type="int" _gui-text="Number of significant digits for coords">5</param>
       	    <param name="indent" type="enum" _gui-text="XML indentation (pretty-printing)">
                 <_item value="space">Space</_item>
@@ -29,8 +30,9 @@
         <page name="Help" _gui-text="Help">
             <_param name="instructions" type="description" xml:space="preserve">This extension optimizes the SVG file according to the following options:
     * Shorten color names: convert all colors to #RRGGBB or #RGB format.
-    * Convert CSS attributes to XML attributes: convert styles from <style> tags and inline style="" declarations into XML attributes.
-    * Group collapsing: removes useless <g> elements, promoting their contents up one level. Requires "Remove unused ID names for elements" to be set.
+    * Convert CSS attributes to XML attributes: convert styles from &lt;style&gt; tags and inline style="" declarations into XML attributes.
+    * Group collapsing: removes useless &lt;g&gt; elements, promoting their contents up one level. Requires "Remove unused ID names for elements" to be set.
+    * Create groups for similar attributes: create &lt;g&gt; elements for runs of elements having at least one attribute in common (e.g. fill color, stroke opacity, ...).
     * Remove unused ID names for elements: remove all unreferenced ID attributes.
     * Shorten IDs: reduce the length of all ID attributes, assigning the shortest to the most-referenced elements. For instance, #linearGradient5621, referenced 100 times, can become #a.
     * Embed rasters: embed raster images as base64-encoded data URLs.

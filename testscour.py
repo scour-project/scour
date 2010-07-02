@@ -51,6 +51,7 @@ class ScourOptions:
 	shorten_ids = False
 	strip_comments = False
 	remove_metadata = False
+	group_create = False
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
@@ -1074,6 +1075,27 @@ class MustKeepGInSwitch2(unittest.TestCase):
 			scour.parse_args(['--enable-id-stripping'])[0])
 		self.assertEquals(doc.getElementsByTagName('g').length, 1,
 			'Erroneously removed a <g> in a <switch>')
+
+class GroupCreation(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/group-creation.svg',
+			scour.parse_args(['--create-groups'])[0])
+		self.assertEquals(doc.getElementsByTagName('g').length, 1,
+			'Did not create a <g> for a run of elements having similar attributes')
+
+class GroupCreationForInheritableAttributesOnly(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/group-creation.svg',
+			scour.parse_args(['--create-groups'])[0])
+		self.assertEquals(doc.getElementsByTagName('g').item(0).getAttribute('y'), '',
+			'Promoted the uninheritable attribute y to a <g>')
+
+class GroupNoCreation(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/group-no-creation.svg',
+			scour.parse_args(['--create-groups'])[0])
+		self.assertEquals(doc.getElementsByTagName('g').length, 0,
+			'Created a <g> for a run of elements having dissimilar attributes')
 
 
 # TODO: write tests for --enable-viewboxing

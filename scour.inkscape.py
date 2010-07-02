@@ -19,6 +19,9 @@ class ScourInkscape (inkex.Effect):
         self.OptionParser.add_option("--group-collapsing", type="inkbool",
             action="store", dest="group_collapse", default=True,
             help="won't collapse <g> elements")
+        self.OptionParser.add_option("--create-groups", type="inkbool",
+            action="store", dest="group_create", default=False,
+            help="create <g> elements for runs of elements with identical attributes")
         self.OptionParser.add_option("--enable-id-stripping", type="inkbool",
             action="store", dest="strip_ids", default=False,
             help="remove all un-referenced ID attributes")
