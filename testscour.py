@@ -1097,6 +1097,10 @@ class GroupNoCreation(unittest.TestCase):
 		self.assertEquals(doc.getElementsByTagName('g').length, 0,
 			'Created a <g> for a run of elements having dissimilar attributes')
 
+class DoNotCommonizeAttributesOnReferencedElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/commonized-referenced-elements.svg')
+		self.assertEquals(doc.getElementsByTagName('circle')[0].getAttribute('fill'), '#0f0')
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters

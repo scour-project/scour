@@ -403,7 +403,10 @@ referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-st
 def findReferencedElements(node, ids=None):
 	"""
 	Returns the number of times an ID is referenced as well as all elements
-	that reference it.
+	that reference it.  node is the node at which to start the search.  The
+	return value is a map which has the id as key and each value is an array
+	where the first value is a count and the second value is a list of nodes
+	that referenced it.
 
 	Currently looks at fill, stroke, clip-path, mask, marker, and
 	xlink:href attributes.
@@ -775,21 +778,24 @@ def removeNestedGroups(node):
 			num += removeNestedGroups(child)		
 	return num
 
-def moveCommonAttributesToParentGroup(elem):
+def moveCommonAttributesToParentGroup(elem, referencedElements):
 	""" 
 	This recursively calls this function on all children of the passed in element
 	and then iterates over all child elements and removes common inheritable attributes 
 	from the children and places them in the parent group.  But only if the parent contains
-	nothing but element children and whitespace.
+	nothing but element children and whitespace.  The attributes are only removed from the
+	children if the children are not referenced by other elements in the document.
 	"""
 	num = 0
 	
 	childElements = []
 	# recurse first into the children (depth-first)
 	for child in elem.childNodes:
-		if child.nodeType == 1: 
-			childElements.append(child)
-			num += moveCommonAttributesToParentGroup(child)
+		if child.nodeType == 1:
+			# only add and recurse if the child is not referenced elsewhere
+			if not child.getAttribute('id') in referencedElements:
+				childElements.append(child)
+				num += moveCommonAttributesToParentGroup(child, referencedElements)
 		# else if the parent has non-whitespace text children, do not
 		# try to move common attributes
 		elif child.nodeType == 3 and child.nodeValue.strip():
@@ -2655,8 +2661,9 @@ def scourString(in_string, options=None):
 	# all have the same value for an attribute, it must not
 	# get moved to the <svg> element. The <svg> element
 	# doesn't accept fill=, stroke= etc.!
+	referencedIds = findReferencedElements(doc.documentElement)
 	for child in doc.documentElement.childNodes:
-		numAttrsRemoved += moveCommonAttributesToParentGroup(child)
+		numAttrsRemoved += moveCommonAttributesToParentGroup(child, referencedIds)
 	
 	# remove unused attributes from parent
 	numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
