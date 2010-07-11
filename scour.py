@@ -420,9 +420,14 @@ def findReferencedElements(node, ids=None):
 
 	# if this node is a style element, parse its text into CSS
 	if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
-		# node.firstChild will be either a CDATA or a Text node
-		if node.firstChild != None:
-			cssRules = parseCssString(node.firstChild.nodeValue)
+		# one stretch of text, please! (we could use node.normalize(), but
+		# this actually modifies the node, and we don't want to keep
+		# whitespace around if there's any)
+		stylesheet = ''
+		for child in node.childNodes:
+			stylesheet += child.nodeValue
+		if stylesheet != '':
+			cssRules = parseCssString(stylesheet)
 			for rule in cssRules:
 				for propname in rule['properties']:
 					propval = rule['properties'][propname]
@@ -632,14 +637,22 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 	for node in referringNodes[1]:
 		# if this node is a style element, parse its text into CSS
 		if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
-			# node.firstChild will be either a CDATA or a Text node
+			# node.firstChild will be either a CDATA or a Text node now
 			if node.firstChild != None:
-				oldValue = node.firstChild.nodeValue
+				# concatenate the value of all children, in case
+				# there's a CDATASection node surrounded by whitespace
+				# nodes
+				# (node.normalize() will NOT work here, it only acts on Text nodes)
+				oldValue = ''
+				for child in node.childNodes:
+					oldValue += child.nodeValue
 				# not going to reparse the whole thing
 				newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
 				newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
 				newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
-				node.firstChild.nodeValue = newValue
+				# and now replace all the children with this new stylesheet.
+				# again, this is in case the stylesheet was a CDATASection
+				node.childNodes[:] = [node.ownerDocument.createTextNode(newValue)]
 				num += len(oldValue) - len(newValue)
 	
 		# if xlink:href is set to #idFrom, then change the id

@@ -1101,20 +1101,40 @@ class GroupNoCreation(unittest.TestCase):
 class DoNotCommonizeAttributesOnReferencedElements(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/commonized-referenced-elements.svg')
-		self.assertEquals(doc.getElementsByTagName('circle')[0].getAttribute('fill'), '#0f0')
+		self.assertEquals(doc.getElementsByTagName('circle')[0].getAttribute('fill'), '#0f0',
+			'Grouped an element referenced elsewhere into a <g>')
 
 class DoNotRemoveOverflowVisibleOnMarker(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/overflow-marker.svg')
-		self.assertEquals(doc.getElementsByTagName('marker')[0].getAttribute('overflow'), 'visible')
-		self.assertEquals(doc.getElementsByTagName('marker')[1].getAttribute('overflow'), '')
+		self.assertEquals(doc.getElementsByTagName('marker')[0].getAttribute('overflow'), 'visible',
+			'Removed the overflow attribute when it was not using the default value')
+		self.assertEquals(doc.getElementsByTagName('marker')[1].getAttribute('overflow'), '',
+			'Did not remove the overflow attribute when it was using the default value')
 
 class MarkerOnSvgElements(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/overflow-svg.svg')
-		self.assertEquals(doc.getElementsByTagName('svg')[0].getAttribute('overflow'), '')
-		self.assertEquals(doc.getElementsByTagName('svg')[1].getAttribute('overflow'), '')
-		self.assertEquals(doc.getElementsByTagName('svg')[2].getAttribute('overflow'), 'visible')
+		self.assertEquals(doc.getElementsByTagName('svg')[0].getAttribute('overflow'), '',
+			'Did not remove the overflow attribute when it was using the default value')
+		self.assertEquals(doc.getElementsByTagName('svg')[1].getAttribute('overflow'), '',
+			'Did not remove the overflow attribute when it was using the default value')
+		self.assertEquals(doc.getElementsByTagName('svg')[2].getAttribute('overflow'), 'visible',
+			'Removed the overflow attribute when it was not using the default value')
+
+class GradientReferencedByStyleCDATA(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/style-cdata.svg')
+		self.assertEquals(len(doc.getElementsByTagName('linearGradient')), 1,
+			'Removed a gradient referenced by an internal stylesheet')
+
+class ShortenIDsInStyleCDATA(unittest.TestCase):
+	def runTest(self):
+		docStr = file('unittests/style-cdata.svg').read()
+		docStr = scour.scourString(docStr,
+			scour.parse_args(['--shorten-ids'])[0])
+		self.assertEquals(docStr.find('somethingreallylong'), -1,
+			'Did not shorten IDs in the internal stylesheet')
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
