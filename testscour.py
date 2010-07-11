@@ -4,6 +4,7 @@
 #  Test Harness for Scour
 #
 #  Copyright 2010 Jeff Schiller
+#  Copyright 2010 Louis Simard
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #
@@ -1101,6 +1102,19 @@ class DoNotCommonizeAttributesOnReferencedElements(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/commonized-referenced-elements.svg')
 		self.assertEquals(doc.getElementsByTagName('circle')[0].getAttribute('fill'), '#0f0')
+
+class DoNotRemoveOverflowVisibleOnMarker(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/overflow-marker.svg')
+		self.assertEquals(doc.getElementsByTagName('marker')[0].getAttribute('overflow'), 'visible')
+		self.assertEquals(doc.getElementsByTagName('marker')[1].getAttribute('overflow'), '')
+
+class MarkerOnSvgElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/overflow-svg.svg')
+		self.assertEquals(doc.getElementsByTagName('svg')[0].getAttribute('overflow'), '')
+		self.assertEquals(doc.getElementsByTagName('svg')[1].getAttribute('overflow'), '')
+		self.assertEquals(doc.getElementsByTagName('svg')[2].getAttribute('overflow'), 'visible')
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters

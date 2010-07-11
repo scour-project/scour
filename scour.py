@@ -4,6 +4,7 @@
 #  Scour
 #
 #  Copyright 2010 Jeff Schiller
+#  Copyright 2010 Louis Simard
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #
@@ -1328,12 +1329,24 @@ def repairStyle(node, options):
 				del styleMap['display']
 				num += 1
 				
-		# overflow: visible or overflow specified on element other than svg, marker, pattern
 		if styleMap.has_key('overflow') :
-			if styleMap['overflow'] == 'visible' or node.nodeName in ['svg','marker','pattern']:
+			# overflow specified on element other than svg, marker, pattern
+			if not node.nodeName in ['svg','marker','pattern']:
 				del styleMap['overflow']
 				num += 1
-				
+			# it is a marker, pattern or svg
+			# as long as this node is not the document <svg>, then only
+			# remove overflow='hidden'.  See 
+			# http://www.w3.org/TR/2010/WD-SVG11-20100622/masking.html#OverflowProperty
+			elif node != node.ownerDocument.documentElement:
+				if styleMap['overflow'] == 'hidden':
+					del styleMap['overflow']
+					num += 1
+			# else if outer svg has a overflow="visible", we can remove it
+			elif styleMap['overflow'] == 'visible':
+					del styleMap['overflow']
+					num += 1
+		
 		# marker: none
 		if styleMap.has_key('marker') :
 			if styleMap['marker'] == 'none':

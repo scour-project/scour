@@ -1,5 +1,16 @@
 Thanks to the following contributors to scour:
 
+* Louis Simard
+	Bugs Fixed:
+	- https://bugs.launchpad.net/scour/+bug/583758
+	- https://bugs.launchpad.net/scour/+bug/583458
+	- https://bugs.launchpad.net/scour/+bug/594930
+	- https://bugs.launchpad.net/scour/+bug/576958
+	New features:
+	- https://bugs.launchpad.net/scour/+bug/428069  Remove metadata option.
+	- https://bugs.launchpad.net/scour/+bug/582619  Feature implementations: --quiet, --enable-comment-stripping.
+	- Add options --shorten-ids, --renderer-workaround.
+
 * Doug Schepers (W3C SVG WG)
 	- function to embed rasters as base64 data: URLs
 	- report file size reduction

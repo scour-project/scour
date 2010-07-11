@@ -3,7 +3,7 @@
 
 #  SVG transformation list parser
 #
-#  Copyright 2010 
+#  Copyright 2010 Louis Simard
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #
