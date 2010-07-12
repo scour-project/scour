@@ -35,6 +35,8 @@
 #    at rounded corners)
 
 # Next Up:
+# - why are marker-start, -end not removed from the style attribute?
+# - why are only overflow style properties considered and not attributes?
 # - only remove unreferenced elements if they are not children of a referenced element
 # - add an option to remove ids if they match the Inkscape-style of IDs
 # - investigate point-reducing algorithms
@@ -69,7 +71,7 @@ except ImportError:
 
 APP = 'scour'
 VER = '0.25'
-COPYRIGHT = 'Copyright Jeff Schiller, 2010'
+COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
 NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
 		'XLINK': 	'http://www.w3.org/1999/xlink', 
@@ -107,6 +109,9 @@ svgAttributes = [
 				'font-weight',
 				'line-height',
 				'marker',
+				'marker-end',
+				'marker-mid',
+				'marker-start',
 				'opacity',
 				'overflow',
 				'stop-color',

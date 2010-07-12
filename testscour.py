@@ -1136,6 +1136,15 @@ class ShortenIDsInStyleCDATA(unittest.TestCase):
 		self.assertEquals(docStr.find('somethingreallylong'), -1,
 			'Did not shorten IDs in the internal stylesheet')
 
+class StyleToAttr(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/style-to-attr.svg')
+		line = doc.getElementsByTagName('line')[0]
+		self.assertEquals(line.getAttribute('stroke'), '#000')
+		self.assertEquals(line.getAttribute('marker-start'), 'url(#m)')
+		self.assertEquals(line.getAttribute('marker-mid'), 'url(#m)')
+		self.assertEquals(line.getAttribute('marker-end'), 'url(#m)')
+
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
