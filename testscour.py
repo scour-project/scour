@@ -1144,6 +1144,12 @@ class StyleToAttr(unittest.TestCase):
 		self.assertEquals(line.getAttribute('marker-start'), 'url(#m)')
 		self.assertEquals(line.getAttribute('marker-mid'), 'url(#m)')
 		self.assertEquals(line.getAttribute('marker-end'), 'url(#m)')
+		
+class PathEmptyMove(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-empty-move.svg')
+		self.assertEquals(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100l200 100z');
+		self.assertEquals(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z');
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters

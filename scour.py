@@ -1670,7 +1670,14 @@ def cleanPath(element, options) :
 		cmd, data = path[pathIndex]
 		i = 0
 		if cmd in ['m','l','t']:
-			if cmd == 'm': i = 2
+			if cmd == 'm':
+				# remove m0,0 segments
+				if data[0] == data[i+1] == 0:
+					# 'm0,0 x,y' can be replaces with 'lx,y'
+					path[pathIndex] = ('l', data[2:])
+					numPathSegmentsReduced += 1
+				else: # else skip move coordinate
+					i = 2
 			while i < len(data):
 				if data[i] == data[i+1] == 0:
 					del data[i:i+2]
