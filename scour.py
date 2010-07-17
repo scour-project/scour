@@ -1672,8 +1672,9 @@ def cleanPath(element, options) :
 		if cmd in ['m','l','t']:
 			if cmd == 'm':
 				# remove m0,0 segments
-				if data[0] == data[i+1] == 0:
-					# 'm0,0 x,y' can be replaces with 'lx,y'
+				if pathIndex > 0 and data[0] == data[i+1] == 0:
+					# 'm0,0 x,y' can be replaces with 'lx,y',
+					# except the first m which is a required absolute moveto
 					path[pathIndex] = ('l', data[2:])
 					numPathSegmentsReduced += 1
 				else: # else skip move coordinate
@@ -1736,7 +1737,7 @@ def cleanPath(element, options) :
 						foundStraightCurve = True
 				else:
 					m = dy/dx
-					if p1y == m*p1x and p2y == m*p2y:
+					if p1y == m*p1x and p2y == m*p2x:
 						foundStraightCurve = True
 
 				if foundStraightCurve:
