@@ -428,9 +428,7 @@ def findReferencedElements(node, ids=None):
 		# one stretch of text, please! (we could use node.normalize(), but
 		# this actually modifies the node, and we don't want to keep
 		# whitespace around if there's any)
-		stylesheet = ''
-		for child in node.childNodes:
-			stylesheet += child.nodeValue
+		stylesheet = "".join([child.nodeValue for child in node.childNodes])
 		if stylesheet != '':
 			cssRules = parseCssString(stylesheet)
 			for rule in cssRules:
@@ -648,9 +646,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 				# there's a CDATASection node surrounded by whitespace
 				# nodes
 				# (node.normalize() will NOT work here, it only acts on Text nodes)
-				oldValue = ''
-				for child in node.childNodes:
-					oldValue += child.nodeValue
+				oldValue = "".join([child.nodeValue for child in node.childNodes])
 				# not going to reparse the whole thing
 				newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
 				newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
@@ -1375,12 +1371,10 @@ def repairStyle(node, options):
 					del styleMap[propName]
 
 		# sew our remaining style properties back together into a style attribute
-		fixedStyle = ''
-		for prop in styleMap.keys() :
-			fixedStyle += prop + ':' + styleMap[prop] + ';'
+		fixedStyle = [prop + ':' + styleMap[prop] + ';' for prop in styleMap.keys()]
 			
-		if fixedStyle != '' :
-			node.setAttribute('style', fixedStyle)
+		if len(fixedStyle) > 0:
+			node.setAttribute('style', "".join(fixedStyle))
 		else:
 			node.removeAttribute('style')
 	
@@ -2480,12 +2474,14 @@ def makeWellFormed(str):
 # - somewhat judicious use of whitespace
 # - ensure id attributes are first
 def serializeXML(element, options, ind = 0, preserveWhitespace = False):
+	outParts = []
+
 	indent = ind
 	I=''
 	if options.indent_type == 'tab': I='\t'
 	elif options.indent_type == 'space': I=' '
 	
-	outString = (I * ind) + '<' + element.nodeName
+	outParts.extend([(I * ind), '<', element.nodeName])
 
 	# always serialize the id or xml:id attributes first
 	if element.getAttribute('id') != '':
@@ -2493,13 +2489,13 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 		quot = '"'
 		if id.find('"') != -1:
 			quot = "'"
-		outString += ' ' + 'id=' + quot + id + quot
+		outParts.extend([' id=', quot, id, quot])
 	if element.getAttribute('xml:id') != '':
 		id = element.getAttribute('xml:id')
 		quot = '"'
 		if id.find('"') != -1:
 			quot = "'"
-		outString += ' ' + 'xml:id=' + quot + id + quot
+		outParts.extend([' xml:id=', quot, id, quot])
 	
 	# now serialize the other attributes
 	attrList = element.attributes
@@ -2513,16 +2509,16 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
 		attrValue = makeWellFormed( attr.nodeValue )
 		
-		outString += ' '
+		outParts.append(' ')
 		# preserve xmlns: if it is a namespace prefix declaration
 		if attr.prefix != None:
-			outString += attr.prefix + ':'
+			outParts.extend([attr.prefix, ':'])
 		elif attr.namespaceURI != None:
 			if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
-				outString += 'xmlns:'
+				outParts.append('xmlns:')
 			elif attr.namespaceURI == 'http://www.w3.org/1999/xlink':
-				outString += 'xlink:'
-		outString += attr.localName + '=' + quot + attrValue + quot
+				outParts.append('xlink:')
+		outParts.extend([attr.localName, '=', quot, attrValue, quot])
 
 		if attr.nodeName == 'xml:space':
 			if attrValue == 'preserve':
@@ -2533,43 +2529,43 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 	# if no children, self-close
 	children = element.childNodes
 	if children.length > 0:
-		outString += '>'
+		outParts.append('>')
 	
 		onNewLine = False
 		for child in element.childNodes:
 			# element node
 			if child.nodeType == 1:
 				if preserveWhitespace:
-					outString += serializeXML(child, options, 0, preserveWhitespace)
+					outParts.append(serializeXML(child, options, 0, preserveWhitespace))
 				else:
-					outString += os.linesep + serializeXML(child, options, indent + 1, preserveWhitespace)
+					outParts.extend([os.linesep, serializeXML(child, options, indent + 1, preserveWhitespace)])
 					onNewLine = True
 			# text node
 			elif child.nodeType == 3:
 				# trim it only in the case of not being a child of an element
 				# where whitespace might be important
 				if preserveWhitespace:
-					outString += makeWellFormed(child.nodeValue)
+					outParts.append(makeWellFormed(child.nodeValue))
 				else:
-					outString += makeWellFormed(child.nodeValue.strip())
+					outParts.append(makeWellFormed(child.nodeValue.strip()))
 			# CDATA node
 			elif child.nodeType == 4:
-				outString += '<![CDATA[' + child.nodeValue + ']]>'
+				outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])
 			# Comment node
 			elif child.nodeType == 8:
-				outString += '<!--' + child.nodeValue + '-->'
+				outParts.extend(['<!--', child.nodeValue, '-->'])
 			# TODO: entities, processing instructions, what else?
 			else: # ignore the rest
 				pass
 				
-		if onNewLine: outString += (I * ind)
-		outString += '</' + element.nodeName + '>'
-		if indent > 0: outString += os.linesep
+		if onNewLine: outParts.append(I * ind)
+		outParts.extend(['</', element.nodeName, '>'])
+		if indent > 0: outParts.append(os.linesep)
 	else:
-		outString += '/>'
-		if indent > 0: outString += os.linesep
+		outParts.append('/>')
+		if indent > 0: outParts.append(os.linesep)
 		
-	return outString
+	return "".join(outParts)
 	
 # this is the main method
 # input is a string representation of the input XML
