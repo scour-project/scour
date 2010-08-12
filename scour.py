@@ -955,20 +955,15 @@ def createGroupsForCommonAttributes(elem):
 					
 					# Create a <g> element from scratch.
 					# We need the Document for this.
-					document = elem.parentNode
-					while document.parentNode is not None:
-						document = document.parentNode
+					document = elem.ownerDocument
 					group = document.createElementNS(NS['SVG'], 'g')
 					# Move the run of elements to the group.
-					for dummy in xrange(runLength):
-						node = elem.childNodes.item(runStart)
-						elem.removeChild(node)
-						group.appendChild(node)
+					# a) ADD the nodes to the new group.
+					group.childNodes[:] = elem.childNodes[runStart:runEnd + 1]
+					# b) REMOVE the nodes from the element.
+					elem.childNodes[runStart:runEnd + 1] = []
 					# Include the group in elem's children.
-					if elem.childNodes.length == runStart:
-						elem.appendChild(group)
-					else:
-						elem.insertBefore(group, elem.childNodes.item(runStart))
+					elem.childNodes.insert(runStart, group)
 					num += 1
 					curChild = runStart - 1
 					numElemsRemoved -= 1
@@ -1950,19 +1945,18 @@ def parseListOfPoints(s):
 		Returns a list of containing an even number of coordinate strings
 	"""
 	i = 0
-	points = []
 	
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
 	# coordinate-pair = coordinate comma-or-wsp coordinate
 	# coordinate = sign? integer
 	# comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
-	ws_nums = re.split("\\s*\\,?\\s*", s.strip())
+	ws_nums = re.split(r"\s*,?\s*", s.strip())
 	nums = []
 	
 	# also, if 100-100 is found, split it into two also
     #  <polygon points="100,-100,100-100,100-100-100,-100-100" />
 	for i in xrange(len(ws_nums)):
-		negcoords = re.split("\\-", ws_nums[i]);
+		negcoords = ws_nums[i].split("-")
 		
 		# this string didn't have any negative coordinates
 		if len(negcoords) == 1:
@@ -1979,26 +1973,26 @@ def parseListOfPoints(s):
 					# unless we accidentally split a number that was in scientific notation
 					# and had a negative exponent (500.00e-1)
 					prev = nums[len(nums)-1]
-					if prev[len(prev)-1] == 'e' or prev[len(prev)-1] == 'E':
+					if prev[len(prev)-1] in ['e', 'E']:
 						nums[len(nums)-1] = prev + '-' + negcoords[j]
 					else:
 						nums.append( '-'+negcoords[j] )
 
-	# now resolve into SVGLength values
+	# if we have an odd number of points, return empty
+	if len(nums) % 2 != 0: return []
+		
+	# now resolve into Decimal values
 	i = 0
 	while i < len(nums):
-		x = SVGLength(nums[i])
-		# if we had an odd number of points, return empty
-		if i == len(nums)-1: return []
-		else: y = SVGLength(nums[i+1])
+		try:
+			nums[i] = getcontext().create_decimal(nums[i])
+			nums[i + 1] = getcontext().create_decimal(nums[i + 1])
+		except decimal.InvalidOperation: # one of the lengths had a unit or is an invalid number
+			return []
 		
-		# if the coordinates were not unitless, return empty
-		if x.units != Unit.NONE or y.units != Unit.NONE: return []
-		points.append( str(x.value) )
-		points.append( str(y.value) )
 		i += 2
 
-	return points
+	return nums
 	
 def cleanPolygon(elem, options):
 	"""
@@ -2009,11 +2003,11 @@ def cleanPolygon(elem, options):
 	pts = parseListOfPoints(elem.getAttribute('points'))
 	N = len(pts)/2
 	if N >= 2:		
-		(startx,starty) = (pts[0],pts[0])
-		(endx,endy) = (pts[len(pts)-2],pts[len(pts)-1])
+		(startx,starty) = pts[:2]
+		(endx,endy) = pts[-2:]
 		if startx == endx and starty == endy:
-			pts = pts[:-2]
-			numPointsRemovedFromPolygon += 1		
+			del pts[-2:]
+			numPointsRemovedFromPolygon += 1
 	elem.setAttribute('points', scourCoordinates(pts, options, True))
 
 def cleanPolyline(elem, options):
