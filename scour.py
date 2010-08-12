@@ -956,10 +956,13 @@ def createGroupsForCommonAttributes(elem):
 					# Move the run of elements to the group.
 					# a) ADD the nodes to the new group.
 					group.childNodes[:] = elem.childNodes[runStart:runEnd + 1]
+					for child in group.childNodes:
+						child.parentNode = group
 					# b) REMOVE the nodes from the element.
 					elem.childNodes[runStart:runEnd + 1] = []
 					# Include the group in elem's children.
 					elem.childNodes.insert(runStart, group)
+					group.parentNode = elem
 					num += 1
 					curChild = runStart - 1
 					numElemsRemoved -= 1
