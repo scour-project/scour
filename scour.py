@@ -2839,8 +2839,11 @@ _options_parser.add_option("--remove-metadata",
 	action="store_true", dest="remove_metadata", default=False,
 	help="remove <metadata> elements (which may contain license metadata etc.)")
 _options_parser.add_option("--renderer-workaround",
-	action="store_true", dest="renderer_workaround", default=False,
-	help="work around various renderer bugs (currently only librsvg)")
+	action="store_true", dest="renderer_workaround", default=True,
+	help="work around various renderer bugs (currently only librsvg) (default)")
+_options_parser.add_option("--no-renderer-workaround",
+	action="store_false", dest="renderer_workaround", default=True,
+	help="do not work around various renderer bugs (currently only librsvg)")
 _options_parser.add_option("--strip-xml-prolog",
 	action="store_true", dest="strip_xml_prolog", default=False,
 	help="won't output the <?xml ?> prolog")

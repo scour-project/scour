@@ -17,7 +17,7 @@
             <param name="keep-editor-data"  type="boolean" _gui-text="Keep editor data">false</param>
             <param name="remove-metadata"  type="boolean" _gui-text="Remove metadata">false</param>
             <param name="enable-comment-stripping"  type="boolean" _gui-text="Remove comments">false</param>
-            <param name="renderer-workaround"  type="boolean" _gui-text="Work around renderer bugs">false</param>
+            <param name="renderer-workaround"  type="boolean" _gui-text="Work around renderer bugs">true</param>
             <param name="enable-viewboxing" type="boolean" _gui-text="Enable viewboxing">false</param>
             <param name="strip-xml-prolog"  type="boolean" _gui-text="Remove the &lt;?xml?&gt; declaration">false</param>
             <param name="set-precision"  type="int" _gui-text="Number of significant digits for coords">5</param>
