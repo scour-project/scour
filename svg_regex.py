@@ -221,14 +221,14 @@ class SVGPathParser(object):
         arguments = []
         while token[0] in self.number_tokens:
             rx = Decimal(token[1]) * 1
-            if rx < 0.0:
+            if rx < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
             token = next()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             ry = Decimal(token[1]) * 1
-            if ry < 0.0:
+            if ry < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
             token = next()
