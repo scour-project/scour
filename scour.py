@@ -1680,7 +1680,7 @@ def cleanPath(element, options) :
 					i += 2
 		elif cmd == 'c':
 			while i < len(data):
-				if data[i+4] == data[i+5] == 0:
+				if data[i] == data[i+1] == data[i+2] == data[i+3] == data[i+4] == data[i+5] == 0:
 					del data[i:i+6]
 					numPathSegmentsReduced += 1
 				else:
@@ -1694,7 +1694,7 @@ def cleanPath(element, options) :
 					i += 7
 		elif cmd == 'q':
 			while i < len(data):
-				if data[i+2] == data[i+3] == 0:
+				if data[i] == data[i+1] == data[i+2] == data[i+3] == 0:
 					del data[i:i+4]
 					numPathSegmentsReduced += 1
 				else:
