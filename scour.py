@@ -1317,8 +1317,9 @@ def repairStyle(node, options):
 			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust', 
 								'font-style', 'font-variant', 'font-weight', 
 								'letter-spacing', 'line-height', 'kerning',
-								'text-anchor', 'text-decoration', 'text-rendering',
-								'unicode-bidi', 'word-spacing', 'writing-mode'] :
+								'text-align', 'text-anchor', 'text-decoration',
+								'text-rendering', 'unicode-bidi',
+								'word-spacing', 'writing-mode'] :
 				if styleMap.has_key(fontstyle) :
 					del styleMap[fontstyle]
 					num += 1
