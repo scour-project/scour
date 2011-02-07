@@ -1054,11 +1054,12 @@ def removeDuplicateGradientStops(doc):
 					
 				color = stop.getAttribute('stop-color')
 				opacity = stop.getAttribute('stop-opacity')
+				style = stop.getAttribute('style')
 				if stops.has_key(offset) :
 					oldStop = stops[offset]
-					if oldStop[0] == color and oldStop[1] == opacity:
+					if oldStop[0] == color and oldStop[1] == opacity and oldStop[2] == style:
 						stopsToRemove.append(stop)
-				stops[offset] = [color, opacity]
+				stops[offset] = [color, opacity, style]
 				
 			for stop in stopsToRemove:
 				stop.parentNode.removeChild(stop)
@@ -1166,7 +1167,7 @@ def removeDuplicateGradients(doc):
 					if stopsNotEqual: break
 					stop = stops.item(i)
 					ostop = ostops.item(i)
-					for attr in ['offset', 'stop-color', 'stop-opacity']:
+					for attr in ['offset', 'stop-color', 'stop-opacity', 'style']:
 						if stop.getAttribute(attr) != ostop.getAttribute(attr):
 							stopsNotEqual = True
 							break
