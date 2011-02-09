@@ -1313,7 +1313,7 @@ def repairStyle(node, options):
 		
 		# remove font properties for non-text elements
 		# I've actually observed this in real SVG content
-		if node.nodeName in ['rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path']:
+		if not mayContainTextNodes(node):
 			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust', 
 								'font-style', 'font-variant', 'font-weight', 
 								'letter-spacing', 'line-height', 'kerning',
@@ -1388,6 +1388,48 @@ def repairStyle(node, options):
 		num += repairStyle(child,options)
 			
 	return num
+
+def mayContainTextNodes(node):
+	"""
+	Returns True if the passed-in node is probably a text element, or at least
+	one of its descendants is probably a text element.
+
+	If False is returned, it is guaranteed that the passed-in node has no
+	business having text-based attributes.
+
+	If True is returned, the passed-in node should not have its text-based
+	attributes removed.
+	"""
+	# Cached result of a prior call?
+	try:
+		return node.mayContainTextNodes
+	except AttributeError:
+		pass
+
+	result = True # Default value
+	# Comment, text and CDATA nodes don't have attributes and aren't containers
+	if node.nodeType != 1:
+		result = False
+	# Non-SVG elements? Unknown elements!
+	elif node.namespaceURI != NS['SVG']:
+		result = True
+	# Blacklisted elements. Those are guaranteed not to be text elements.
+	elif node.nodeName in ['rect', 'circle', 'ellipse', 'line', 'polygon',
+	                     'polyline', 'path', 'image', 'stop']:
+		result = False
+	# Group elements. If we're missing any here, the default of True is used.
+	elif node.nodeName in ['g', 'clipPath', 'marker', 'mask', 'pattern',
+	                     'linearGradient', 'radialGradient', 'symbol']:
+		result = False
+		for child in node.childNodes:
+			if mayContainTextNodes(child):
+				result = True
+	# Everything else should be considered a future SVG-version text element
+	# at best, or an unknown element at worst. result will stay True.
+
+	# Cache this result before returning it.
+	node.mayContainTextNodes = result
+	return result
 
 def removeDefaultAttributeValues(node, options):
 	num = 0
