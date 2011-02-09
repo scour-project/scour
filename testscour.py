@@ -741,7 +741,7 @@ class RereferenceForRadialGradient(unittest.TestCase):
 class CollapseSamePathPoints(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
-		self.assertEquals(p.getAttribute('d'), "m100 100l100.12 100.12z",
+		self.assertEquals(p.getAttribute('d'), "m100 100l100.12 100.12c14.88 4.88-15.12-5.12 0 0z",
 			'Did not collapse same path points')
 
 class ScourUnitlessLengths(unittest.TestCase):
