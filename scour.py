@@ -2390,24 +2390,24 @@ def embedRasters(element, options) :
 		# look for 'png', 'jpg', and 'gif' extensions 
 		if ext == 'png' or ext == 'jpg' or ext == 'gif':
 
-			# check if href resolves to an existing file
-			if os.path.isfile(href) == False :
-				if href[:7] != 'http://' and os.path.isfile(href) == False :
-						# if this is not an absolute path, set path relative
-						# to script file based on input arg 
-						infilename = '.'
-						if options.infilename: infilename = options.infilename
-						href = os.path.join(os.path.dirname(infilename), href)				
-			
+			# file:// URLs denote files on the local system too
+			if href[:7] == 'file://':
+				href = href[7:]
+			# does the file exist?
+			if os.path.isfile(href):
+				# if this is not an absolute path, set path relative
+				# to script file based on input arg 
+				infilename = '.'
+				if options.infilename: infilename = options.infilename
+				href = os.path.join(os.path.dirname(infilename), href)
+
 			rasterdata = ''
 			# test if file exists locally
-			if os.path.isfile(href) == True :
+			if os.path.isfile(href):
 				# open raster file as raw binary
 				raster = open( href, "rb")
 				rasterdata = raster.read()
-
 			elif href[:7] == 'http://':
-				# raster = open( href, "rb")
 				webFile = urllib.urlopen( href )
 				rasterdata = webFile.read()
 				webFile.close()
