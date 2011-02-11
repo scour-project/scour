@@ -276,7 +276,66 @@ colors = {
 	'yellow': 'rgb(255, 255, 0)',
 	'yellowgreen': 'rgb(154, 205, 50)',
 	}
-	
+
+default_attributes = { # excluded all attributes with 'auto' as default
+	# SVG 1.1 presentation attributes
+	'baseline-shift': 'baseline',
+	'clip-path': 'none',
+	'clip-rule': 'nonzero',
+	'color': '#000',
+	'color-interpolation-filters': 'linearRGB',
+	'color-interpolation': 'sRGB',
+	'direction': 'ltr',
+	'display': 'inline',
+	'enable-background': 'accumulate',
+	'fill': '#000',
+	'fill-opacity': '1',
+	'fill-rule': 'nonzero',
+	'filter': 'none',
+	'flood-color': '#000',
+	'flood-opacity': '1',
+	'font-size-adjust': 'none',
+	'font-size': 'medium',
+	'font-stretch': 'normal',
+	'font-style': 'normal',
+	'font-variant': 'normal',
+	'font-weight': 'normal',
+	'glyph-orientation-horizontal': '0deg',
+	'letter-spacing': 'normal',
+	'lighting-color': '#fff',
+	'marker': 'none',
+	'marker-start': 'none',
+	'marker-mid': 'none',
+	'marker-end': 'none',
+	'mask': 'none',
+	'opacity': '1',
+	'pointer-events': 'visiblePainted',
+	'stop-color': '#000',
+	'stop-opacity': '1',
+	'stroke': 'none',
+	'stroke-dasharray': 'none',
+	'stroke-dashoffset': '0',
+	'stroke-linecap': 'butt',
+	'stroke-linejoin': 'miter',
+	'stroke-miterlimit': '4',
+	'stroke-opacity': '1',
+	'stroke-width': '1',
+	'text-anchor': 'start',
+	'text-decoration': 'none',
+	'unicode-bidi': 'normal',
+	'visibility': 'visible',
+	'word-spacing': 'normal',
+	'writing-mode': 'lr-tb',
+	# SVG 1.2 tiny properties
+	'audio-level': '1',
+	'solid-color': '#000',
+	'solid-opacity': '1',
+	'text-align': 'start',
+	'vector-effect': 'none',
+	'viewport-fill': 'none',
+	'viewport-fill-opacity': '1',
+	}
+
 def isSameSign(a,b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
@@ -1211,16 +1270,32 @@ def removeDuplicateGradients(doc):
 			num += 1
 	return num
 
-def repairStyle(node, options):
-	num = 0
+def _getStyle(node):
+	u"""Returns the style attribute of a node as a dictionary."""
 	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
-		# get all style properties and stuff them into a dictionary
 		styleMap = { }
 		rawStyles = node.getAttribute('style').split(';')
 		for style in rawStyles:
 			propval = style.split(':')
 			if len(propval) == 2 :
 				styleMap[propval[0].strip()] = propval[1].strip()
+		return styleMap
+	else:
+		return {}
+
+def _setStyle(node, styleMap):
+	u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
+	fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in styleMap.keys()])
+	if fixedStyle != '' :
+		node.setAttribute('style', fixedStyle)
+	elif node.getAttribute('style'):
+		node.removeAttribute('style')
+	return node
+
+def repairStyle(node, options):
+	num = 0
+	styleMap = _getStyle(node)
+	if styleMap:
 
 		# I've seen this enough to know that I need to correct it:
 		# fill: url(#linearGradient4918) rgb(0, 0, 0);
@@ -1235,13 +1310,8 @@ def repairStyle(node, options):
 		#  opacity:1
 		if styleMap.has_key('opacity') :
 			opacity = float(styleMap['opacity'])
-			# opacity='1.0' is useless, remove it
-			if opacity == 1.0 :
-				del styleMap['opacity']
-				num += 1
-				
 			# if opacity='0' then all fill and stroke properties are useless, remove them
-			elif opacity == 0.0 :
+			if opacity == 0.0 :
 				for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
 					'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
 					'stroke-dashoffset', 'stroke-opacity'] :
@@ -1268,33 +1338,19 @@ def repairStyle(node, options):
 					del styleMap[fillstyle]
 					num += 1
 					
-		#  stop-opacity: 1
-		if styleMap.has_key('stop-opacity') :
-			if float(styleMap['stop-opacity']) == 1.0 :
-				del styleMap['stop-opacity']
-				num += 1
-		
-		#  fill-opacity: 1 or 0
+		#  fill-opacity: 0
 		if styleMap.has_key('fill-opacity') :
 			fillOpacity = float(styleMap['fill-opacity'])
-			#  TODO: This is actually a problem if the parent element does not have fill-opacity=1
-			if fillOpacity == 1.0 :
-				del styleMap['fill-opacity']
-				num += 1
-			elif fillOpacity == 0.0 :
+			if fillOpacity == 0.0 :
 				for uselessFillStyle in [ 'fill', 'fill-rule' ] :
 					if styleMap.has_key(uselessFillStyle):
 						del styleMap[uselessFillStyle]
 						num += 1
 		
-		#  stroke-opacity: 1 or 0
+		#  stroke-opacity: 0
 		if styleMap.has_key('stroke-opacity') :
 			strokeOpacity = float(styleMap['stroke-opacity']) 
-			#  TODO: This is actually a problem if the parent element does not have stroke-opacity=1
-			if strokeOpacity == 1.0 :
-				del styleMap['stroke-opacity']
-				num += 1
-			elif strokeOpacity == 0.0 :
+			if strokeOpacity == 0.0 :
 				for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap', 
 							'stroke-dasharray', 'stroke-dashoffset' ] :
 					if styleMap.has_key(uselessStrokeStyle): 
@@ -1331,18 +1387,6 @@ def repairStyle(node, options):
 				del styleMap[inkscapeStyle]
 				num += 1
 
-		# visibility: visible
-		if styleMap.has_key('visibility') :
-			if styleMap['visibility'] == 'visible':
-				del styleMap['visibility']
-				num += 1
-		
-		# display: inline
-		if styleMap.has_key('display') :
-			if styleMap['display'] == 'inline':
-				del styleMap['display']
-				num += 1
-				
 		if styleMap.has_key('overflow') :
 			# overflow specified on element other than svg, marker, pattern
 			if not node.nodeName in ['svg','marker','pattern']:
@@ -1361,12 +1405,6 @@ def repairStyle(node, options):
 					del styleMap['overflow']
 					num += 1
 		
-		# marker: none
-		if styleMap.has_key('marker') :
-			if styleMap['marker'] == 'none':
-				del styleMap['marker']
-				num += 1
-		
 		# now if any of the properties match known SVG attributes we prefer attributes 
 		# over style so emit them and remove them from the style map
 		if options.style_to_xml:
@@ -1374,15 +1412,9 @@ def repairStyle(node, options):
 				if propName in svgAttributes :
 					node.setAttribute(propName, styleMap[propName])
 					del styleMap[propName]
-
-		# sew our remaining style properties back together into a style attribute
-		fixedStyle = [prop + ':' + styleMap[prop] + ';' for prop in styleMap.keys()]
-			
-		if len(fixedStyle) > 0:
-			node.setAttribute('style', "".join(fixedStyle))
-		else:
-			node.removeAttribute('style')
-	
+		
+		_setStyle(node, styleMap)
+		
 	# recurse for our child elements
 	for child in node.childNodes :
 		num += repairStyle(child,options)
@@ -1431,7 +1463,21 @@ def mayContainTextNodes(node):
 	node.mayContainTextNodes = result
 	return result
 
-def removeDefaultAttributeValues(node, options):
+def taint(taintedSet, taintedAttribute):
+	u"""Adds an attribute to a set of attributes.
+	
+	Related attributes are also included."""
+	taintedSet.add(taintedAttribute)
+	if taintedAttribute == 'marker':
+		taintedSet |= set(['marker-start', 'marker-mid', 'marker-end'])
+	if taintedAttribute in ['marker-start', 'marker-mid', 'marker-end']:
+		taintedSet.add('marker')
+	return taintedSet
+
+def removeDefaultAttributeValues(node, options, tainted=set()):
+	u"""'tainted' keeps a set of attributes defined in parent nodes.
+	
+	For such attributes, we don't delete attributes with default values."""
 	num = 0
 	if node.nodeType != 1: return 0
 	
@@ -1505,10 +1551,33 @@ def removeDefaultAttributeValues(node, options):
 		if (r.value == 50 and r.units == Unit.PCT) or (r.value == 0.5 and r.units == Unit.NONE):
 			node.removeAttribute('r')
 			num += 1
+	
+	# Summarily get rid of some more attributes
+	attributes = [node.attributes.item(i).nodeName 
+				  for i in range(node.attributes.length)]
+	for attribute in attributes:
+		if attribute not in tainted:
+			if attribute in default_attributes.keys():
+				if node.getAttribute(attribute) == default_attributes[attribute]:
+					node.removeAttribute(attribute)
+					num += 1
+				else:
+					tainted = taint(tainted, attribute)
+	# These attributes might also occur as styles
+	styles = _getStyle(node)
+	for attribute in styles.keys():
+		if attribute not in tainted:
+			if attribute in default_attributes.keys():
+				if styles[attribute] == default_attributes[attribute]:
+					del styles[attribute]
+					num += 1
+				else:
+					tainted = taint(tainted, attribute)
+	_setStyle(node, styles)
 
 	# recurse for our child elements
 	for child in node.childNodes :
-		num += removeDefaultAttributeValues(child,options)
+		num += removeDefaultAttributeValues(child, options, tainted.copy())
 	
 	return num
 
@@ -1563,6 +1632,7 @@ def convertColors(element) :
 		attrsToConvert = ['solid-color']
 
 	# now convert all the color formats
+	styles = _getStyle(element)
 	for attr in attrsToConvert:
 		oldColorValue = element.getAttribute(attr)
 		if oldColorValue != '':
@@ -1572,6 +1642,16 @@ def convertColors(element) :
 			if oldBytes > newBytes:
 				element.setAttribute(attr, newColorValue)
 				numBytes += (oldBytes - len(element.getAttribute(attr)))
+		# colors might also hide in styles
+		if attr in styles.keys():
+			oldColorValue = styles[attr]
+			newColorValue = convertColor(oldColorValue)
+			oldBytes = len(oldColorValue)
+			newBytes = len(newColorValue)
+			if oldBytes > newBytes:
+				styles[attr] = newColorValue
+				numBytes += (oldBytes - len(element.getAttribute(attr)))
+	_setStyle(element, styles)
 	
 	# now recurse for our child elements
 	for child in element.childNodes :
@@ -2182,7 +2262,12 @@ def reducePrecision(element) :
 	"""
 	num = 0
 	
-	for lengthAttr in ['opacity', 'flood-opacity', 'fill-opacity', 'stroke-opacity', 'stop-opacity', 'stroke-miterlimit', 'stroke-dashoffset', 'letter-spacing', 'word-spacing', 'kerning', 'font-size-adjust', 'font-size', 'stroke-width']:
+	styles = _getStyle(element)
+	for lengthAttr in ['opacity', 'flood-opacity', 'fill-opacity', 
+						'stroke-opacity', 'stop-opacity', 'stroke-miterlimit',
+						'stroke-dashoffset', 'letter-spacing', 'word-spacing',
+						'kerning', 'font-size-adjust', 'font-size',
+						'stroke-width']:
 		val = element.getAttribute(lengthAttr)
 		if val != '':
 			valLen = SVGLength(val)
@@ -2191,6 +2276,16 @@ def reducePrecision(element) :
 				if len(newVal) < len(val):
 					num += len(val) - len(newVal)
 					element.setAttribute(lengthAttr, newVal)
+		# repeat for attributes hidden in styles
+		if lengthAttr in styles.keys():
+			val = styles[lengthAttr]
+			valLen = SVGLength(val)
+			if valLen.units != Unit.INVALID:
+				newVal = scourLength(val)
+				if len(newVal) < len(val):
+					num += len(val) - len(newVal)
+					styles[lengthAttr] = newVal
+	_setStyle(element, styles)
 	
 	for child in element.childNodes:
 		if child.nodeType == 1:
@@ -2769,9 +2864,6 @@ def scourString(in_string, options=None):
 	if options.shorten_ids:
 		numBytesSavedInIDs += shortenIDs(doc)
 
-	# remove default values of attributes
-	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)	
-	
 	# scour lengths (including coordinates)
 	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
 		for elem in doc.getElementsByTagName(type):
@@ -2782,6 +2874,9 @@ def scourString(in_string, options=None):
 	
 	# more length scouring in this function
 	numBytesSavedInLengths = reducePrecision(doc.documentElement)
+	
+	# remove default values of attributes
+	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)	
 	
 	# reduce the length of transformation attributes
 	numBytesSavedInTransforms = optimizeTransforms(doc.documentElement, options)
