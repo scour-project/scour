@@ -596,8 +596,9 @@ def removeUnreferencedElements(doc):
 	"""
 	global numElemsRemoved
 	num = 0
+	
+	# Remove certain unreferenced elements outside of defs
 	removeTags = ['linearGradient', 'radialGradient', 'pattern']
-
 	identifiedElements = findElementsWithId(doc.documentElement)
 	referencedIDs = findReferencedElements(doc.documentElement)
 
@@ -609,8 +610,7 @@ def removeUnreferencedElements(doc):
 				num += 1
 				numElemsRemoved += 1
 
-	# TODO: should also go through defs and vacuum it
-	num = 0
+	# Remove most unreferenced elements inside defs
 	defs = doc.documentElement.getElementsByTagName('defs')
 	for aDef in defs:
 		elemsToRemove = removeUnusedDefs(doc, aDef)
@@ -2784,25 +2784,27 @@ def scourString(in_string, options=None):
 	if options.remove_metadata:
 		removeMetadataElements(doc)
 	
+	# remove unreferenced gradients/patterns outside of defs
+	# and most unreferenced elements inside of defs
+	while removeUnreferencedElements(doc) > 0:
+		pass
+
 	# remove empty defs, metadata, g
-	# NOTE: these elements will be removed even if they have (invalid) text nodes
-	elemsToRemove = []
+	# NOTE: these elements will be removed if they just have whitespace-only text nodes
 	for tag in ['defs', 'metadata', 'g'] :
 		for elem in doc.documentElement.getElementsByTagName(tag) :
 			removeElem = not elem.hasChildNodes()
 			if removeElem == False :
 				for child in elem.childNodes :
-					if child.nodeType in [1, 3, 4, 8] :
+					if child.nodeType in [1, 4, 8]:
+						break
+					elif child.nodeType == 3 and not child.nodeValue.isspace():
 						break
 				else:
 					removeElem = True
 			if removeElem :
 				elem.parentNode.removeChild(elem)
 				numElemsRemoved += 1
-
-	# remove unreferenced gradients/patterns outside of defs
-	while removeUnreferencedElements(doc) > 0:
-		pass
 
 	if options.strip_ids:
 		bContinueLooping = True

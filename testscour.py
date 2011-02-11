@@ -1148,20 +1148,20 @@ class StyleToAttr(unittest.TestCase):
 class PathEmptyMove(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-empty-move.svg')
-		self.assertEquals(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100l200 100z');
-		self.assertEquals(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z');
+		self.assertEquals(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100l200 100z')
+		self.assertEquals(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z')
 
 class DefaultsRemovalToplevel(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[1].getAttribute('fill-rule'), '',
-			'Default attribute fill-rule:nonzero not removed');
+			'Default attribute fill-rule:nonzero not removed')
 
 class DefaultsRemovalToplevelInverse(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[0].getAttribute('fill-rule'), 'evenodd',
-			'Non-Default attribute fill-rule:evenodd removed');
+			'Non-Default attribute fill-rule:evenodd removed')
 
 class DefaultsRemovalToplevelFormat(unittest.TestCase):
 	def runTest(self):
@@ -1173,37 +1173,49 @@ class DefaultsRemovalInherited(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[3].getAttribute('fill-rule'), '',
-			'Default attribute fill-rule:nonzero not removed in child');
+			'Default attribute fill-rule:nonzero not removed in child')
 
 class DefaultsRemovalInheritedInverse(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[2].getAttribute('fill-rule'), 'evenodd',
-			'Non-Default attribute fill-rule:evenodd removed in child');
+			'Non-Default attribute fill-rule:evenodd removed in child')
 
 class DefaultsRemovalInheritedFormat(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[2].getAttribute('stroke-width'), '',
-			'Default attribute stroke-width:1.00 not removed in child');
+			'Default attribute stroke-width:1.00 not removed in child')
 
 class DefaultsRemovalOverwrite(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[5].getAttribute('fill-rule'), 'nonzero',
-			'Default attribute removed, although it overwrites parent element');
+			'Default attribute removed, although it overwrites parent element')
 
 class DefaultsRemovalOverwriteMarker(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[4].getAttribute('marker-start'), 'none',
-			'Default marker attribute removed, although it overwrites parent element');
+			'Default marker attribute removed, although it overwrites parent element')
 
 class DefaultsRemovalNonOverwrite(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/cascading-default-attribute-removal.svg')
 		self.assertEquals(doc.getElementsByTagName('path')[10].getAttribute('fill-rule'), '',
-			'Default attribute not removed, although its parent used default');
+			'Default attribute not removed, although its parent used default')
+
+class RemoveDefsWithUnreferencedElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/useless-defs.svg')
+		self.assertEquals(doc.getElementsByTagName('defs').length, 0,
+			'Kept defs, although it contains only unreferenced elements')
+
+class RemoveDefsWithWhitespace(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/whitespace-defs.svg')
+		self.assertEquals(doc.getElementsByTagName('defs').length, 0,
+			'Kept defs, although it contains only whitespace or is <defs/>')
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
