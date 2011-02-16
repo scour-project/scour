@@ -2680,7 +2680,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 				if preserveWhitespace:
 					outParts.append(serializeXML(child, options, 0, preserveWhitespace))
 				else:
-					outParts.extend([os.linesep, serializeXML(child, options, indent + 1, preserveWhitespace)])
+					outParts.extend(['\n', serializeXML(child, options, indent + 1, preserveWhitespace)])
 					onNewLine = True
 			# text node
 			elif child.nodeType == 3:
@@ -2702,10 +2702,10 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 				
 		if onNewLine: outParts.append(I * ind)
 		outParts.extend(['</', element.nodeName, '>'])
-		if indent > 0: outParts.append(os.linesep)
+		if indent > 0: outParts.append('\n')
 	else:
 		outParts.append('/>')
-		if indent > 0: outParts.append(os.linesep)
+		if indent > 0: outParts.append('\n')
 		
 	return "".join(outParts)
 	
@@ -2897,7 +2897,7 @@ def scourString(in_string, options=None):
 	# http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
 	# rolled our own serialize function here to save on space, put id first, customize indentation, etc
 #	out_string = doc.documentElement.toprettyxml(' ')
-	out_string = serializeXML(doc.documentElement, options) + os.linesep
+	out_string = serializeXML(doc.documentElement, options) + '\n'
 	
 	# now strip out empty lines
 	lines = []
@@ -2908,7 +2908,7 @@ def scourString(in_string, options=None):
 
 	# return the string with its XML prolog and surrounding comments
 	if options.strip_xml_prolog == False:
-		total_output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + os.linesep
+		total_output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
 	else:
 		total_output = ""
 	
@@ -2916,7 +2916,7 @@ def scourString(in_string, options=None):
 		if child.nodeType == 1:
 			total_output += "".join(lines)
 		else: # doctypes, entities, comments
-			total_output += child.toxml() + os.linesep
+			total_output += child.toxml() + '\n'
 		
 	return total_output
 
@@ -3033,7 +3033,7 @@ def parse_args(args=None):
 		# GZ: could sniff for gzip compression here
 		infile = sys.stdin
 	if options.outfilename:
-		outfile = maybe_gziped_file(options.outfilename, "w")
+		outfile = maybe_gziped_file(options.outfilename, "wb")
 	else:
 		outfile = sys.stdout
 		
