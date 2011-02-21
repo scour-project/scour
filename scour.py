@@ -2339,6 +2339,8 @@ def optimizeTransform(transform):
 		elif (A1 == B2 and -1 <= A1 <= 1 and A3 == 0
 		 and -B1 == A2 and -1 <= B1 <= 1 and B3 == 0
 		 # as cos² A + sin² A == 1 and as decimal trig is approximate:
+		 # FIXME: the "epsilon" term here should really be some function
+		 #        of the precision of the (sin|cos)_A terms, not 1e-15:
 		 and  abs((B1 ** 2) + (A1 ** 2) - 1) < Decimal("1e-15")):
 			[sin_A, cos_A] = [B1, A1]
 			# while asin(A) and acos(A) both only have an 180° range
