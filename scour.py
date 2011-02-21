@@ -2302,51 +2302,51 @@ def optimizeTransform(transform):
 	"""
 	# if there's only one transformation and it's a matrix,
 	# try to make it a shorter non-matrix transformation
+	# NOTE: as matrix(a b c d e f) in SVG means the matrix:
+	# |¯  a  c  e  ¯|   make constants   |¯  A1  A2  A3  ¯|
+	# |   b  d  f   |  translating them  |   B1  B2  B3   |
+	# |_  0  0  1  _|  to more readable  |_  0    0   1  _|
 	if len(transform) == 1 and transform[0][0] == 'matrix':
+		matrix = [A1, B1, A2, B2, A3, B3] = transform[0][1]
 		# |¯  1  0  0  ¯|
 		# |   0  1  0   |  Identity matrix (no transformation)
 		# |_  0  0  1  _|
-		if transform[0][1] == [1, 0, 0, 0, 1, 0]:
+		if matrix == [1, 0, 0, 1, 0, 0]:
 			del transform[0]
 		# |¯  1  0  X  ¯|
 		# |   0  1  Y   |  Translation by (X, Y).
 		# |_  0  0  1  _|
-		if (transform[0][1][0] == 1 and
-		    transform[0][1][1] == 0 and
-		    transform[0][1][3] == 0 and
-		    transform[0][1][4] == 1):
-			transform[0] = ('translate', [
-				transform[0][1][2], transform[0][1][5]
-			])
+		elif (A1 ==  1 and A2 ==  0
+		 and  B1 ==  0 and B2 ==  1):
+			transform[0] = ('translate', [A3, B3])
 		# |¯  X  0  0  ¯|
 		# |   0  Y  0   |  Scaling by (X, Y).
 		# |_  0  0  1  _|
-		elif (transform[0][1][1] == 0 and
-		      transform[0][1][2] == 0 and
-		      transform[0][1][3] == 0 and
-		      transform[0][1][5] == 0):
-			transform[0] = ('scale', [
-				transform[0][1][0], transform[0][1][4]
-			])
+		elif (             A2 ==  0 and A3 ==  0
+		 and  B1 ==  0 and              B3 ==  0):
+			transform[0] = ('scale', [A1, B2])
 		# |¯  cos(A) -sin(A)    0    ¯|  Rotation by angle A,
 		# |   sin(A)  cos(A)    0     |  clockwise, about the origin.
-		# |_    0       0       1    _|  A is in degrees.
-		elif (transform[0][1][0] ==  transform[0][1][4]                and
-		      transform[0][1][1] == -transform[0][1][3]                and
-		      transform[0][1][0] >=  0                                 and
-		      transform[0][1][0] <=  1                                 and
-		      transform[0][1][3] ==  sqrt(1 - transform[0][1][0] ** 2) and
-		      transform[0][1][2] ==  0                                 and
-		      transform[0][1][5] ==  0):
-			transform[0] = ('rotate', [
-				# What allows us to get the angle from the matrix
-				# is the inverse sine of sin(A), which is the 4th
-				# matrix component, or the inverse cosine of cos(A),
-				# which is the 1st matrix component. I chose sin(A).
-				# math.asin returns radians, so convert.
-				# SVG demands degrees.
-				Decimal(math.degrees(math.asin(transform[0][1][4])))
-			])
+		# |_    0       0       1    _|  A is in degrees, [-180...180].
+		elif (A1 == B2 and -1 <= A1 <= 1 and A3 == 0
+		 and -B1 == A2 and -1 <= B1 <= 1 and B3 == 0
+		 # as cos² A + sin² A == 1 and as decimal trig is approximate:
+		 and  abs((B1 ** 2) + (A1 ** 2) - 1) < Decimal("1e-15")):
+			[sin_A, cos_A] = [B1, A1]
+			# while asin(A) and acos(A) both only have an 180° range
+			# the sign of sin(A) and cos(A) varies across quadrants,
+			# letting us hone in on the angle the matrix represents:
+			# -- => < -90 | -+ => -90..0 | ++ => 0..90 | +- => >= 90
+			#
+			# http://en.wikipedia.org/wiki/File:Sine_cosine_plot.svg
+			# shows asin has the correct angle the middle quadrants:
+			A = Decimal(str(math.degrees(math.asin(sin_A))))
+			if cos_A < 0: # otherwise needs adjusting from the edges
+                                if sin_A < 0:
+                                        A = -180 - A
+                                else:
+					A =  180 - A
+			transform[0] = ('rotate', [A])
 	
 	# Simplify transformations where numbers are optional.
 	for singleTransform in transform:
@@ -2435,7 +2435,10 @@ def optimizeTransforms(element, options) :
 			newVal = serializeTransform(transform)
 			
 			if len(newVal) < len(val):
-				element.setAttribute(transformAttr, newVal)
+				if len(newVal):
+					element.setAttribute(transformAttr, newVal)
+				else:
+					element.removeAttribute(transformAttr)
 				num += len(val) - len(newVal)
 	
 	for child in element.childNodes:
