@@ -2300,6 +2300,14 @@ def optimizeTransform(transform):
 	
 	The transformation list is modified in-place.
 	"""
+	# FIXME: reordering these would optimize even more cases:
+	#	 first: Fold consecutive runs of the same transformation
+	#	 extra:	Attempt to cast between types to create sameness:
+	#		"matrix(0 1 -1 0 0 0) rotate(180) scale(-1)" all
+	#		are rotations (90, 180, 180) -- thus "rotate(90)"
+	#	second: Simplify transforms where numbers are optional.
+	#	 third: Attempt to simplify any single remaining matrix()
+	#
 	# if there's only one transformation and it's a matrix,
 	# try to make it a shorter non-matrix transformation
 	# NOTE: as matrix(a b c d e f) in SVG means the matrix:
@@ -2373,8 +2381,17 @@ def optimizeTransform(transform):
 	# rotations followed immediately by other rotations,
 	# scaling followed immediately by other scaling,
 	# are safe to add.
-	# A matrix followed immediately by another matrix
-	# would be safe to multiply together, too.
+	# Identity skewX/skewY are safe to remove, but how do they accrete?
+	# |¯    1     0    0    ¯|
+	# |   tan(A)  1    0     |  skews X coordinates by angle A
+	# |_    0     0    1    _|
+	#
+	# |¯    1  tan(A)  0    ¯|
+	# |     0     1    0     |  skews Y coordinates by angle A
+	# |_    0     0    1    _|
+	#
+	# FIXME: A matrix followed immediately by another matrix
+	#	 would be safe to multiply together, too.
 	i = 1
 	while i < len(transform):
 		[currType, currArgs] = transform[i]
@@ -2412,6 +2429,11 @@ def optimizeTransform(transform):
 			del transform[i]
 			if prevArgs[0] == prevArgs[1] == 1:
 				# Identity scale!
+				i -= 1
+				del transform[i]
+		elif ((currType == 'skewX' or currType == 'skewY')
+		 and  len(currArgs) == 1 and currArgs[0] == 0):
+				# Identity skew!
 				i -= 1
 				del transform[i]
 		else:
