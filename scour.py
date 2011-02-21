@@ -2342,34 +2342,32 @@ def optimizeTransform(transform):
 			# shows asin has the correct angle the middle quadrants:
 			A = Decimal(str(math.degrees(math.asin(sin_A))))
 			if cos_A < 0: # otherwise needs adjusting from the edges
-                                if sin_A < 0:
-                                        A = -180 - A
-                                else:
+				if sin_A < 0:
+					A = -180 - A
+				else:
 					A =  180 - A
 			transform[0] = ('rotate', [A])
 	
-	# Simplify transformations where numbers are optional.
-	for singleTransform in transform:
-		if singleTransform[0] == 'translate':
+		# Simplify transformations where numbers are optional.
+	for [type, args] in transform:
+		if type == 'translate':
 			# Only the X coordinate is required for translations.
 			# If the Y coordinate is unspecified, it's 0.
-			if (len(singleTransform[1]) == 2 and
-			    singleTransform[1][1] == 0):
-				del singleTransform[1][1]
-		elif singleTransform[0] == 'rotate':
+			if (len(args) == 2 and args[1] == 0):
+				del args[1]
+		elif type == 'rotate':
 			# Only the angle is required for rotations.
 			# If the coordinates are unspecified, it's the origin (0, 0).
-			if (len(singleTransform[1]) == 3 and
-			    singleTransform[1][1] == 0 and
-			    singleTransform[1][2] == 0):
-				del singleTransform[1][1:]
-		elif singleTransform[0] == 'scale':
+			if (len(args) == 3 and
+			    args[1] == 0 and
+			    args[2] == 0):
+				del args[1:]
+		elif type == 'scale':
 			# Only the X scaling factor is required.
 			# If the Y factor is unspecified, it's the same as X.
-			if (len(singleTransform[1]) == 2 and
-			    singleTransform[1][0] == singleTransform[1][1]):
-				del singleTransform[1][1]
-	
+			if (len(args) == 2 and args[0] == args[1]):
+				del args[1]
+
 	# Attempt to coalesce runs of the same transformation.
 	# Translations followed immediately by other translations,
 	# rotations followed immediately by other rotations,
@@ -2379,38 +2377,40 @@ def optimizeTransform(transform):
 	# would be safe to multiply together, too.
 	i = 1
 	while i < len(transform):
-		if transform[i][0] == transform[i - 1][0] == 'translate':
-			transform[i - 1][1][0] += transform[i][1][0] # x
+		[currType, currArgs] = transform[i]
+		[prevType, prevArgs] = transform[i - 1]
+		if currType == prevType == 'translate':
+			prevArgs[0] += currArgs[0] # x
 			# for y, only add if the second translation has an explicit y
-			if len(transform[i][1]) == 2:
-				if len(transform[i - 1][1]) == 2:
-					transform[i - 1][1][1] += transform[i][1][1] # y
-				elif len(transform[i - 1][1]) == 1:
-					transform[i - 1][1].append(transform[i][1][1]) # y
+			if len(currArgs) == 2:
+				if len(prevArgs) == 2:
+					prevArgs[1] += currArgs[1] # y
+				elif len(prevArgs) == 1:
+					prevArgs.append(currArgs[1]) # y
 			del transform[i]
-			if transform[i - 1][1][0] == transform[i - 1][1][1] == 0:
+			if prevArgs[0] == prevArgs[1] == 0:
 				# Identity translation!
 				i -= 1
 				del transform[i]
-		elif (transform[i][0] == transform[i - 1][0] == 'rotate'
-		      and len(transform[i - 1][1]) == len(transform[i][1]) == 1):
+		elif (currType == prevType == 'rotate'
+		      and len(prevArgs) == len(currArgs) == 1):
 			# Only coalesce if both rotations are from the origin.
-			transform[i - 1][1][0] += transform[i][1][0] # angle
+			prevArgs[0] += currArgs[0] # angle
 			del transform[i]
-		elif transform[i][0] == transform[i - 1][0] == 'scale':
-			transform[i - 1][1][0] *= transform[i][1][0] # x
+		elif currType == prevType == 'scale':
+			prevArgs[0] *= currArgs[0] # x
 			# handle an implicit y
-			if len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 2:
+			if len(prevArgs) == 2 and len(currArgs) == 2:
 				# y1 * y2
-				transform[i - 1][1][1] *= transform[i][1][1]
-			elif len(transform[i - 1][1]) == 1 and len(transform[i][1]) == 2:
+				prevArgs[1] *= currArgs[1]
+			elif len(prevArgs) == 1 and len(currArgs) == 2:
 				# create y2 = uniformscalefactor1 * y2
-				transform[i - 1][1].append(transform[i - 1][1][0] * transform[i][1][1])
-			elif len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 1:
+				prevArgs.append(prevArgs[0] * currArgs[1])
+			elif len(prevArgs) == 2 and len(currArgs) == 1:
 				# y1 * uniformscalefactor2
-				transform[i - 1][1][1] *= transform[i][1][0]
+				prevArgs[1] *= currArgs[0]
 			del transform[i]
-			if transform[i - 1][1][0] == transform[i - 1][1][1] == 1:
+			if prevArgs[0] == prevArgs[1] == 1:
 				# Identity scale!
 				i -= 1
 				del transform[i]
