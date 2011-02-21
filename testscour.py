@@ -1222,6 +1222,7 @@ class RemoveDefsWithWhitespace(unittest.TestCase):
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
 # TODO: write tests for scouring transformations
+#   progress: the unittests/transform-* files list expected before/after behaviour
 
 if __name__ == '__main__':
 	testcss = __import__('testcss')
