@@ -2315,7 +2315,7 @@ def optimizeTransform(transform):
 	# |   b  d  f   |  translating them  |   B1  B2  B3   |
 	# |_  0  0  1  _|  to more readable  |_  0    0   1  _|
 	if len(transform) == 1 and transform[0][0] == 'matrix':
-		matrix = [A1, B1, A2, B2, A3, B3] = transform[0][1]
+		matrix = A1, B1, A2, B2, A3, B3 = transform[0][1]
 		# |¯  1  0  0  ¯|
 		# |   0  1  0   |  Identity matrix (no transformation)
 		# |_  0  0  1  _|
@@ -2342,7 +2342,7 @@ def optimizeTransform(transform):
 		 # FIXME: the "epsilon" term here should really be some function
 		 #        of the precision of the (sin|cos)_A terms, not 1e-15:
 		 and  abs((B1 ** 2) + (A1 ** 2) - 1) < Decimal("1e-15")):
-			[sin_A, cos_A] = [B1, A1]
+			sin_A, cos_A = B1, A1
 			# while asin(A) and acos(A) both only have an 180° range
 			# the sign of sin(A) and cos(A) varies across quadrants,
 			# letting us hone in on the angle the matrix represents:
@@ -2358,24 +2358,22 @@ def optimizeTransform(transform):
 					A =  180 - A
 			transform[0] = ('rotate', [A])
 	
-		# Simplify transformations where numbers are optional.
-	for [type, args] in transform:
+	# Simplify transformations where numbers are optional.
+	for type, args in transform:
 		if type == 'translate':
 			# Only the X coordinate is required for translations.
 			# If the Y coordinate is unspecified, it's 0.
-			if (len(args) == 2 and args[1] == 0):
+			if len(args) == 2 and args[1] == 0:
 				del args[1]
 		elif type == 'rotate':
 			# Only the angle is required for rotations.
 			# If the coordinates are unspecified, it's the origin (0, 0).
-			if (len(args) == 3 and
-			    args[1] == 0 and
-			    args[2] == 0):
+			if len(args) == 3 and args[1] == args[2] == 0:
 				del args[1:]
 		elif type == 'scale':
 			# Only the X scaling factor is required.
 			# If the Y factor is unspecified, it's the same as X.
-			if (len(args) == 2 and args[0] == args[1]):
+			if len(args) == 2 and args[0] == args[1]:
 				del args[1]
 
 	# Attempt to coalesce runs of the same transformation.
@@ -2396,8 +2394,8 @@ def optimizeTransform(transform):
 	#	 would be safe to multiply together, too.
 	i = 1
 	while i < len(transform):
-		[currType, currArgs] = transform[i]
-		[prevType, prevArgs] = transform[i - 1]
+		currType, currArgs = transform[i]
+		prevType, prevArgs = transform[i - 1]
 		if currType == prevType == 'translate':
 			prevArgs[0] += currArgs[0] # x
 			# for y, only add if the second translation has an explicit y
@@ -2435,9 +2433,9 @@ def optimizeTransform(transform):
 				del transform[i]
 		elif ((currType == 'skewX' or currType == 'skewY')
 		 and  len(currArgs) == 1 and currArgs[0] == 0):
-				# Identity skew!
-				i -= 1
-				del transform[i]
+			# Identity skew!
+			i -= 1
+			del transform[i]
 		else:
 			i += 1
 
