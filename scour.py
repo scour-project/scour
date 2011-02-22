@@ -620,23 +620,27 @@ def removeUnreferencedElements(doc):
 			num += 1
 	return num
 
-def shortenIDs(doc):
+def shortenIDs(doc, unprotectedElements=None):
 	"""
 	Shortens ID names used in the document. ID names referenced the most often are assigned the
 	shortest ID names.
+	If the list unprotectedElements is provided, only IDs from this list will be shortened.
 	
 	Returns the number of bytes saved by shortening ID names in the document.
 	"""
 	num = 0
 
 	identifiedElements = findElementsWithId(doc.documentElement)
+	if unprotectedElements is None:
+		unprotectedElements = identifiedElements
 	referencedIDs = findReferencedElements(doc.documentElement)
 
 	# Make idList (list of idnames) sorted by reference count
 	# descending, so the highest reference count is first.
 	# First check that there's actually a defining element for the current ID name.
 	# (Cyn: I've seen documents with #id references but no element with that ID!)
-	idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs  if rid in identifiedElements]
+	idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs 
+				if rid in unprotectedElements]
 	idList.sort(reverse=True)
 	idList = [rid for count, rid in idList]
 	
@@ -744,6 +748,31 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 	referencedIDs[idTo] = referringNodes
 	
 	return num
+
+def unprotected_ids(doc, options):
+	u"""Returns a list of unprotected IDs within the document doc."""
+	identifiedElements = findElementsWithId(doc.documentElement)
+	if not (options.protect_ids_noninkscape or
+			options.protect_ids_list or
+			options.protect_ids_prefix):
+		return identifiedElements
+	if options.protect_ids_list:
+		protect_ids_list = options.protect_ids_list.split(",")
+	if options.protect_ids_prefix:
+		protect_ids_prefixes = options.protect_ids_prefix.split(",")
+	for id in identifiedElements.keys():
+		protected = False
+		if options.protect_ids_noninkscape and not id[-1].isdigit():
+			protected = True
+		if options.protect_ids_list and id in protect_ids_list:
+			protected = True
+		if options.protect_ids_prefix:
+			for prefix in protect_ids_prefixes:
+				if id.startswith(prefix):
+					protected = True
+		if protected:
+			del identifiedElements[id]
+	return identifiedElements
 
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
 	"""
@@ -2809,7 +2838,7 @@ def scourString(in_string, options=None):
 	if options.strip_ids:
 		bContinueLooping = True
 		while bContinueLooping:
-			identifiedElements = findElementsWithId(doc.documentElement)
+			identifiedElements = unprotected_ids(doc, options)
 			referencedIDs = findReferencedElements(doc.documentElement)
 			bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
 
@@ -2864,7 +2893,7 @@ def scourString(in_string, options=None):
 	
 	# shorten ID names as much as possible
 	if options.shorten_ids:
-		numBytesSavedInIDs += shortenIDs(doc)
+		numBytesSavedInIDs += shortenIDs(doc, unprotected_ids(doc, options))
 
 	# scour lengths (including coordinates)
 	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
@@ -3007,6 +3036,15 @@ _options_parser.add_option("-q", "--quiet",
 _options_parser.add_option("--indent",
 	action="store", type="string", dest="indent_type", default="space",
 	help="indentation of the output: none, space, tab (default: %default)")
+_options_parser.add_option("--protect-ids-noninkscape",
+	action="store_true", dest="protect_ids_noninkscape", default=False,
+	help="Don't change IDs not ending with a digit")
+_options_parser.add_option("--protect-ids-list",
+	action="store", type="string", dest="protect_ids_list", default=None,
+	help="Don't change IDs given in a comma-separated list")
+_options_parser.add_option("--protect-ids-prefix",
+	action="store", type="string", dest="protect_ids_prefix", default=None,
+	help="Don't change IDs starting with the given prefix")
 
 def maybe_gziped_file(filename, mode="r"):
 	if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
