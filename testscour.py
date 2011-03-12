@@ -1217,6 +1217,96 @@ class RemoveDefsWithWhitespace(unittest.TestCase):
 		self.assertEquals(doc.getElementsByTagName('defs').length, 0,
 			'Kept defs, although it contains only whitespace or is <defs/>')
 
+class TransformIdentityMatrix(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-identity.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), '',
+			'Transform containing identity matrix not removed')
+
+class TransformRotate135(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-135.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(135)',
+			'Rotation matrix not converted to rotate(135)')
+
+class TransformRotate45(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-45.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(45)',
+			'Rotation matrix not converted to rotate(45)')
+
+class TransformRotate90(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-90.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(90)',
+			'Rotation matrix not converted to rotate(90)')
+
+class TransformRotateCCW135(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-neg-135.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(-135)',
+			'Counter-clockwise rotation matrix not converted to rotate(-135)')
+
+class TransformRotateCCW45(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-neg-45.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(-45)',
+			'Counter-clockwise rotation matrix not converted to rotate(-45)')
+
+class TransformRotateCCW90(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-neg-90.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(-90)',
+			'Counter-clockwise rotation matrix not converted to rotate(-90)')
+
+class TransformScale2by3(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-scale-2-3.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'scale(2 3)',
+			'Scaling matrix not converted to scale(2 3)')
+
+class TransformScaleMinus1(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-scale-neg-1.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'scale(-1)',
+			'Scaling matrix not converted to scale(-1)')
+
+class TransformTranslate(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-translate.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'translate(2 3)',
+			'Translation matrix not converted to translate(2 3)')
+
+class TransformRotation3Args(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-rotate-fold-3args.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(90)',
+			'Optional zeroes in rotate(angle 0 0) not removed')
+
+class TransformIdentityRotation(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-rotate-is-identity.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), '',
+			'Transform containing identity rotation not removed')
+
+class TransformIdentitySkewX(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-skewX-is-identity.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), '',
+			'Transform containing identity X-axis skew not removed')
+
+class TransformIdentitySkewY(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-skewY-is-identity.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), '',
+			'Transform containing identity Y-axis skew not removed')
+
+class TransformIdentityTranslate(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-translate-is-identity.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), '',
+			'Transform containing identity translation not removed')
+
 class DuplicateGradientsUpdateStyle(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradients-update-style.svg',
@@ -1233,7 +1323,6 @@ class DuplicateGradientsUpdateStyle(unittest.TestCase):
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
-# TODO: write tests for scouring transformations
 
 if __name__ == '__main__':
 	testcss = __import__('testcss')

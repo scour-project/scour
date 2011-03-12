@@ -2335,120 +2335,161 @@ def optimizeTransform(transform):
 	
 	The transformation list is modified in-place.
 	"""
+	# FIXME: reordering these would optimize even more cases:
+	#	 first: Fold consecutive runs of the same transformation
+	#	 extra:	Attempt to cast between types to create sameness:
+	#		"matrix(0 1 -1 0 0 0) rotate(180) scale(-1)" all
+	#		are rotations (90, 180, 180) -- thus "rotate(90)"
+	#	second: Simplify transforms where numbers are optional.
+	#	 third: Attempt to simplify any single remaining matrix()
+	#
 	# if there's only one transformation and it's a matrix,
 	# try to make it a shorter non-matrix transformation
+	# NOTE: as matrix(a b c d e f) in SVG means the matrix:
+	# |¯  a  c  e  ¯|   make constants   |¯  A1  A2  A3  ¯|
+	# |   b  d  f   |  translating them  |   B1  B2  B3   |
+	# |_  0  0  1  _|  to more readable  |_  0    0   1  _|
 	if len(transform) == 1 and transform[0][0] == 'matrix':
+		matrix = A1, B1, A2, B2, A3, B3 = transform[0][1]
 		# |¯  1  0  0  ¯|
 		# |   0  1  0   |  Identity matrix (no transformation)
 		# |_  0  0  1  _|
-		if transform[0][1] == [1, 0, 0, 0, 1, 0]:
+		if matrix == [1, 0, 0, 1, 0, 0]:
 			del transform[0]
 		# |¯  1  0  X  ¯|
 		# |   0  1  Y   |  Translation by (X, Y).
 		# |_  0  0  1  _|
-		if (transform[0][1][0] == 1 and
-		    transform[0][1][1] == 0 and
-		    transform[0][1][3] == 0 and
-		    transform[0][1][4] == 1):
-			transform[0] = ('translate', [
-				transform[0][1][2], transform[0][1][5]
-			])
+		elif (A1 ==  1 and A2 ==  0
+		 and  B1 ==  0 and B2 ==  1):
+			transform[0] = ('translate', [A3, B3])
 		# |¯  X  0  0  ¯|
 		# |   0  Y  0   |  Scaling by (X, Y).
 		# |_  0  0  1  _|
-		elif (transform[0][1][1] == 0 and
-		      transform[0][1][2] == 0 and
-		      transform[0][1][3] == 0 and
-		      transform[0][1][5] == 0):
-			transform[0] = ('scale', [
-				transform[0][1][0], transform[0][1][4]
-			])
+		elif (             A2 ==  0 and A3 ==  0
+		 and  B1 ==  0 and              B3 ==  0):
+			transform[0] = ('scale', [A1, B2])
 		# |¯  cos(A) -sin(A)    0    ¯|  Rotation by angle A,
 		# |   sin(A)  cos(A)    0     |  clockwise, about the origin.
-		# |_    0       0       1    _|  A is in degrees.
-		elif (transform[0][1][0] ==  transform[0][1][4]                and
-		      transform[0][1][1] == -transform[0][1][3]                and
-		      transform[0][1][0] >=  0                                 and
-		      transform[0][1][0] <=  1                                 and
-		      transform[0][1][3] ==  sqrt(1 - transform[0][1][0] ** 2) and
-		      transform[0][1][2] ==  0                                 and
-		      transform[0][1][5] ==  0):
-			transform[0] = ('rotate', [
-				# What allows us to get the angle from the matrix
-				# is the inverse sine of sin(A), which is the 4th
-				# matrix component, or the inverse cosine of cos(A),
-				# which is the 1st matrix component. I chose sin(A).
-				# math.asin returns radians, so convert.
-				# SVG demands degrees.
-				Decimal(math.degrees(math.asin(transform[0][1][4])))
-			])
+		# |_    0       0       1    _|  A is in degrees, [-180...180].
+		elif (A1 == B2 and -1 <= A1 <= 1 and A3 == 0
+		 and -B1 == A2 and -1 <= B1 <= 1 and B3 == 0
+		 # as cos² A + sin² A == 1 and as decimal trig is approximate:
+		 # FIXME: the "epsilon" term here should really be some function
+		 #        of the precision of the (sin|cos)_A terms, not 1e-15:
+		 and  abs((B1 ** 2) + (A1 ** 2) - 1) < Decimal("1e-15")):
+			sin_A, cos_A = B1, A1
+			# while asin(A) and acos(A) both only have an 180° range
+			# the sign of sin(A) and cos(A) varies across quadrants,
+			# letting us hone in on the angle the matrix represents:
+			# -- => < -90 | -+ => -90..0 | ++ => 0..90 | +- => >= 90
+			#
+			# http://en.wikipedia.org/wiki/File:Sine_cosine_plot.svg
+			# shows asin has the correct angle the middle quadrants:
+			A = Decimal(str(math.degrees(math.asin(float(sin_A)))))
+			if cos_A < 0: # otherwise needs adjusting from the edges
+				if sin_A < 0:
+					A = -180 - A
+				else:
+					A =  180 - A
+			transform[0] = ('rotate', [A])
 	
 	# Simplify transformations where numbers are optional.
-	for singleTransform in transform:
-		if singleTransform[0] == 'translate':
+	for type, args in transform:
+		if type == 'translate':
 			# Only the X coordinate is required for translations.
 			# If the Y coordinate is unspecified, it's 0.
-			if (len(singleTransform[1]) == 2 and
-			    singleTransform[1][1] == 0):
-				del singleTransform[1][1]
-		elif singleTransform[0] == 'rotate':
+			if len(args) == 2 and args[1] == 0:
+				del args[1]
+		elif type == 'rotate':
 			# Only the angle is required for rotations.
 			# If the coordinates are unspecified, it's the origin (0, 0).
-			if (len(singleTransform[1]) == 3 and
-			    singleTransform[1][1] == 0 and
-			    singleTransform[1][2] == 0):
-				del singleTransform[1][1:]
-		elif singleTransform[0] == 'scale':
+			if len(args) == 3 and args[1] == args[2] == 0:
+				del args[1:]
+		elif type == 'scale':
 			# Only the X scaling factor is required.
 			# If the Y factor is unspecified, it's the same as X.
-			if (len(singleTransform[1]) == 2 and
-			    singleTransform[1][0] == singleTransform[1][1]):
-				del singleTransform[1][1]
-	
+			if len(args) == 2 and args[0] == args[1]:
+				del args[1]
+
 	# Attempt to coalesce runs of the same transformation.
 	# Translations followed immediately by other translations,
 	# rotations followed immediately by other rotations,
 	# scaling followed immediately by other scaling,
 	# are safe to add.
-	# A matrix followed immediately by another matrix
-	# would be safe to multiply together, too.
+	# Identity skewX/skewY are safe to remove, but how do they accrete?
+	# |¯    1     0    0    ¯|
+	# |   tan(A)  1    0     |  skews X coordinates by angle A
+	# |_    0     0    1    _|
+	#
+	# |¯    1  tan(A)  0    ¯|
+	# |     0     1    0     |  skews Y coordinates by angle A
+	# |_    0     0    1    _|
+	#
+	# FIXME: A matrix followed immediately by another matrix
+	#	 would be safe to multiply together, too.
 	i = 1
 	while i < len(transform):
-		if transform[i][0] == transform[i - 1][0] == 'translate':
-			transform[i - 1][1][0] += transform[i][1][0] # x
+		currType, currArgs = transform[i]
+		prevType, prevArgs = transform[i - 1]
+		if currType == prevType == 'translate':
+			prevArgs[0] += currArgs[0] # x
 			# for y, only add if the second translation has an explicit y
-			if len(transform[i][1]) == 2:
-				if len(transform[i - 1][1]) == 2:
-					transform[i - 1][1][1] += transform[i][1][1] # y
-				elif len(transform[i - 1][1]) == 1:
-					transform[i - 1][1].append(transform[i][1][1]) # y
+			if len(currArgs) == 2:
+				if len(prevArgs) == 2:
+					prevArgs[1] += currArgs[1] # y
+				elif len(prevArgs) == 1:
+					prevArgs.append(currArgs[1]) # y
 			del transform[i]
-			if transform[i - 1][1][0] == transform[i - 1][1][1] == 0:
+			if prevArgs[0] == prevArgs[1] == 0:
 				# Identity translation!
 				i -= 1
 				del transform[i]
-		elif (transform[i][0] == transform[i - 1][0] == 'rotate'
-		      and len(transform[i - 1][1]) == len(transform[i][1]) == 1):
+		elif (currType == prevType == 'rotate'
+		      and len(prevArgs) == len(currArgs) == 1):
 			# Only coalesce if both rotations are from the origin.
-			transform[i - 1][1][0] += transform[i][1][0] # angle
+			prevArgs[0] += currArgs[0] # angle
+			# Put the new angle in the range ]-360, 360[.
+			# The modulo operator yields results with the sign of the
+			# divisor, so for negative dividends, we preserve the sign
+			# of the angle.
+			if prevArgs[0] < 0: prevArgs[0] = prevArgs[0] % -360
+			else:               prevArgs[0] = prevArgs[0] %  360
+
 			del transform[i]
-		elif transform[i][0] == transform[i - 1][0] == 'scale':
-			transform[i - 1][1][0] *= transform[i][1][0] # x
+		elif currType == prevType == 'scale':
+			prevArgs[0] *= currArgs[0] # x
 			# handle an implicit y
-			if len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 2:
+			if len(prevArgs) == 2 and len(currArgs) == 2:
 				# y1 * y2
-				transform[i - 1][1][1] *= transform[i][1][1]
-			elif len(transform[i - 1][1]) == 1 and len(transform[i][1]) == 2:
+				prevArgs[1] *= currArgs[1]
+			elif len(prevArgs) == 1 and len(currArgs) == 2:
 				# create y2 = uniformscalefactor1 * y2
-				transform[i - 1][1].append(transform[i - 1][1][0] * transform[i][1][1])
-			elif len(transform[i - 1][1]) == 2 and len(transform[i][1]) == 1:
+				prevArgs.append(prevArgs[0] * currArgs[1])
+			elif len(prevArgs) == 2 and len(currArgs) == 1:
 				# y1 * uniformscalefactor2
-				transform[i - 1][1][1] *= transform[i][1][0]
+				prevArgs[1] *= currArgs[0]
 			del transform[i]
-			if transform[i - 1][1][0] == transform[i - 1][1][1] == 1:
+			if prevArgs[0] == prevArgs[1] == 1:
 				# Identity scale!
 				i -= 1
 				del transform[i]
+		else:
+			i += 1
+
+	# Some fixups are needed for single-element transformation lists, since
+	# the loop above was to coalesce elements with their predecessors in the
+	# list, and thus it required 2 elements.
+	i = 0
+	while i < len(transform):
+		currType, currArgs = transform[i]
+		if ((currType == 'skewX' or currType == 'skewY')
+		  and len(currArgs) == 1 and currArgs[0] == 0):
+			# Identity skew!
+			del transform[i]
+		elif ((currType == 'rotate')
+		  and len(currArgs) == 1 and currArgs[0] == 0):
+			# Identity rotation!
+			del transform[i]
 		else:
 			i += 1
 
@@ -2470,7 +2511,10 @@ def optimizeTransforms(element, options) :
 			newVal = serializeTransform(transform)
 			
 			if len(newVal) < len(val):
-				element.setAttribute(transformAttr, newVal)
+				if len(newVal):
+					element.setAttribute(transformAttr, newVal)
+				else:
+					element.removeAttribute(transformAttr)
 				num += len(val) - len(newVal)
 	
 	for child in element.childNodes:
