@@ -2413,6 +2413,13 @@ def optimizeTransform(transform):
 		      and len(prevArgs) == len(currArgs) == 1):
 			# Only coalesce if both rotations are from the origin.
 			prevArgs[0] += currArgs[0] # angle
+			# Put the new angle in the range ]-360, 360[.
+			# The modulo operator yields results with the sign of the
+			# divisor, so for negative dividends, we preserve the sign
+			# of the angle.
+			if prevArgs[0] < 0: prevArgs[0] = prevArgs[0] % -360
+			else:               prevArgs[0] = prevArgs[0] %  360
+
 			del transform[i]
 		elif currType == prevType == 'scale':
 			prevArgs[0] *= currArgs[0] # x
@@ -2431,10 +2438,22 @@ def optimizeTransform(transform):
 				# Identity scale!
 				i -= 1
 				del transform[i]
-		elif ((currType == 'skewX' or currType == 'skewY')
-		 and  len(currArgs) == 1 and currArgs[0] == 0):
+		else:
+			i += 1
+
+	# Some fixups are needed for single-element transformation lists, since
+	# the loop above was to coalesce elements with their predecessors in the
+	# list, and thus it required 2 elements.
+	i = 0
+	while i < len(transform):
+		currType, currArgs = transform[i]
+		if ((currType == 'skewX' or currType == 'skewY')
+		  and len(currArgs) == 1 and currArgs[0] == 0):
 			# Identity skew!
-			i -= 1
+			del transform[i]
+		elif ((currType == 'rotate')
+		  and len(currArgs) == 1 and currArgs[0] == 0):
+			# Identity rotation!
 			del transform[i]
 		else:
 			i += 1
