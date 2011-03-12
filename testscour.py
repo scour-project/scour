@@ -1217,6 +1217,18 @@ class RemoveDefsWithWhitespace(unittest.TestCase):
 		self.assertEquals(doc.getElementsByTagName('defs').length, 0,
 			'Kept defs, although it contains only whitespace or is <defs/>')
 
+class DuplicateGradientsUpdateStyle(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/duplicate-gradients-update-style.svg',
+			scour.parse_args(['--disable-style-to-xml'])[0])
+		gradientTag = doc.getElementsByTagName('linearGradient')[0]
+		rectTag0 = doc.getElementsByTagName('rect')[0]
+		rectTag1 = doc.getElementsByTagName('rect')[1]
+		self.assertEquals('fill:url(#' + gradientTag.getAttribute('id') + ')', rectTag0.getAttribute('style'),
+			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" was not updated to reflect this')
+		self.assertEquals('fill:url(#' + gradientTag.getAttribute('id') + ')', rectTag1.getAttribute('style'),
+			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" was not updated to reflect this')
+
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters

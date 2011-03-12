@@ -1291,6 +1291,12 @@ def removeDuplicateGradients(doc):
 						elem.setAttribute(attr, 'url(#'+master_id+')')
 				if elem.getAttributeNS(NS['XLINK'], 'href') == '#'+dup_id:
 					elem.setAttributeNS(NS['XLINK'], 'href', '#'+master_id)
+				styles = _getStyle(elem)
+				for style in styles:
+					v = styles[style]
+					if v == 'url(#'+dup_id+')' or v == 'url("#'+dup_id+'")' or v == "url('#"+dup_id+"')":
+						styles[style] = 'url(#'+master_id+')'
+				_setStyle(elem, styles)
 			
 			# now that all referencing elements have been re-mapped to the master
 			# it is safe to remove this gradient from the document
