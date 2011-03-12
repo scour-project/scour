@@ -2350,7 +2350,7 @@ def optimizeTransform(transform):
 			#
 			# http://en.wikipedia.org/wiki/File:Sine_cosine_plot.svg
 			# shows asin has the correct angle the middle quadrants:
-			A = Decimal(str(math.degrees(math.asin(sin_A))))
+			A = Decimal(str(math.degrees(math.asin(float(sin_A)))))
 			if cos_A < 0: # otherwise needs adjusting from the edges
 				if sin_A < 0:
 					A = -180 - A
