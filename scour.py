@@ -1482,11 +1482,11 @@ def mayContainTextNodes(node):
 		result = True
 	# Blacklisted elements. Those are guaranteed not to be text elements.
 	elif node.nodeName in ['rect', 'circle', 'ellipse', 'line', 'polygon',
-	                     'polyline', 'path', 'image', 'stop']:
+	                       'polyline', 'path', 'image', 'stop']:
 		result = False
 	# Group elements. If we're missing any here, the default of True is used.
 	elif node.nodeName in ['g', 'clipPath', 'marker', 'mask', 'pattern',
-	                     'linearGradient', 'radialGradient', 'symbol']:
+	                       'linearGradient', 'radialGradient', 'symbol']:
 		result = False
 		for child in node.childNodes:
 			if mayContainTextNodes(child):
@@ -2110,7 +2110,7 @@ def parseListOfPoints(s):
 	nums = []
 	
 	# also, if 100-100 is found, split it into two also
-    #  <polygon points="100,-100,100-100,100-100-100,-100-100" />
+	#  <polygon points="100,-100,100-100,100-100-100,-100-100" />
 	for i in xrange(len(ws_nums)):
 		negcoords = ws_nums[i].split("-")
 		
@@ -2328,6 +2328,28 @@ def reducePrecision(element) :
 	
 	return num
 
+def optimizeAngle(angle):
+	"""
+	Because any rotation can be expressed within 360 degrees
+	of any given number, and since negative angles sometimes
+	are one character longer than corresponding positive angle,
+	we shorten the number to one in the range to [-90, 270[.
+	"""
+	# First, we put the new angle in the range ]-360, 360[.
+	# The modulo operator yields results with the sign of the
+	# divisor, so for negative dividends, we preserve the sign
+	# of the angle.
+	if angle < 0:     angle %= -360
+	else:             angle %=  360
+	# 720 degrees is unneccessary, as 360 covers all angles.
+	# As "-x" is shorter than "35x" and "-xxx" one character
+	# longer than positive angles <= 260, we constrain angle
+	# range to [-90, 270[ (or, equally valid: ]-100, 260]).
+	if  angle >= 270: angle -=  360
+	elif angle < -90: angle +=  360
+	return angle
+
+
 def optimizeTransform(transform):
 	"""
 	Optimises a series of transformations parsed from a single
@@ -2401,6 +2423,7 @@ def optimizeTransform(transform):
 			if len(args) == 2 and args[1] == 0:
 				del args[1]
 		elif type == 'rotate':
+			args[0] = optimizeAngle(args[0]) # angle
 			# Only the angle is required for rotations.
 			# If the coordinates are unspecified, it's the origin (0, 0).
 			if len(args) == 3 and args[1] == args[2] == 0:
@@ -2447,14 +2470,7 @@ def optimizeTransform(transform):
 		elif (currType == prevType == 'rotate'
 		      and len(prevArgs) == len(currArgs) == 1):
 			# Only coalesce if both rotations are from the origin.
-			prevArgs[0] += currArgs[0] # angle
-			# Put the new angle in the range ]-360, 360[.
-			# The modulo operator yields results with the sign of the
-			# divisor, so for negative dividends, we preserve the sign
-			# of the angle.
-			if prevArgs[0] < 0: prevArgs[0] = prevArgs[0] % -360
-			else:               prevArgs[0] = prevArgs[0] %  360
-
+			prevArgs[0] = optimizeAngle(prevArgs[0] + currArgs[0])
 			del transform[i]
 		elif currType == prevType == 'scale':
 			prevArgs[0] *= currArgs[0] # x

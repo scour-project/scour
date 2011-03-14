@@ -1243,9 +1243,9 @@ class TransformRotate90(unittest.TestCase):
 
 class TransformRotateCCW135(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-neg-135.svg')
-		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(-135)',
-			'Counter-clockwise rotation matrix not converted to rotate(-135)')
+		doc = scour.scourXmlFile('unittests/transform-matrix-is-rotate-225.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(225)',
+			'Counter-clockwise rotation matrix not converted to rotate(225)')
 
 class TransformRotateCCW45(unittest.TestCase):
 	def runTest(self):
@@ -1276,6 +1276,18 @@ class TransformTranslate(unittest.TestCase):
 		doc = scour.scourXmlFile('unittests/transform-matrix-is-translate.svg')
 		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'translate(2 3)',
 			'Translation matrix not converted to translate(2 3)')
+
+class TransformRotationRange719_5(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-rotate-trim-range-719.5.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(-.5)',
+			'Transform containing rotate(719.5) not shortened to rotate(-.5)')
+
+class TransformRotationRangeCCW540_0(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/transform-rotate-trim-range-neg-540.0.svg')
+		self.assertEquals(doc.getElementsByTagName('line')[0].getAttribute('transform'), 'rotate(180)',
+			'Transform containing rotate(-540.0) not shortened to rotate(180)')
 
 class TransformRotation3Args(unittest.TestCase):
 	def runTest(self):
