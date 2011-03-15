@@ -1709,6 +1709,10 @@ def cleanPath(element, options) :
 	oldPathStr = element.getAttribute('d')
 	path = svg_parser.parse(oldPathStr)
 
+	# This determines whether the stroke has round linecaps.  If it does,
+	# we do not want to collapse empty segments, as they are actually rendered.
+	withRoundLineCaps = element.getAttribute('stroke-linecap') == 'round'
+
 	# The first command must be a moveto, and whether it's relative (m)
 	# or absolute (M), the first set of coordinates *is* absolute. So
 	# the first iteration of the loop below will get x,y and startx,starty.
@@ -1817,50 +1821,51 @@ def cleanPath(element, options) :
 	# remove empty segments
 	# Reuse the data structure 'path' and the coordinate lists, even if we're
 	# deleting items, because these deletions are relatively cheap.
-	for pathIndex in xrange(0, len(path)):
-		cmd, data = path[pathIndex]
-		i = 0
-		if cmd in ['m','l','t']:
-			if cmd == 'm':
-				# remove m0,0 segments
-				if pathIndex > 0 and data[0] == data[i+1] == 0:
-					# 'm0,0 x,y' can be replaces with 'lx,y',
-					# except the first m which is a required absolute moveto
-					path[pathIndex] = ('l', data[2:])
-					numPathSegmentsReduced += 1
-				else: # else skip move coordinate
-					i = 2
-			while i < len(data):
-				if data[i] == data[i+1] == 0:
-					del data[i:i+2]
-					numPathSegmentsReduced += 1
-				else:
-					i += 2
-		elif cmd == 'c':
-			while i < len(data):
-				if data[i] == data[i+1] == data[i+2] == data[i+3] == data[i+4] == data[i+5] == 0:
-					del data[i:i+6]
-					numPathSegmentsReduced += 1
-				else:
-					i += 6
-		elif cmd == 'a':
-			while i < len(data):
-				if data[i+5] == data[i+6] == 0:
-					del data[i:i+7]
-					numPathSegmentsReduced += 1
-				else:
-					i += 7
-		elif cmd == 'q':
-			while i < len(data):
-				if data[i] == data[i+1] == data[i+2] == data[i+3] == 0:
-					del data[i:i+4]
-					numPathSegmentsReduced += 1
-				else:
-					i += 4
-		elif cmd in ['h','v']:
-			oldLen = len(data)
-			path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
-			numPathSegmentsReduced += len(path[pathIndex][1]) - oldLen
+	if not withRoundLineCaps:
+		for pathIndex in xrange(0, len(path)):
+			cmd, data = path[pathIndex]
+			i = 0
+			if cmd in ['m','l','t']:
+				if cmd == 'm':
+					# remove m0,0 segments
+					if pathIndex > 0 and data[0] == data[i+1] == 0:
+						# 'm0,0 x,y' can be replaces with 'lx,y',
+						# except the first m which is a required absolute moveto
+						path[pathIndex] = ('l', data[2:])
+						numPathSegmentsReduced += 1
+					else: # else skip move coordinate
+						i = 2
+				while i < len(data):
+					if data[i] == data[i+1] == 0:
+						del data[i:i+2]
+						numPathSegmentsReduced += 1
+					else:
+						i += 2
+			elif cmd == 'c':
+				while i < len(data):
+					if data[i] == data[i+1] == data[i+2] == data[i+3] == data[i+4] == data[i+5] == 0:
+						del data[i:i+6]
+						numPathSegmentsReduced += 1
+					else:
+						i += 6
+			elif cmd == 'a':
+				while i < len(data):
+					if data[i+5] == data[i+6] == 0:
+						del data[i:i+7]
+						numPathSegmentsReduced += 1
+					else:
+						i += 7
+			elif cmd == 'q':
+				while i < len(data):
+					if data[i] == data[i+1] == data[i+2] == data[i+3] == 0:
+						del data[i:i+4]
+						numPathSegmentsReduced += 1
+					else:
+						i += 4
+			elif cmd in ['h','v']:
+				oldLen = len(data)
+				path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
+				numPathSegmentsReduced += len(path[pathIndex][1]) - oldLen
 	
 	# fixup: Delete subcommands having no coordinates.
 	path = [elem for elem in path if len(elem[1]) > 0 or elem[0] == 'z']

@@ -544,6 +544,14 @@ class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
 		self.assertEquals(path[4][0], 'z',
 			'Did not remove an empty line segment from path' )
 
+# Do not remove empty segments if round linecaps.
+class DoNotRemoveEmptySegmentsFromPathWithRoundLineCaps(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/path-with-caps.svg')
+		path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
+		self.assertEquals(len(path), 2,
+			'Did not preserve empty segments when path had round linecaps' )
+
 class ChangeLineToHorizontalLineSegmentInPath(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/path-line-optimize.svg')
