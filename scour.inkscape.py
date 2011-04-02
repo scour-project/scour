@@ -46,6 +46,15 @@ class ScourInkscape (inkex.Effect):
         self.OptionParser.add_option("--indent",
             action="store", type="string", dest="indent_type", default="space",
             help="indentation of the output: none, space, tab (default: %default)")
+        self.OptionParser.add_option("--protect-ids-noninkscape", type="inkbool",
+            action="store", dest="protect_ids_noninkscape", default=False,
+            help="don't change IDs not ending with a digit")
+        self.OptionParser.add_option("--protect-ids-list",
+            action="store", type="string", dest="protect_ids_list", default=None,
+            help="don't change IDs given in a comma-separated list")
+        self.OptionParser.add_option("--protect-ids-prefix",
+            action="store", type="string", dest="protect_ids_prefix", default=None,
+            help="don't change IDs starting with the given prefix")
         self.OptionParser.add_option("--enable-viewboxing", type="inkbool",
             action="store", dest="enable_viewboxing", default=False,
             help="changes document width/height to 100%/100% and creates viewbox coordinates")
