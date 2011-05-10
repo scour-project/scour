@@ -1,5 +1,9 @@
 Thanks to the following contributors to scour:
 
+* Jamie Strandboge
+
+* Jan Thor
+
 * Louis Simard
 	Bugs Fixed:
 	- https://bugs.launchpad.net/scour/+bug/583758
@@ -11,12 +15,13 @@ Thanks to the following contributors to scour:
 	- https://bugs.launchpad.net/scour/+bug/582619  Feature implementations: --quiet, --enable-comment-stripping.
 	- Add options --shorten-ids, --renderer-workaround.
 
+* Martin:
+	- better methods of handling string-to-float conversions in Python
+	- document functions in the traditional Python way
+	- rewrite option parsing code
+
 * Doug Schepers (W3C SVG WG)
 	- function to embed rasters as base64 data: URLs
 	- report file size reduction
 	- prettied up the report
 	
-* Martin:
-	- better methods of handling string-to-float conversions in Python
-	- document functions in the traditional Python way
-	- rewrite option parsing code

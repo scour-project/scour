@@ -1,5 +1,5 @@
 #!/bin/bash
-SCOURVER="0.25"
+SCOURVER="0.26"
 cd ..
 zip scour/tarballs/scour-$SCOURVER.zip scour/scour.py scour/yocto_css.py scour/svg_regex.py scour/svg_transform.py scour/LICENSE scour/NOTICE scour/README.txt scour/release-notes.html
 cd scour
