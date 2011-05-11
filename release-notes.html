@@ -9,6 +9,29 @@
 
 <p>Copyright 2010, Jeff Schiller</p>
 
+<section id="0.26">
+	<header>
+		<h2><a href="#0.26">Version 0.26</a></h2>
+	</header>
+	<p>2011-05-09</p>
+	<ul>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/702423">Bug 702423</a> to function well in the presence of multiple identical gradients and --disable-style-to-xml.</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/722544">Bug 722544</a> to properly optimize transformation matrices. Also optimize more things away in transformation specifications. (Thanks to Johan Sundstr&ouml;m for the patch.)</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/616150">Bug 616150</a> to run faster using the --create-groups option.</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/562784">Bug 708515</a> to handle raster embedding better in the presence of file:// URLs.</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/714717">Bug 714717</a> to avoid deleting renderable CurveTo commands in paths, which happen to end where they started.</li>
+		<li>Per <a href="https://bugs.launchpad.net/scour/+bug/714727">Bug 714727</a> and <a href="https://bugs.launchpad.net/scour/+bug/714720">Bug 714720</a>, Scour now deletes text attributes, including "text-align", from elements and groups of elements that only contain shapes. (Thanks to Jan Thor for the patches.)</li>
+		<li>Per <a href="https://bugs.launchpad.net/scour/+bug/714731">Bug 714731</a>, remove the default value of more SVG attributes. (Thanks to Jan Thor for the patch.)</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/717826">Bug 717826</a> to emit the correct line terminator (CR LF) in optimized SVG content on the version of Scour used in Inkscape on Windows.</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/734933">Bug 734933</a> to avoid deleting renderable LineTo commands in paths, which happen to end where they started, if their stroke-linecap property has the value "round".</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/717254">Bug 717254</a> to delete &lt;defs&gt; elements that become empty after unreferenced element removal. (Thanks to Jan Thor for the patch.)</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/627372">Bug 627372</a> to future-proof the parameter passing between Scour and Inkscape. (Thanks to Bernd Feige for the patch.)</li>
+		<li>Fix <a href="https://bugs.launchpad.net/scour/+bug/638764">Bug 638764</a>, which crashed Scour due to <a href="http://bugs.python.org/issue2531">Python Issue 2531</a> regarding floating-point handling in ArcTo path commands. (Thanks to <a href="https://launchpad.net/~walther-md">Walther</a> for investigating this bug.)</li>
+		<li>Per <a href="https://bugs.launchpad.net/scour/+bug/654759">Bug 654759</a>, enable librsvg workarounds by default in Scour.</li>
+		<li>Added ID change and removal protection options per <a href="https://bugs.launchpad.net/scour/+bug/492277">bug 492277</a>: --protect-ids-noninkscape, --protect-ids-prefix, --protect-ids-list. (Thanks to Jan Thor for this patch.)</li>
+	</ul>
+</section>
+
 <section id="0.25">
 	<header>
 		<h2><a href="#0.25">Version 0.25</a></h2>
