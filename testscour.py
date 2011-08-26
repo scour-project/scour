@@ -704,6 +704,19 @@ class ScourPolylineNegativeCoords(unittest.TestCase):
 		self.assertEquals(p.getAttribute('points'), '100 -100 100 -100 100 -100 -100 -100 -100 200',
 			'Negative polyline coordinates not properly parsed')
 
+class ScourPolygonNegativeCoordFirst(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polygon-coord-neg-first.svg').getElementsByTagNameNS(SVGNS, 'polygon')[0]
+		#  points="-100,-100,100-100,100-100-100,-100-100,200" />
+		self.assertEquals(p.getAttribute('points'), '-100 -100 100 -100 100 -100 -100 -100 -100 200',
+			'Negative polygon coordinates not properly parsed')
+
+class ScourPolylineNegativeCoordFirst(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/polyline-coord-neg-first.svg').getElementsByTagNameNS(SVGNS, 'polyline')[0]
+		self.assertEquals(p.getAttribute('points'), '-100 -100 100 -100 100 -100 -100 -100 -100 200',
+			'Negative polyline coordinates not properly parsed')
+
 class DoNotRemoveGroupsWithIDsInDefs(unittest.TestCase):
 	def runTest(self):
 		f = scour.scourXmlFile('unittests/important-groups-in-defs.svg')
