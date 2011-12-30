@@ -48,6 +48,7 @@ var removeNamespacedElements = function(node, namespaces) {
       var child = node.childNodes.item(i);
       if (namespaces.indexOf(child.namespaceURI) != -1) {
         childrenToRemove.push(child);
+        postMessage({update: '.'});
       }
     }
     
@@ -58,6 +59,35 @@ var removeNamespacedElements = function(node, namespaces) {
     // Now recurse for children.
     for (var i = 0; i < node.childNodes.length; ++i) {
       removeNamespacedElements(node.childNodes.item(i), namespaces);
+    }
+  }
+};
+
+
+/**
+ * @param {pdom.Node|Node} node The parent node.
+ * @param {Array.<string>} namespaces An array of namespace URIs.
+ */
+var removeNamespacedAttributes = function(node, namespaces) {
+  if (node.nodeType == 1) {
+    // Remove all namespace'd attributes from this element.
+    var attrsToRemove = [];
+    for (var i = 0; i < node.attributes.length; ++i) {
+      var attr = node.attributes.item(i);
+      if (namespaces.indexOf(attr.namespaceURI) != -1 ||
+          (namespaces.indexOf(attr.value) != -1 && attr.name.indexOf('xmlns:') == 0)) {
+        attrsToRemove.push(attr);
+        postMessage({update: '.'});
+      }
+    }
+    
+    for (var i = 0; i < attrsToRemove.length; ++i) {
+      node.removeAttribute(attrsToRemove[i].name);
+    }
+
+    // Now recurse for children.
+    for (var i = 0; i < node.childNodes.length; ++i) {
+      removeNamespacedAttributes(node.childNodes.item(i), namespaces);
     }
   }
 };
@@ -76,8 +106,15 @@ var scourString = function(in_string, opt_options) {
 
   // Remove editor stuff.
   if (!options.keep_editor_data) {
+    postMessage({message: 'Removing namespaced elements '});
     removeNamespacedElements(doc.documentElement, unwanted_ns);
-    postMessage({message: 'Removed namespaced elements'});
+    postMessage({update: ' done!'});
+    postMessage({progress: {loaded: 45, total: 100}});
+
+    postMessage({message: 'Removing namespaced attributes '});
+    removeNamespacedAttributes(doc.documentElement, unwanted_ns);
+    postMessage({update: ' done!'});
+    postMessage({progress: {loaded: 90, total: 100}});
   }
 
   return new pdom.XMLSerializer().serializeToString(doc);

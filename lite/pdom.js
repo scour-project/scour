@@ -109,10 +109,11 @@ pdom.NodeList.prototype.item = function(index) {
 /**
  * @param {Object.<string, pdom.Node>} nodeMap An object containing the
  *     attribute name-Node pairs.
+ * @param {pdom.Node} opt_refNode An optional reference node.
  * @constructor
  */
-pdom.NamedNodeMap = function(nodeMap) {
-  this.setNodeMapInternal(nodeMap);
+pdom.NamedNodeMap = function(nodeMap, opt_refNode) {
+  this.setNodeMapInternal(nodeMap, opt_refNode);
   this.__defineGetter__('length', function() { return this.attrs_.length });
 };
 
@@ -136,12 +137,33 @@ pdom.NamedNodeMap.prototype.nodeMap_ = {};
 /**
  * Sets the internal node map (and updates the array).
  * @param {Object.<string, pdom.Node>} The node map.
+ * @param {pdom.Node} opt_refNode The optional reference node for namespace prefix checking.
  */
-pdom.NamedNodeMap.prototype.setNodeMapInternal = function(nodeMap) {
+pdom.NamedNodeMap.prototype.setNodeMapInternal = function(nodeMap, opt_refNode) {
+  var nsPrefixMap = {};
+  if (opt_refNode) {
+    var node = opt_refNode;
+    while (node) {
+      for (var prefix in node.nsPrefixMapInternal) {
+        nsPrefixMap[prefix] = node.nsPrefixMapInternal[prefix];
+      }
+      node = node.parentNode;
+    }
+  }
   this.nodeMap_ = {};
   this.attrs_ = [];
   for (var name in nodeMap) {
-    var attr = new pdom.Attr(name, nodeMap[name]);
+    // If the attribute name includes a colon, resolve the namespace prefix.
+    var colonIndex = name.indexOf(':');
+    var namespaceURI = null;
+    if (colonIndex != -1) {
+      var prefix = name.substring(0, colonIndex);
+      var uri = nsPrefixMap[prefix];
+      if (uri) {
+        namespaceURI = uri;
+      }
+    }
+    var attr = new pdom.Attr(name, nodeMap[name], namespaceURI);
     this.attrs_.push(attr);
     this.nodeMap_[name] = attr;
   }
@@ -334,16 +356,18 @@ pdom.inherits(pdom.DocumentType, pdom.Node);
  *
  * @param {string} name The name of the attribute.
  * @param {string} value The value of the attribute.
+ * @param {stirng} opt_namespaceURI Optional namespace URI.
  * @constructor
  * @extends {pdom.Attr}
  */
-pdom.Attr = function(name, value) {
+pdom.Attr = function(name, value, opt_namespaceURI) {
   pdom.base(this, null);
   
   this.__defineGetter__('nodeType', function() {
     return pdom.Node.ATTRIBUTE_NODE;
   });
   this.__defineGetter__('name', function() { return name });
+  this.__defineGetter__('namespaceURI', function() { return opt_namespaceURI });
 
   /**  
    * @type {string}
@@ -375,7 +399,7 @@ pdom.Element = function(tagName, opt_parentNode, opt_attrs) {
 
   this.__defineGetter__('attributes', function() {
     if (!this.attributeMap_) {
-      this.attributeMap_ = new pdom.NamedNodeMap(this.attributes_);
+      this.attributeMap_ = new pdom.NamedNodeMap(this.attributes_, this);
     }
     return this.attributeMap_;
   });
@@ -453,7 +477,7 @@ pdom.Element.prototype.getAttribute = function(attrName) {
 pdom.Element.prototype.setAttribute = function(name, value) {
   this.attributes_[name] = value;
   if (this.attributeMap_) {
-    this.attributeMap_.setNodeMapInternal(this.attributes_);
+    this.attributeMap_.setNodeMapInternal(this.attributes_, this);
   }
 };
 
@@ -464,7 +488,7 @@ pdom.Element.prototype.setAttribute = function(name, value) {
 pdom.Element.prototype.removeAttribute = function(name) {
   delete this.attributes_[name];
   if (this.attributeMap_) {
-    this.attributeMap_.setNodeMapInternal(this.attributes_);
+    this.attributeMap_.setNodeMapInternal(this.attributes_, this);
   }
 };
 
@@ -658,7 +682,7 @@ pdom.parse.parseOneNode_ = function(parsingContext) {
     if (endDocType == -1) {
       throw 'Could not find the end of the DOCTYPE (>)';
     }
-    var newDocType = new pdom.DocType();
+    var newDocType = new pdom.DocumentType();
     parsingContext.currentNode.childNodes_.push(newDocType);
     parsingContext.offset = endDocType + 1;
     return newDocType;
@@ -706,9 +730,12 @@ pdom.parse.parseOneNode_ = function(parsingContext) {
 
     var attrs = {};
 
-    // TODO: This should be whitespace, not space.
-    var tagNameIndex = xmlText.indexOf(' ', i + 1);
-    if (tagNameIndex == -1 || tagNameIndex > endStartTagIndex) {
+    // Find if whitespace occurs before the end of the start tag.
+    var wsMatches = xmlText.substring(i + 1).match(/\s+/);
+    var tagNameIndex = wsMatches && wsMatches.length > 0 ?
+        wsMatches.index + i + 1 :
+        endStartTagIndex;
+    if (tagNameIndex > endStartTagIndex) {
       tagNameIndex = endStartTagIndex;
     } else {
       // Find all attributes and record them.

@@ -31,7 +31,7 @@
 
     function testParseSimpleGetAttribute() {
       var doc = new pdom.DOMParser().parseFromString(
-          '<?xml version="1.0"?><simple bar="foo" foo=\'bar\'' +
+          '<simple bar="foo" foo=\'bar\'' +
           '  baz = " blah blah "' +
           '/>');
 
@@ -42,6 +42,15 @@
       muther.assert(elem.getAttribute('bar') == 'foo', 'bar attribute not correct');
       muther.assert(elem.getAttribute('foo') == 'bar', 'foo attribute not correct');
       muther.assert(elem.getAttribute('baz') == ' blah blah ', 'baz attribute not correct');
+    },
+
+    function testParseTagNameWithEOL() {
+      var doc = new pdom.DOMParser().parseFromString('<parent\n/>');
+
+      var parent = doc.documentElement;
+      muther.assert(parent, 'Could not parse documentElement');
+      muther.assert(parent.tagName == 'parent', 'Did not parse the parent tagName: \'' +
+          parent.tagName + '\'');
     },
     
     function testNodeTypes() {
@@ -110,6 +119,20 @@
           'prefixed namespaceURI did not work');
       muther.assert(grandChild.namespaceURI === "http://bar/",
           'prefixed namespaceURI did not work');
+    },
+
+    function testNamespacedAttributes() {
+      var NS_BAR = 'http://bar/';
+      var doc = new pdom.DOMParser().parseFromString(
+          '<parent xmlns="http://foo/" xmlns:bar="http://bar/" bar:foo="baz">' +
+          '<child bar:baz="blah"/></parent>');
+      var parent = doc.documentElement;
+      var child = parent.firstChild;
+
+      muther.assert(parent.attributes.getNamedItem('bar:foo').namespaceURI == NS_BAR,
+          'bar: attribute on parent does not have the proper namespaceURI');
+      muther.assert(child.attributes.item(0).namespaceURI == NS_BAR,
+          'bar: attribute on child does not have the proper namespaceURI');
     },
     
     function testTagName() {

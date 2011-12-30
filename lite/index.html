@@ -22,16 +22,16 @@
     <p id='progressPara' class='hidden'>
       <span id='stage'>Progress</span>: <progress id='progress' max='100'></progress>
     </p>
-    <div>
-      <div id='originalSvg' class='hidden'>
+    <div id='links' class='hidden'>
+      <div id='originalSvg'>
         Original:
-          <a id='originalLinkText' href='#'>[text]</a>
-          <a id='originalLinkSvg' href='#'>[svg]</a>
+          <a id='originalLinkText' target='_blank'>[text]</a>
+          <a id='originalLinkSvg' target='_blank'>[svg]</a>
       </div>
-      <div id='scouredSvg' class='hidden'>
+      <div id='scouredSvg'>
         Scoured:
-          <a id='scouredLinkText' href='#'>[text]</a>
-          <a id='scouredLinkSvg' href='#'>[svg]</a>
+          <a id='scouredLinkText' target='_blank'>[text]</a>
+          <a id='scouredLinkSvg' target='_blank'>[svg]</a>
       </div>
     </div>
     <div id='status' class='hidden'></div>
@@ -43,19 +43,6 @@
     var progress = document.getElementById('progress');
     var originalSvg;
     var scouredSvg;
-
-    document.getElementById('originalLinkText').onclick = function(evt) {
-      window.open('data:text/plain;base64,' + window.btoa(originalSvg));
-    };
-    document.getElementById('originalLinkSvg').onclick = function(evt) {
-      window.open('data:image/svg+xml;base64,' + window.btoa(originalSvg));
-    };
-    document.getElementById('scouredLinkText').onclick = function(evt) {
-      window.open('data:text/plain;base64,' + window.btoa(scouredSvg));
-    };
-    document.getElementById('scouredLinkSvg').onclick = function(evt) {
-      window.open('data:image/svg+xml;base64,' + window.btoa(scouredSvg));
-    };
 
     var handleMessage = function(evt) {
       if (typeof evt.data == 'string') {
@@ -73,13 +60,28 @@
         if (evt.data.progress) {
           handleProgress(evt.data.progress);
         }
+        if (evt.data.update) {
+          var status = document.getElementById('status').firstChild;
+          status.innerHTML = status.innerHTML + evt.data.update;
+        }
         if (evt.data.scouredSvg) {
-          document.getElementById('scouredSvg').className = '';
           scouredSvg = evt.data.scouredSvg;
           handleMessage({
             data: 'Scoured SVG came out to be ' +
               evt.data.scouredSvg.length + ' bytes'
           });
+
+          var status = document.getElementById('status');
+          var links = document.getElementById('links');
+          document.getElementById('originalLinkText').setAttribute('href',
+              'data:text/plain;base64,' + window.btoa(originalSvg));
+          document.getElementById('originalLinkSvg').setAttribute('href',
+              'data:image/svg+xml;base64,' + window.btoa(originalSvg));
+          document.getElementById('scouredLinkText').setAttribute('href',
+              'data:text/plain;base64,' + window.btoa(scouredSvg));
+          document.getElementById('scouredLinkSvg').setAttribute('href',
+              'data:image/svg+xml;base64,' + window.btoa(scouredSvg));
+          status.innerHTML = links.innerHTML + status.innerHTML;
         }
       }
     };
@@ -89,7 +91,7 @@
     };
     var getFile = function(evt) {
       stageSpan.innerHTML = 'Loading';
-      var showElems = ['progressPara', 'status', 'originalSvg'];
+      var showElems = ['progressPara', 'status'];
       for (var i in showElems) {
         document.getElementById(showElems[i]).className = '';
       }
@@ -102,6 +104,8 @@
         // TODO: Use addEventListener when WebKit supports it
         // https://bugs.webkit.org/show_bug.cgi?id=42723
         fr.onload = function(evt) {
+          handleMessage({data:
+              '-------------------------------------------------------------------------------'});
           handleMessage({data:'Loaded \'' + theFile.name + '\'' + ' (' + theFile.size + ' bytes)'});
           var worker = new Worker('scour.js');
           worker.addEventListener('message', handleMessage);
