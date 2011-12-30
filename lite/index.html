@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Scour Lite</title>
+    <style type='text/css'>
+      .hidden { display: none; }
+      #status {
+        border: solid 1px lightgrey;
+        color: grey;
+        margin: 10px;
+        padding: 5px;
+      }
+      #status p {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scour Lite</h1>
+    <input id='fileInput' type='file'/>
+    <p id='progressPara' class='hidden'>
+      <span id='stage'>Progress</span>: <progress id='progress' max='100'></progress>
+    </p>
+    <div>
+      <div id='originalSvg' class='hidden'>
+        Original:
+          <a id='originalLinkText' href='#'>[text]</a>
+          <a id='originalLinkSvg' href='#'>[svg]</a>
+      </div>
+      <div id='scouredSvg' class='hidden'>
+        Scoured:
+          <a id='scouredLinkText' href='#'>[text]</a>
+          <a id='scouredLinkSvg' href='#'>[svg]</a>
+      </div>
+    </div>
+    <div id='status' class='hidden'></div>
+  </body>
+  <script type='text/javascript' src='pdom.js'></script>
+  <script type='text/javascript'>
+    var input = document.getElementById('fileInput');
+    var stageSpan = document.getElementById('stage');
+    var progress = document.getElementById('progress');
+    var originalSvg;
+    var scouredSvg;
+
+    document.getElementById('originalLinkText').onclick = function(evt) {
+      window.open('data:text/plain;base64,' + window.btoa(originalSvg));
+    };
+    document.getElementById('originalLinkSvg').onclick = function(evt) {
+      window.open('data:image/svg+xml;base64,' + window.btoa(originalSvg));
+    };
+    document.getElementById('scouredLinkText').onclick = function(evt) {
+      window.open('data:text/plain;base64,' + window.btoa(scouredSvg));
+    };
+    document.getElementById('scouredLinkSvg').onclick = function(evt) {
+      window.open('data:image/svg+xml;base64,' + window.btoa(scouredSvg));
+    };
+
+    var handleMessage = function(evt) {
+      if (typeof evt.data == 'string') {
+        var p = document.createElement('p');
+        p.innerHTML = evt.data;
+        var status = document.getElementById('status');
+        status.insertBefore(p, status.firstChild);
+      } else {
+        if (evt.data.stage) {
+          stageSpan.innerHTML = evt.data.stage;
+        }
+        if (evt.data.message) {
+          handleMessage({data: evt.data.message});
+        }
+        if (evt.data.progress) {
+          handleProgress(evt.data.progress);
+        }
+        if (evt.data.scouredSvg) {
+          document.getElementById('scouredSvg').className = '';
+          scouredSvg = evt.data.scouredSvg;
+          handleMessage({
+            data: 'Scoured SVG came out to be ' +
+              evt.data.scouredSvg.length + ' bytes'
+          });
+        }
+      }
+    };
+    var handleProgress = function(evt) {
+      progress.max = evt.total;
+      progress.value = evt.loaded;  
+    };
+    var getFile = function(evt) {
+      stageSpan.innerHTML = 'Loading';
+      var showElems = ['progressPara', 'status', 'originalSvg'];
+      for (var i in showElems) {
+        document.getElementById(showElems[i]).className = '';
+      }
+      if (input.files.length == 1) {
+        var theFile = input.files[0];
+        // TODO: One day, all browsers will support passing of File blobs
+        // to the worker and the creation of FileReaders inside workers.
+        // When that day comes, shove this code into scour.js.
+        var fr = new FileReader();
+        // TODO: Use addEventListener when WebKit supports it
+        // https://bugs.webkit.org/show_bug.cgi?id=42723
+        fr.onload = function(evt) {
+          handleMessage({data:'Loaded \'' + theFile.name + '\'' + ' (' + theFile.size + ' bytes)'});
+          var worker = new Worker('scour.js');
+          worker.addEventListener('message', handleMessage);
+          originalSvg = evt.target.result;
+          var parser = new pdom.DOMParser();
+          var pdoc = parser.parseFromString(originalSvg);
+          // TODO: Restore this once pdom is working satisfactorily.
+          worker.postMessage(originalSvg);
+        };
+        fr.onprogress = handleProgress;
+        fr.readAsText(theFile);
+      }
+    };
+    input.addEventListener('change', getFile, false);
+  </script>
+</html>

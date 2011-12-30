@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>pdom unit tests</title>
+  <script src='pdom.js'></script>
+  <style type='text/css'>
+    progress {
+      width: 600px;
+    }
+  </style>
+  <script src='muther.js'></script>
+</head>
+<body></body>
+<script type='text/javascript'>
+  muther.test([
+    function testConstruction() {
+      var parser = new pdom.DOMParser();
+      muther.assert(parser, 'Could not construct parser');
+    },
+    
+    function testParseEmptyDoc() {
+      var doc = new pdom.DOMParser().parseFromString('<?xml version="1.0"?><empty/>');
+      muther.assert(doc, 'Could not parse doc');
+      muther.assert(doc instanceof pdom.XMLDocument, 'parseFromString() did not return a pdom.XMLDocument');
+      muther.assert(doc.childNodes.length == 1, 'Doc node had incorrect # of nodes: ' + doc.childNodes.length);
+      muther.assert(doc.documentElement, 'Document had no documentElement');
+      muther.assert(doc.documentElement instanceof pdom.Element, 'documentElement not a pdom.Element');
+      muther.assert(doc.documentElement.tagName == 'empty', 'documentElement not an <empty/>');
+      muther.assert(doc.documentElement.childNodes.length == 0, 'documentElement had child nodes');
+    },
+
+    function testParseSimpleGetAttribute() {
+      var doc = new pdom.DOMParser().parseFromString(
+          '<?xml version="1.0"?><simple bar="foo" foo=\'bar\'' +
+          '  baz = " blah blah "' +
+          '/>');
+
+      muther.assert(doc, 'Could not parse doc');
+      muther.assert(doc.documentElement, 'Document had no documentElement');
+
+      var elem = doc.documentElement;
+      muther.assert(elem.getAttribute('bar') == 'foo', 'bar attribute not correct');
+      muther.assert(elem.getAttribute('foo') == 'bar', 'foo attribute not correct');
+      muther.assert(elem.getAttribute('baz') == ' blah blah ', 'baz attribute not correct');
+    },
+    
+    function testNodeTypes() {
+      var doc = new pdom.DOMParser().parseFromString('<simple foo="bar"><!-- Comment -->Text</simple>');
+      muther.assert(doc.nodeType == 9, 'Document nodetype not 9');
+      muther.assert(doc.documentElement.nodeType == 1, 'Document element not 1');
+      muther.assert(doc.documentElement.attributes.item(0).nodeType == 2, 'Attribute nodeType not 2');
+      muther.assert(doc.documentElement.childNodes.item(0).nodeType == 8, 'Comment nodetype not 8');
+      muther.assert(doc.documentElement.childNodes.item(1).nodeType == 3, 'Text nodetype not 3');
+    },
+    
+    function testParentNode() {
+      var doc = new pdom.DOMParser().parseFromString('<simple foo="bar">Text</simple>');
+      muther.assert(doc.documentElement.parentNode == doc,
+          'parentNode of documentElement not the document');
+      muther.assert(doc.documentElement == doc.documentElement.childNodes.item(0).parentNode,
+          'parentNode of text not the documentElement');
+      muther.assert(doc.documentElement.attributes.item(0).parentNode == null,
+          'parentNode of Attr is not null');
+    },
+    
+    function testConvenienceNodeProperties() {
+      var doc = new pdom.DOMParser().parseFromString(
+          '<parent><child1/><child2/><child3/></parent>');
+      var parent = doc.documentElement;
+      var child1 = parent.childNodes.item(0);
+      var child2 = parent.childNodes.item(1);
+      var child3 = parent.childNodes.item(2);
+      
+      muther.assert(parent.firstChild === child1, 'firstChild did not work');
+      muther.assert(parent.lastChild === child3, 'lastChild did not work');
+      muther.assert(child2.previousSibling === child1, 'previousSibling did not work');
+      muther.assert(child2.nextSibling === child3, 'nextSibling did not work');
+    },
+
+    function testNamespaceless() {
+      var doc = new pdom.DOMParser().parseFromString('<parent><child/></parent>');
+      var parent = doc.documentElement;
+      var child = parent.firstChild;
+      muther.assert(parent.namespaceURI === null, 'parent namespaceURI did not return null');
+      muther.assert(child.namespaceURI === null, 'child namespaceURI did not return null');
+    },
+
+    function testDefaultNamespaceURI() {
+      var doc = new pdom.DOMParser().parseFromString(
+          '<parent xmlns="http://foo/"><child xmlns="http://bar/"><grandchild/></child></parent>');
+      var parent = doc.documentElement;
+      var child = parent.firstChild;
+      var grandchild = child.firstChild;
+      muther.assert(parent.namespaceURI === "http://foo/", 'parent namespaceURI was not correct');
+      muther.assert(child.namespaceURI === "http://bar/", 'child namespaceURI was not correct');
+      muther.assert(grandchild.namespaceURI === "http://bar/",
+          'grandchild namespaceURI was not correct');
+    },
+    
+    function testPrefixedNamespaceURI() {
+      var doc = new pdom.DOMParser().parseFromString(
+          '<parent xmlns="http://foo/" xmlns:bar="http://bar/">' +
+          '<child/><bar:child><grandchild/></bar:child></parent>');
+      var parent = doc.documentElement;
+      var firstChild = parent.firstChild;
+      var secondChild = firstChild.nextSibling;
+      var grandChild = secondChild.firstChild;
+      
+      muther.assert(secondChild.namespaceURI === "http://bar/",
+          'prefixed namespaceURI did not work');
+      muther.assert(grandChild.namespaceURI === "http://bar/",
+          'prefixed namespaceURI did not work');
+    },
+    
+    function testTagName() {
+      var doc = new pdom.DOMParser().parseFromString('<simple/>');
+      muther.assert(doc.documentElement.tagName == 'simple',
+          'tagName was not "simple"');
+    },
+
+    function testHasChildNodes() {
+      var doc = new pdom.DOMParser().parseFromString('<parent><child/></parent>');
+      muther.assert(doc.documentElement.hasChildNodes(), 'documentElement had no child nodes');
+      muther.assert(!doc.documentElement.childNodes.item(0).hasChildNodes(),
+        'child-less element had child nodes');
+    },
+
+    function testRemoveChild() {
+      var doc = new pdom.DOMParser().parseFromString('<parent><child/></parent>');
+      var root = doc.documentElement;
+      var child = root.childNodes.item(0);
+      var retValue = root.removeChild(child);
+      muther.assert(!root.hasChildNodes(), 'Parent still has children');
+      muther.assert(child == retValue, 'removeChild did not return the removed child');
+      muther.assert(!child.parentNode, 'Removed child still has a parent');
+      
+      try {
+        root.removeChild(child);
+        muther.assert(false, 'removeChild() did not throw an exception');
+      } catch(e) {
+        muther.assert(e.code == 8, 'DOMException not thrown with code 8');
+      }
+    },
+
+    function testAppendChild() {
+      var doc = new pdom.DOMParser().parseFromString('<parent><child1/><child2/><child3/></parent>');
+      var root = doc.documentElement;
+      var child1 = root.childNodes.item(0);
+      var child2 = root.childNodes.item(1);
+
+      var retValue = root.appendChild(child1);
+      muther.assert(child1 === retValue, 'appendChild did not return the appended child');
+      muther.assert(root.firstChild === child2, 'appendChild did not remove the appended child');
+      muther.assert(root.lastChild === child1, 'appendChild did not append the child');
+      
+      retValue = child1.appendChild(child2);      
+      muther.assert(root.childNodes.length == 2, 'root did not have 2 children');
+      muther.assert(child1.hasChildNodes(), 'child1 did not have any child nodes');
+      muther.assert(child1.firstChild == child2, 'child1\'s child is not child2');;
+    },
+
+    function testGetAttribute() {
+      var doc = new pdom.DOMParser().parseFromString('<parent foo="bar"></parent>');
+      var root = doc.documentElement;
+      muther.assert(root.getAttribute('foo') == 'bar', 'Element did not have a foo attribute');
+      muther.assert(root.getAttribute('blah') == '', 'getAttribute("blah") did not return an empty string');
+    },
+    
+    function testRemoveAttribute() {
+      var doc = new pdom.DOMParser().parseFromString('<parent foo="bar" baz="blah"></parent>');
+      var root = doc.documentElement;
+      var attrMap = root.attributes;
+      
+      root.removeAttribute('baz');
+
+      muther.assert(root.getAttribute('baz') == '', 'Element still has a baz attribute');
+      muther.assert(root.getAttribute('foo') == 'bar', 'Element does not have a foo attribute');
+      // Also tests liveness of the NamedNodeMap.
+      muther.assert(attrMap.length == 1, 'attributes NamedNodeMap was not updated after a removeAttribute');
+    },
+    
+    function testSetAttribute() {
+      var doc = new pdom.DOMParser().parseFromString('<parent foo="bar"></parent>');
+      var root = doc.documentElement;
+      var attrMap = root.attributes;
+      
+      root.setAttribute('foo', 'baz');
+      root.setAttribute('blah', 'boo');
+
+      muther.assert(attrMap.length == 2, 'attributes NamedNodeMap was not updated after a setAttribute');
+      muther.assert(root.getAttribute('foo') == 'baz', 'Foo attribute value not updated after a setAttribute');
+      muther.assert(root.getAttribute('blah') == 'boo', 'Blah attribute value not updated after a setAttribute');
+    },
+
+    function testHasAttribute() {
+      var doc = new pdom.DOMParser().parseFromString('<parent foo="bar"></parent>');
+      var root = doc.documentElement;
+      var attrMap = root.attributes;
+      
+      muther.assert(root.hasAttribute('foo'), 'hasAttribute() did not work for parsed attribute');
+      muther.assert(!root.hasAttribute('blah'), 'hasAttribute() returned true for unknown attribute');
+
+      root.setAttribute('foo', 'baz');
+      root.setAttribute('blah', 'boo');
+      muther.assert(root.hasAttribute('foo'), 'hasAttribute() did not work for a set attribute');
+      muther.assert(root.hasAttribute('blah'), 'hasAttribute() returned false for a set attribute');
+
+      root.removeAttribute('foo');
+      muther.assert(!root.hasAttribute('foo'), 'hasAttribute() return true for a removed attribute');
+    },
+    
+    function testParseAttributes() {
+      var parser = new pdom.DOMParser();
+      var doc = parser.parseFromString('<simple bar="baz" foo="blah"/>');
+
+      muther.assert(doc, 'Could not parse doc');
+      muther.assert(doc.documentElement, 'Document had no documentElement');
+
+      var elem = doc.documentElement;
+      var attrMap = elem.attributes;
+      muther.assert(attrMap, 'Could not get NamedNodeMap for attributes');
+      muther.assert(attrMap.length == 2, 'Attribute map did not have two items');
+      
+      muther.assert(attrMap.item(0) instanceof pdom.Node, 'item(0) did not return a Node');
+      muther.assert(attrMap.item(1) instanceof pdom.Node, 'item(1) did not return a Node');
+      muther.assert(attrMap.item(0).name == 'foo' || attrMap.item(0).name == 'bar',
+          'Unknown node returned from map');
+
+      var fooAttr = attrMap.getNamedItem('foo');
+      muther.assert(fooAttr instanceof pdom.Attr, 'foo attribute was not an Attr node');
+      muther.assert(fooAttr.name == 'foo', 'foo attribute did not have name of "foo"');
+      muther.assert(fooAttr.value == 'blah', 'foo attribute did not have value of "blah"');
+
+      var barAttr = attrMap.getNamedItem('bar');
+      muther.assert(barAttr instanceof pdom.Attr, 'bar attribute was not an Attr node');
+      muther.assert(barAttr.name == 'bar', 'bar attribute did not have name of "bar"');
+      muther.assert(barAttr.value == 'baz', 'bar attribute did not have value of "baz"');
+      
+      barAttr.value = 'fungus';
+      muther.assert(attrMap.getNamedItem('bar').value == 'fungus',
+          'Mutating Attr node value did not update the node in NamedNodeMap');
+    },
+
+    function testSerializerRoundtripSimple() {
+      var parser = new pdom.DOMParser();
+      var xmlText = '<simple foo="bar">blah</simple>';
+      var doc = parser.parseFromString(xmlText, 'text/xml');
+      var serializer = new pdom.XMLSerializer();
+      var serializedText = serializer.serializeToString(doc);
+      muther.assert(serializedText == xmlText,
+          ('Serializing empty doc failed.  Expected: ' + xmlText +
+          '  Actual: ' + serializedText));
+    },
+  ]);
+</script>
+</html>
