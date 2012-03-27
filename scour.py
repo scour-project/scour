@@ -565,6 +565,25 @@ numBytesSavedInTransforms = 0
 numPointsRemovedFromPolygon = 0
 numCommentBytes = 0
 
+def flattenDefs(doc):
+	"""
+	Puts all defined elements into a newly created defs in the document.  This function
+	handles recursive defs elements.
+	"""
+	defs = doc.documentElement.getElementsByTagName('defs')
+
+	if defs.length > 1:
+		topDef = doc.createElementNS(NS['SVG'], 'defs')
+
+		for defElem in defs:
+			# Remove all children of this defs and put it into the topDef.
+			while defElem.hasChildNodes():
+				topDef.appendChild(defElem.firstChild)
+			defElem.parentNode.removeChild(defElem)
+
+		if topDef.hasChildNodes():
+			doc.documentElement.insertBefore(topDef, doc.documentElement.firstChild)
+
 def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 	if elemsToRemove is None:
 		elemsToRemove = []
@@ -2886,6 +2905,9 @@ def scourString(in_string, options=None):
 	# remove <metadata> if the user wants to
 	if options.remove_metadata:
 		removeMetadataElements(doc)
+	
+	# flattend defs elements into just one defs element
+	flattenDefs(doc)
 	
 	# remove unreferenced gradients/patterns outside of defs
 	# and most unreferenced elements inside of defs

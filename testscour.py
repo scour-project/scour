@@ -172,6 +172,12 @@ class KeepTitleInDefs(unittest.TestCase):
 		self.assertEquals(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 1,
 			'Title removed from in defs' )
 
+class RemoveNestedDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/nested-defs.svg')
+		allDefs = doc.getElementsByTagNameNS(SVGNS, 'defs')
+		self.assertEquals(len(allDefs), 1, 'More than one defs left in doc')
+
 class KeepUnreferencedIDsWhenEnabled(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/ids-to-strip.svg')
