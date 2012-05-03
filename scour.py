@@ -2575,7 +2575,9 @@ def removeComments(element) :
 	if isinstance(element, xml.dom.minidom.Document):
 		# must process the document object separately, because its
 		# documentElement's nodes have None as their parentNode
-		for subelement in element.childNodes:
+		# iterate in reverse order to prevent mess-ups with renumbering
+		for index in xrange(len(element.childNodes) - 1, -1, -1):
+			subelement = element.childNodes[index]
 			if isinstance(subelement, xml.dom.minidom.Comment):
 				numCommentBytes += len(subelement.data)
 				element.removeChild(subelement)
@@ -2585,7 +2587,9 @@ def removeComments(element) :
 		numCommentBytes += len(element.data)
 		element.parentNode.removeChild(element)
 	else:
-		for subelement in element.childNodes:
+		# iterate in reverse order to prevent mess-ups with renumbering
+		for index in xrange(len(element.childNodes) - 1, -1, -1):
+			subelement = element.childNodes[index]
 			removeComments(subelement)
 
 def embedRasters(element, options) :
