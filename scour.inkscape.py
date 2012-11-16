@@ -67,6 +67,7 @@ class ScourInkscape (inkex.Effect):
 
     def effect(self):   
         input = file(self.args[0], "r")
+        self.options.infilename = self.args[0]
         sys.stdout.write(scourString(input.read(), self.options).encode("UTF-8"))
         input.close()
         sys.stdout.close()
