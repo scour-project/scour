@@ -1,7 +1,6 @@
-Scour
-=====
+# Scour
 
-Scour is a Python module that takes an input SVG and outputs a cleaner, 
+Scour is a Python module that takes an input SVG and outputs a cleaner,
 more concise SVG file.  The goal is that authors will use this script after
 editing the file in a GUI editor such as Inkscape or Adobe Illustrator.
 
@@ -11,13 +10,23 @@ such as openclipart.org
 
 Ideas are pulled from three places:
 
-- my head
-- Sam Ruby's SVG Tidy script: http://intertwingly.net/code/svgtidy/svgtidy.rb
-- Inkscape's proposal for a 'cleaned SVG': http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
+  * my head
+  * Sam Ruby's SVG Tidy script: http://intertwingly.net/code/svgtidy/svgtidy.rb
+  * Inkscape's proposal for a 'cleaned SVG': http://wiki.inkscape.org/wiki/index.php/Save_Cleaned_SVG
 
 Regards,
 
-Jeff Schiller
-2009-04-06
+Jeff Schiller, 2009-04-06
+
 codedread@gmail.com
+
 http://blog.codedread.com/
+
+http://www.codedread.com/scour/
+
+## Notes
+
+Packaging from [sources](http://www.codedread.com/scour/) retrieved on 2013/20/22:
+
+  * done by Tavendo GmbH, Tobias Oberstein
+  * license same as upstream (Apache 2.0)

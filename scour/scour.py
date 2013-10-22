@@ -73,8 +73,8 @@ APP = 'scour'
 VER = '0.26'
 COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
-NS = { 	'SVG': 		'http://www.w3.org/2000/svg', 
-		'XLINK': 	'http://www.w3.org/1999/xlink', 
+NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
+		'XLINK': 	'http://www.w3.org/1999/xlink',
 		'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
 		'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape',
 		'ADOBE_ILLUSTRATOR': 'http://ns.adobe.com/AdobeIllustrator/10.0/',
@@ -84,7 +84,7 @@ NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
 		'ADOBE_SFW': 'http://ns.adobe.com/SaveForWeb/1.0/',
 		'ADOBE_EXTENSIBILITY': 'http://ns.adobe.com/Extensibility/1.0/',
 		'ADOBE_FLOWS': 'http://ns.adobe.com/Flows/1.0/',
-		'ADOBE_IMAGE_REPLACEMENT': 'http://ns.adobe.com/ImageReplacement/1.0/',     
+		'ADOBE_IMAGE_REPLACEMENT': 'http://ns.adobe.com/ImageReplacement/1.0/',
 		'ADOBE_CUSTOM': 'http://ns.adobe.com/GenericCustomNamespace/1.0/',
 		'ADOBE_XPATH': 'http://ns.adobe.com/XPath/1.0/'
 		}
@@ -92,7 +92,7 @@ NS = { 	'SVG': 		'http://www.w3.org/2000/svg',
 unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
 				NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
 				NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'], NS['ADOBE_FLOWS'],
-				NS['ADOBE_IMAGE_REPLACEMENT'], NS['ADOBE_CUSTOM'], NS['ADOBE_XPATH'] ] 
+				NS['ADOBE_IMAGE_REPLACEMENT'], NS['ADOBE_CUSTOM'], NS['ADOBE_XPATH'] ]
 
 svgAttributes = [
 				'clip-rule',
@@ -356,7 +356,7 @@ class Unit(object):
 	CM = 7
 	MM = 8
 	IN = 9
-	
+
 	# String to Unit. Basically, converts unit strings to their integer constants.
 	s2u = {
 		'': NONE,
@@ -370,7 +370,7 @@ class Unit(object):
 		'mm': MM,
 		'in': IN,
 	}
-	
+
 	# Unit to String. Basically, converts unit integer constants to their corresponding strings.
 	u2s = {
 		NONE: '',
@@ -384,7 +384,7 @@ class Unit(object):
 		MM: 'mm',
 		IN: 'in',
 	}
-	
+
 #	@staticmethod
 	def get(unitstr):
 		if unitstr is None: return Unit.NONE
@@ -399,15 +399,15 @@ class Unit(object):
 			return Unit.u2s[unitint]
 		except KeyError:
 			return 'INVALID'
-		
+
 	get = staticmethod(get)
 	str = staticmethod(str)
-	
+
 class SVGLength(object):
 	def __init__(self, str):
 		try: # simple unitless and no scientific notation
 			self.value = float(str)
-			if int(self.value) == self.value: 
+			if int(self.value) == self.value:
 				self.value = int(self.value)
 			self.units = Unit.NONE
 		except ValueError:
@@ -430,7 +430,7 @@ class SVGLength(object):
 				if numMatch != None:
 					self.value = float(numMatch.group(0))
 					unitBegin = numMatch.end(0)
-					
+
 			if int(self.value) == self.value:
 				self.value = int(self.value)
 
@@ -438,11 +438,11 @@ class SVGLength(object):
 				unitMatch = unit.search(str, unitBegin)
 				if unitMatch != None :
 					self.units = Unit.get(unitMatch.group(0))
-				
+
 			# invalid
 			else:
 				# TODO: this needs to set the default for the given attribute (how?)
-				self.value = 0 
+				self.value = 0
 				self.units = Unit.INVALID
 
 def findElementsWithId(node, elems=None):
@@ -462,7 +462,7 @@ def findElementsWithId(node, elems=None):
 				findElementsWithId(child, elems)
 	return elems
 
-referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 
+referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start',
 					'marker-end', 'marker-mid']
 
 def findReferencedElements(node, ids=None):
@@ -495,7 +495,7 @@ def findReferencedElements(node, ids=None):
 					propval = rule['properties'][propname]
 					findReferencingProperty(node, propname, propval, ids)
 		return ids
-	
+
 	# else if xlink:href is set, then grab the id
 	href = node.getAttributeNS(NS['XLINK'],'href')
 	if href != '' and len(href) > 1 and href[0] == '#':
@@ -511,7 +511,7 @@ def findReferencedElements(node, ids=None):
 	styles = node.getAttribute('style').split(';')
 	for attr in referencingProps:
 		styles.append(':'.join([attr, node.getAttribute(attr)]))
-			
+
 	for style in styles:
 		propval = style.split(':')
 		if len(propval) == 2 :
@@ -565,25 +565,6 @@ numBytesSavedInTransforms = 0
 numPointsRemovedFromPolygon = 0
 numCommentBytes = 0
 
-def flattenDefs(doc):
-	"""
-	Puts all defined elements into a newly created defs in the document.  This function
-	handles recursive defs elements.
-	"""
-	defs = doc.documentElement.getElementsByTagName('defs')
-
-	if defs.length > 1:
-		topDef = doc.createElementNS(NS['SVG'], 'defs')
-
-		for defElem in defs:
-			# Remove all children of this defs and put it into the topDef.
-			while defElem.hasChildNodes():
-				topDef.appendChild(defElem.firstChild)
-			defElem.parentNode.removeChild(defElem)
-
-		if topDef.hasChildNodes():
-			doc.documentElement.insertBefore(topDef, doc.documentElement.firstChild)
-
 def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 	if elemsToRemove is None:
 		elemsToRemove = []
@@ -608,14 +589,14 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
 
 def removeUnreferencedElements(doc):
 	"""
-	Removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>.	
+	Removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>.
 	Also vacuums the defs of any non-referenced renderable elements.
-	
+
 	Returns the number of unreferenced elements removed from the document.
 	"""
 	global numElemsRemoved
 	num = 0
-	
+
 	# Remove certain unreferenced elements outside of defs
 	removeTags = ['linearGradient', 'radialGradient', 'pattern']
 	identifiedElements = findElementsWithId(doc.documentElement)
@@ -644,7 +625,7 @@ def shortenIDs(doc, unprotectedElements=None):
 	Shortens ID names used in the document. ID names referenced the most often are assigned the
 	shortest ID names.
 	If the list unprotectedElements is provided, only IDs from this list will be shortened.
-	
+
 	Returns the number of bytes saved by shortening ID names in the document.
 	"""
 	num = 0
@@ -658,13 +639,13 @@ def shortenIDs(doc, unprotectedElements=None):
 	# descending, so the highest reference count is first.
 	# First check that there's actually a defining element for the current ID name.
 	# (Cyn: I've seen documents with #id references but no element with that ID!)
-	idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs 
+	idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs
 				if rid in unprotectedElements]
 	idList.sort(reverse=True)
 	idList = [rid for count, rid in idList]
-	
+
 	curIdNum = 1
-	
+
 	for rid in idList:
 		curId = intToID(curIdNum)
 		# First make sure that *this* element isn't already using
@@ -677,7 +658,7 @@ def shortenIDs(doc, unprotectedElements=None):
 			# Then go rename it.
 			num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
 		curIdNum += 1
-	
+
 	return num
 
 def intToID(idnum):
@@ -686,37 +667,37 @@ def intToID(idnum):
 	then from aa to az, ba to bz, etc., until zz.
 	"""
 	rid = ''
-	
+
 	while idnum > 0:
 		idnum -= 1
 		rid = chr((idnum % 26) + ord('a')) + rid
 		idnum = int(idnum / 26)
-	
+
 	return rid
 
 def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 	"""
 	Changes the ID name from idFrom to idTo, on the declaring element
 	as well as all references in the document doc.
-	
+
 	Updates identifiedElements and referencedIDs.
 	Does not handle the case where idTo is already the ID name
 	of another element in doc.
-	
+
 	Returns the number of bytes saved by this replacement.
 	"""
-	
+
 	num = 0
-	
+
 	definingNode = identifiedElements[idFrom]
 	definingNode.setAttribute("id", idTo)
 	del identifiedElements[idFrom]
 	identifiedElements[idTo] = definingNode
-	
+
 	referringNodes = referencedIDs[idFrom]
-	
+
 	# Look for the idFrom ID name in each of the referencing elements,
-	# exactly like findReferencedElements would. 
+	# exactly like findReferencedElements would.
 	# Cyn: Duplicated processing!
 
 	for node in referringNodes[1]:
@@ -737,7 +718,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 				# again, this is in case the stylesheet was a CDATASection
 				node.childNodes[:] = [node.ownerDocument.createTextNode(newValue)]
 				num += len(oldValue) - len(newValue)
-	
+
 		# if xlink:href is set to #idFrom, then change the id
 		href = node.getAttributeNS(NS['XLINK'],'href')
 		if href == '#' + idFrom:
@@ -752,7 +733,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 			newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
 			node.setAttribute('style', newValue)
 			num += len(styles) - len(newValue)
-			
+
 		# now try the fill, stroke, filter attributes
 		for attr in referencingProps:
 			oldValue = node.getAttribute(attr)
@@ -762,10 +743,10 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
 				newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
 				node.setAttribute(attr, newValue)
 				num += len(oldValue) - len(newValue)
-				
+
 	del referencedIDs[idFrom]
 	referencedIDs[idTo] = referringNodes
-	
+
 	return num
 
 def unprotected_ids(doc, options):
@@ -796,7 +777,7 @@ def unprotected_ids(doc, options):
 def removeUnreferencedIDs(referencedIDs, identifiedElements):
 	"""
 	Removes the unreferenced ID attributes.
-	
+
 	Returns the number of ID attributes removed
 	"""
 	global numIDsRemoved
@@ -809,7 +790,7 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 			numIDsRemoved += 1
 			num += 1
 	return num
-	
+
 def removeNamespacedAttributes(node, namespaces):
 	global numAttrsRemoved
 	num = 0
@@ -825,12 +806,12 @@ def removeNamespacedAttributes(node, namespaces):
 			num += 1
 			numAttrsRemoved += 1
 			node.removeAttribute(attrName)
-		
+
 		# now recurse for children
 		for child in node.childNodes:
 			num += removeNamespacedAttributes(child, namespaces)
 	return num
-	
+
 def removeNamespacedElements(node, namespaces):
 	global numElemsRemoved
 	num = 0
@@ -845,34 +826,34 @@ def removeNamespacedElements(node, namespaces):
 			num += 1
 			numElemsRemoved += 1
 			node.removeChild(child)
-		
+
 		# now recurse for children
 		for child in node.childNodes:
 			num += removeNamespacedElements(child, namespaces)
 	return num
-	
+
 def removeMetadataElements(doc):
 	global numElemsRemoved
 	num = 0
 	# clone the list, as the tag list is live from the DOM
 	elementsToRemove = [element for element in doc.documentElement.getElementsByTagName('metadata')]
-	
+
 	for element in elementsToRemove:
 		element.parentNode.removeChild(element)
 		num += 1
 		numElemsRemoved += 1
-	
+
 	return num
 
 def removeNestedGroups(node):
-	""" 
+	"""
 	This walks further and further down the tree, removing groups
-	which do not have any attributes or a title/desc child and 
+	which do not have any attributes or a title/desc child and
 	promoting their children up one level
 	"""
 	global numElemsRemoved
 	num = 0
-	
+
 	groupsToRemove = []
 	# Only consider <g> elements for promotion if this element isn't a <switch>.
 	# (partial fix for bug 594930, required by the SVG spec however)
@@ -897,19 +878,19 @@ def removeNestedGroups(node):
 	# now recurse for children
 	for child in node.childNodes:
 		if child.nodeType == 1:
-			num += removeNestedGroups(child)		
+			num += removeNestedGroups(child)
 	return num
 
 def moveCommonAttributesToParentGroup(elem, referencedElements):
-	""" 
+	"""
 	This recursively calls this function on all children of the passed in element
-	and then iterates over all child elements and removes common inheritable attributes 
+	and then iterates over all child elements and removes common inheritable attributes
 	from the children and places them in the parent group.  But only if the parent contains
 	nothing but element children and whitespace.  The attributes are only removed from the
 	children if the children are not referenced by other elements in the document.
 	"""
 	num = 0
-	
+
 	childElements = []
 	# recurse first into the children (depth-first)
 	for child in elem.childNodes:
@@ -925,7 +906,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
 
 	# only process the children if there are more than one element
 	if len(childElements) <= 1: return num
-	
+
 	commonAttrs = {}
 	# add all inheritable properties of the first child element
 	# FIXME: Note there is a chance that the first child is a set/animate in which case
@@ -937,30 +918,30 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
 		# this is most of the inheritable properties from http://www.w3.org/TR/SVG11/propidx.html
 		# and http://www.w3.org/TR/SVGTiny12/attributeTable.html
 		if attr.nodeName in ['clip-rule',
-					'display-align', 
-					'fill', 'fill-opacity', 'fill-rule', 
+					'display-align',
+					'fill', 'fill-opacity', 'fill-rule',
 					'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
 					'font-style', 'font-variant', 'font-weight',
 					'letter-spacing',
 					'pointer-events', 'shape-rendering',
 					'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
 					'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
-					'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+					'text-anchor', 'text-decoration', 'text-rendering', 'visibility',
 					'word-spacing', 'writing-mode']:
 			# we just add all the attributes from the first child
 			commonAttrs[attr.nodeName] = attr.nodeValue
-	
+
 	# for each subsequent child element
 	for childNum in xrange(len(childElements)):
 		# skip first child
-		if childNum == 0: 
+		if childNum == 0:
 			continue
-			
+
 		child = childElements[childNum]
 		# if we are on an animateXXX/set element, ignore it (due to the 'fill' attribute)
 		if child.localName in ['set', 'animate', 'animateColor', 'animateTransform', 'animateMotion']:
 			continue
-			
+
 		distinctAttrs = []
 		# loop through all current 'common' attributes
 		for name in commonAttrs.keys():
@@ -970,7 +951,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
 		# remove those attributes which are not common
 		for name in distinctAttrs:
 			del commonAttrs[name]
-	
+
 	# commonAttrs now has all the inheritable attributes which are common among all child elements
 	for name in commonAttrs.keys():
 		for child in childElements:
@@ -985,37 +966,37 @@ def createGroupsForCommonAttributes(elem):
 	"""
 	Creates <g> elements to contain runs of 3 or more
 	consecutive child elements having at least one common attribute.
-	
+
 	Common attributes are not promoted to the <g> by this function.
 	This is handled by moveCommonAttributesToParentGroup.
-	
+
 	If all children have a common attribute, an extra <g> is not created.
-	
+
 	This function acts recursively on the given element.
 	"""
 	num = 0
 	global numElemsRemoved
-	
+
 	# TODO perhaps all of the Presentation attributes in http://www.w3.org/TR/SVG/struct.html#GElement
 	# could be added here
 	# Cyn: These attributes are the same as in moveAttributesToParentGroup, and must always be
 	for curAttr in ['clip-rule',
-				'display-align', 
-				'fill', 'fill-opacity', 'fill-rule', 
+				'display-align',
+				'fill', 'fill-opacity', 'fill-rule',
 				'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
 				'font-style', 'font-variant', 'font-weight',
 				'letter-spacing',
 				'pointer-events', 'shape-rendering',
 				'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
 				'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
-				'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+				'text-anchor', 'text-decoration', 'text-rendering', 'visibility',
 				'word-spacing', 'writing-mode']:
 		# Iterate through the children in reverse order, so item(i) for
 		# items we have yet to visit still returns the correct nodes.
 		curChild = elem.childNodes.length - 1
 		while curChild >= 0:
 			childNode = elem.childNodes.item(curChild)
-			
+
 			if childNode.nodeType == 1 and childNode.getAttribute(curAttr) != '':
 				# We're in a possible run! Track the value and run length.
 				value = childNode.getAttribute(curAttr)
@@ -1023,7 +1004,7 @@ def createGroupsForCommonAttributes(elem):
 				# Run elements includes only element tags, no whitespace/comments/etc.
 				# Later, we calculate a run length which includes these.
 				runElements = 1
-				
+
 				# Backtrack to get all the nodes having the same
 				# attribute value, preserving any nodes in-between.
 				while runStart > 0:
@@ -1034,13 +1015,13 @@ def createGroupsForCommonAttributes(elem):
 							runElements += 1
 							runStart -= 1
 					else: runStart -= 1
-				
+
 				if runElements >= 3:
 					# Include whitespace/comment/etc. nodes in the run.
 					while runEnd < elem.childNodes.length - 1:
 						if elem.childNodes.item(runEnd + 1).nodeType == 1: break
 						else: runEnd += 1
-					
+
 					runLength = runEnd - runStart + 1
 					if runLength == elem.childNodes.length: # Every child has this
 						# If the current parent is a <g> already,
@@ -1055,7 +1036,7 @@ def createGroupsForCommonAttributes(elem):
 						# it's going to be worth making the <g> since
 						# <svg> doesn't support attributes like 'stroke'.
 						# Fall through.
-					
+
 					# Create a <g> element from scratch.
 					# We need the Document for this.
 					document = elem.ownerDocument
@@ -1077,7 +1058,7 @@ def createGroupsForCommonAttributes(elem):
 					curChild -= 1
 			else:
 				curChild -= 1
-	
+
 	# each child gets the same treatment, recursively
 	for childNode in elem.childNodes:
 		if childNode.nodeType == 1:
@@ -1095,10 +1076,10 @@ def removeUnusedAttributesOnParent(elem):
 	childElements = []
 	# recurse first into the children (depth-first)
 	for child in elem.childNodes:
-		if child.nodeType == 1: 
+		if child.nodeType == 1:
 			childElements.append(child)
 			num += removeUnusedAttributesOnParent(child)
-	
+
 	# only process the children if there are more than one element
 	if len(childElements) <= 1: return num
 
@@ -1108,18 +1089,18 @@ def removeUnusedAttributesOnParent(elem):
 	for num in xrange(attrList.length):
 		attr = attrList.item(num)
 		if attr.nodeName in ['clip-rule',
-					'display-align', 
-					'fill', 'fill-opacity', 'fill-rule', 
+					'display-align',
+					'fill', 'fill-opacity', 'fill-rule',
 					'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch',
 					'font-style', 'font-variant', 'font-weight',
 					'letter-spacing',
 					'pointer-events', 'shape-rendering',
 					'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin',
 					'stroke-miterlimit', 'stroke-opacity', 'stroke-width',
-					'text-anchor', 'text-decoration', 'text-rendering', 'visibility', 
+					'text-anchor', 'text-decoration', 'text-rendering', 'visibility',
 					'word-spacing', 'writing-mode']:
 			unusedAttrs[attr.nodeName] = attr.nodeValue
-	
+
 	# for each child, if at least one child inherits the parent's attribute, then remove
 	for childNum in xrange(len(childElements)):
 		child = childElements[childNum]
@@ -1130,18 +1111,18 @@ def removeUnusedAttributesOnParent(elem):
 				inheritedAttrs.append(name)
 		for a in inheritedAttrs:
 			del unusedAttrs[a]
-	
+
 	# unusedAttrs now has all the parent attributes that are unused
 	for name in unusedAttrs.keys():
 		elem.removeAttribute(name)
 		num += 1
-	
+
 	return num
-	
+
 def removeDuplicateGradientStops(doc):
 	global numElemsRemoved
 	num = 0
-	
+
 	for gradType in ['linearGradient', 'radialGradient']:
 		for grad in doc.getElementsByTagName(gradType):
 			stops = {}
@@ -1158,7 +1139,7 @@ def removeDuplicateGradientStops(doc):
 				# set the stop offset value to the integer or floating point equivalent
 				if int(offset) == offset: stop.setAttribute('offset', str(int(offset)))
 				else: stop.setAttribute('offset', str(offset))
-					
+
 				color = stop.getAttribute('stop-color')
 				opacity = stop.getAttribute('stop-opacity')
 				style = stop.getAttribute('style')
@@ -1167,21 +1148,21 @@ def removeDuplicateGradientStops(doc):
 					if oldStop[0] == color and oldStop[1] == opacity and oldStop[2] == style:
 						stopsToRemove.append(stop)
 				stops[offset] = [color, opacity, style]
-				
+
 			for stop in stopsToRemove:
 				stop.parentNode.removeChild(stop)
 				num += 1
 				numElemsRemoved += 1
-	
+
 	# linear gradients
 	return num
 
 def collapseSinglyReferencedGradients(doc):
 	global numElemsRemoved
 	num = 0
-	
+
 	identifiedElements = findElementsWithId(doc.documentElement)
-	
+
 	# make sure to reset the ref'ed ids for when we are running this in testscour
 	for rid,nodeCount in findReferencedElements(doc.documentElement).iteritems():
 		count = nodeCount[0]
@@ -1197,46 +1178,46 @@ def collapseSinglyReferencedGradients(doc):
 				if refElem.nodeType == 1 and refElem.nodeName in ['linearGradient', 'radialGradient'] \
 						and refElem.namespaceURI == NS['SVG']:
 					# elem is a gradient referenced by only one other gradient (refElem)
-					
+
 					# add the stops to the referencing gradient (this removes them from elem)
 					if len(refElem.getElementsByTagName('stop')) == 0:
 						stopsToAdd = elem.getElementsByTagName('stop')
 						for stop in stopsToAdd:
 							refElem.appendChild(stop)
-							
+
 					# adopt the gradientUnits, spreadMethod,  gradientTransform attributes if
 					# they are unspecified on refElem
 					for attr in ['gradientUnits','spreadMethod','gradientTransform']:
 						if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
 							refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
-							
+
 					# if both are radialGradients, adopt elem's fx,fy,cx,cy,r attributes if
 					# they are unspecified on refElem
 					if elem.nodeName == 'radialGradient' and refElem.nodeName == 'radialGradient':
 						for attr in ['fx','fy','cx','cy','r']:
 							if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
 								refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
-					
-					# if both are linearGradients, adopt elem's x1,y1,x2,y2 attributes if 
+
+					# if both are linearGradients, adopt elem's x1,y1,x2,y2 attributes if
 					# they are unspecified on refElem
 					if elem.nodeName == 'linearGradient' and refElem.nodeName == 'linearGradient':
 						for attr in ['x1','y1','x2','y2']:
 							if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
 								refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
-								
+
 					# now remove the xlink:href from refElem
 					refElem.removeAttributeNS(NS['XLINK'], 'href')
-					
+
 					# now delete elem
 					elem.parentNode.removeChild(elem)
 					numElemsRemoved += 1
-					num += 1		
+					num += 1
 	return num
 
 def removeDuplicateGradients(doc):
 	global numElemsRemoved
 	num = 0
-	
+
 	gradientsToRemove = {}
 	duplicateToMaster = {}
 
@@ -1255,7 +1236,7 @@ def removeDuplicateGradients(doc):
 					if grad.getAttribute(attr) != ograd.getAttribute(attr):
 						someGradAttrsDoNotMatch = True
 						break;
-				
+
 				if someGradAttrsDoNotMatch: continue
 
 				# compare xlink:href values too
@@ -1288,7 +1269,7 @@ def removeDuplicateGradients(doc):
 							gradientsToRemove[grad] = []
 						gradientsToRemove[grad].append( ograd )
 						duplicateToMaster[ograd] = grad
-	
+
 	# get a collection of all elements that are referenced and their referencing elements
 	referencedIDs = findReferencedElements(doc.documentElement)
 	for masterGrad in gradientsToRemove.keys():
@@ -1316,7 +1297,7 @@ def removeDuplicateGradients(doc):
 					if v == 'url(#'+dup_id+')' or v == 'url("#'+dup_id+'")' or v == "url('#"+dup_id+"')":
 						styles[style] = 'url(#'+master_id+')'
 				_setStyle(elem, styles)
-			
+
 			# now that all referencing elements have been re-mapped to the master
 			# it is safe to remove this gradient from the document
 			dupGrad.parentNode.removeChild(dupGrad)
@@ -1326,7 +1307,7 @@ def removeDuplicateGradients(doc):
 
 def _getStyle(node):
 	u"""Returns the style attribute of a node as a dictionary."""
-	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :	
+	if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :
 		styleMap = { }
 		rawStyles = node.getAttribute('style').split(';')
 		for style in rawStyles:
@@ -1376,7 +1357,7 @@ def repairStyle(node, options):
 		#  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
 		#  TODO: should also detect if the computed value of this element is stroke="none"
 		if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
-			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit', 
+			for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit',
 					'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
 				if styleMap.has_key(strokestyle) :
 					del styleMap[strokestyle]
@@ -1391,7 +1372,7 @@ def repairStyle(node, options):
 				if styleMap.has_key(fillstyle) :
 					del styleMap[fillstyle]
 					num += 1
-					
+
 		#  fill-opacity: 0
 		if styleMap.has_key('fill-opacity') :
 			fillOpacity = float(styleMap['fill-opacity'])
@@ -1400,32 +1381,32 @@ def repairStyle(node, options):
 					if styleMap.has_key(uselessFillStyle):
 						del styleMap[uselessFillStyle]
 						num += 1
-		
+
 		#  stroke-opacity: 0
 		if styleMap.has_key('stroke-opacity') :
-			strokeOpacity = float(styleMap['stroke-opacity']) 
+			strokeOpacity = float(styleMap['stroke-opacity'])
 			if strokeOpacity == 0.0 :
-				for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap', 
+				for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap',
 							'stroke-dasharray', 'stroke-dashoffset' ] :
-					if styleMap.has_key(uselessStrokeStyle): 
+					if styleMap.has_key(uselessStrokeStyle):
 						del styleMap[uselessStrokeStyle]
 						num += 1
 
 		# stroke-width: 0
 		if styleMap.has_key('stroke-width') :
-			strokeWidth = SVGLength(styleMap['stroke-width']) 
+			strokeWidth = SVGLength(styleMap['stroke-width'])
 			if strokeWidth.value == 0.0 :
-				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap', 
+				for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap',
 							'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
-					if styleMap.has_key(uselessStrokeStyle): 
+					if styleMap.has_key(uselessStrokeStyle):
 						del styleMap[uselessStrokeStyle]
 						num += 1
-		
+
 		# remove font properties for non-text elements
 		# I've actually observed this in real SVG content
 		if not mayContainTextNodes(node):
-			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust', 
-								'font-style', 'font-variant', 'font-weight', 
+			for fontstyle in [ 'font-family', 'font-size', 'font-stretch', 'font-size-adjust',
+								'font-style', 'font-variant', 'font-weight',
 								'letter-spacing', 'line-height', 'kerning',
 								'text-align', 'text-anchor', 'text-decoration',
 								'text-rendering', 'unicode-bidi',
@@ -1448,7 +1429,7 @@ def repairStyle(node, options):
 				num += 1
 			# it is a marker, pattern or svg
 			# as long as this node is not the document <svg>, then only
-			# remove overflow='hidden'.  See 
+			# remove overflow='hidden'.  See
 			# http://www.w3.org/TR/2010/WD-SVG11-20100622/masking.html#OverflowProperty
 			elif node != node.ownerDocument.documentElement:
 				if styleMap['overflow'] == 'hidden':
@@ -1458,21 +1439,21 @@ def repairStyle(node, options):
 			elif styleMap['overflow'] == 'visible':
 					del styleMap['overflow']
 					num += 1
-		
-		# now if any of the properties match known SVG attributes we prefer attributes 
+
+		# now if any of the properties match known SVG attributes we prefer attributes
 		# over style so emit them and remove them from the style map
 		if options.style_to_xml:
 			for propName in styleMap.keys() :
 				if propName in svgAttributes :
 					node.setAttribute(propName, styleMap[propName])
 					del styleMap[propName]
-		
+
 		_setStyle(node, styleMap)
-		
+
 	# recurse for our child elements
 	for child in node.childNodes :
 		num += repairStyle(child,options)
-			
+
 	return num
 
 def mayContainTextNodes(node):
@@ -1519,7 +1500,7 @@ def mayContainTextNodes(node):
 
 def taint(taintedSet, taintedAttribute):
 	u"""Adds an attribute to a set of attributes.
-	
+
 	Related attributes are also included."""
 	taintedSet.add(taintedAttribute)
 	if taintedAttribute == 'marker':
@@ -1530,21 +1511,21 @@ def taint(taintedSet, taintedAttribute):
 
 def removeDefaultAttributeValues(node, options, tainted=set()):
 	u"""'tainted' keeps a set of attributes defined in parent nodes.
-	
+
 	For such attributes, we don't delete attributes with default values."""
 	num = 0
 	if node.nodeType != 1: return 0
-	
+
 	# gradientUnits: objectBoundingBox
 	if node.getAttribute('gradientUnits') == 'objectBoundingBox':
 		node.removeAttribute('gradientUnits')
 		num += 1
-		
+
 	# spreadMethod: pad
 	if node.getAttribute('spreadMethod') == 'pad':
 		node.removeAttribute('spreadMethod')
 		num += 1
-		
+
 	# x1: 0%
 	if node.getAttribute('x1') != '':
 		x1 = SVGLength(node.getAttribute('x1'))
@@ -1605,9 +1586,9 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
 		if (r.value == 50 and r.units == Unit.PCT) or (r.value == 0.5 and r.units == Unit.NONE):
 			node.removeAttribute('r')
 			num += 1
-	
+
 	# Summarily get rid of some more attributes
-	attributes = [node.attributes.item(i).nodeName 
+	attributes = [node.attributes.item(i).nodeName
 				  for i in range(node.attributes.length)]
 	for attribute in attributes:
 		if attribute not in tainted:
@@ -1632,7 +1613,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
 	# recurse for our child elements
 	for child in node.childNodes :
 		num += removeDefaultAttributeValues(child, options, tainted.copy())
-	
+
 	return num
 
 rgb = re.compile(r"\s*rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*")
@@ -1642,10 +1623,10 @@ def convertColor(value):
 		Converts the input color string and returns a #RRGGBB (or #RGB if possible) string
 	"""
 	s = value
-	
+
 	if s in colors.keys():
 		s = colors[s]
-	
+
 	rgbpMatch = rgbp.match(s)
 	if rgbpMatch != None :
 		r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
@@ -1659,20 +1640,20 @@ def convertColor(value):
 			g = int( rgbMatch.group(2) )
 			b = int( rgbMatch.group(3) )
 			s = '#%02x%02x%02x' % (r, g, b)
-	
+
 	if s[0] == '#':
 		s = s.lower()
 		if len(s)==7 and s[1]==s[2] and s[3]==s[4] and s[5]==s[6]:
 			s = '#'+s[1]+s[3]+s[5]
 
 	return s
-	
+
 def convertColors(element) :
 	"""
 		Recursively converts all color properties into #RRGGBB format if shorter
 	"""
 	numBytes = 0
-	
+
 	if element.nodeType != 1: return 0
 
 	# set up list of color attributes for each element type
@@ -1706,7 +1687,7 @@ def convertColors(element) :
 				styles[attr] = newColorValue
 				numBytes += (oldBytes - len(element.getAttribute(attr)))
 	_setStyle(element, styles)
-	
+
 	# now recurse for our child elements
 	for child in element.childNodes :
 		numBytes += convertColors(child)
@@ -1718,12 +1699,12 @@ def convertColors(element) :
 #       reusing data structures, etc
 def cleanPath(element, options) :
 	"""
-		Cleans the path string (d attribute) of the element 
+		Cleans the path string (d attribute) of the element
 	"""
 	global numBytesSavedInPathData
 	global numPathSegmentsReduced
 	global numCurvesStraightened
-	
+
 	# this gets the parser object from svg_regex.py
 	oldPathStr = element.getAttribute('d')
 	path = svg_parser.parse(oldPathStr)
@@ -1735,7 +1716,7 @@ def cleanPath(element, options) :
 	# The first command must be a moveto, and whether it's relative (m)
 	# or absolute (M), the first set of coordinates *is* absolute. So
 	# the first iteration of the loop below will get x,y and startx,starty.
-	
+
 	# convert absolute coordinates into relative ones.
 	# Reuse the data structure 'path', since we're not adding or removing subcommands.
 	# Also reuse the coordinate lists since we're not adding or removing any.
@@ -1775,7 +1756,7 @@ def cleanPath(element, options) :
 			if pathIndex != 0:
 				data[0] -= x
 				data[1] -= y
-			
+
 			x, y = startx, starty
 			i = 2
 			for i in xrange(i, len(data), 2):
@@ -1836,7 +1817,7 @@ def cleanPath(element, options) :
 		elif cmd in ['z','Z']:
 			x, y = startx, starty
 			path[pathIndex] = ('z', data)
-	
+
 	# remove empty segments
 	# Reuse the data structure 'path' and the coordinate lists, even if we're
 	# deleting items, because these deletions are relatively cheap.
@@ -1885,10 +1866,10 @@ def cleanPath(element, options) :
 				oldLen = len(data)
 				path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
 				numPathSegmentsReduced += len(path[pathIndex][1]) - oldLen
-	
+
 	# fixup: Delete subcommands having no coordinates.
 	path = [elem for elem in path if len(elem[1]) > 0 or elem[0] == 'z']
-	
+
 	# convert straight curves into lines
 	newPath = [path[0]]
 	for (cmd,data) in path[1:]:
@@ -1904,9 +1885,9 @@ def cleanPath(element, options) :
 				(p2x,p2y) = (data[i+2],data[i+3])
 				dx = data[i+4]
 				dy = data[i+5]
-				
+
 				foundStraightCurve = False
-				
+
 				if dx == 0:
 					if p1x == 0 and p2x == 0:
 						foundStraightCurve = True
@@ -1925,7 +1906,7 @@ def cleanPath(element, options) :
 					numCurvesStraightened += 1
 				else:
 					newData.extend(data[i:i+6])
-					
+
 				i += 6
 		if newData or cmd == 'z' or cmd == 'Z':
 			newPath.append( (cmd,newData) )
@@ -1942,13 +1923,13 @@ def cleanPath(element, options) :
 				newPath.append( (prevCmd, prevData) )
 				prevCmd = ''
 				prevData = []
-		
+
 		# if the previous and current commands are the same type,
 		# or the previous command is moveto and the current is lineto, collapse,
 		# but only if they are not move commands (since move can contain implicit lineto commands)
 		if (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')) and cmd != 'm':
 			prevData.extend(data)
-		
+
 		# save last command and data
 		else:
 			prevCmd = cmd
@@ -1972,7 +1953,7 @@ def cleanPath(element, options) :
 						# flush the existing line command
 						newPath.append( ('l', lineTuples) )
 						lineTuples = []
-					# append the v and then the remaining line coords						
+					# append the v and then the remaining line coords
 					newPath.append( ('v', [data[i+1]]) )
 					numPathSegmentsReduced += 1
 				elif data[i+1] == 0:
@@ -1999,7 +1980,7 @@ def cleanPath(element, options) :
 						newPath.append( (cmd, lineTuples) )
 						lineTuples = []
 						cmd = 'l' # dealing with linetos now
-					# append the v and then the remaining line coords						
+					# append the v and then the remaining line coords
 					newPath.append( ('v', [data[i+1]]) )
 					numPathSegmentsReduced += 1
 				elif data[i+1] == 0:
@@ -2015,7 +1996,7 @@ def cleanPath(element, options) :
 				i += 2
 			if lineTuples:
 				newPath.append( (cmd, lineTuples) )
-		# convert Bézier curve segments into s where possible	
+		# convert Bézier curve segments into s where possible
 		elif cmd == 'c':
 			bez_ctl_pt = (0,0)
 			i = 0
@@ -2036,14 +2017,14 @@ def cleanPath(element, options) :
 					while j <= 5:
 						curveTuples.append(data[i+j])
 						j += 1
-				
+
 				# set up control point for next curve segment
 				bez_ctl_pt = (data[i+4]-data[i+2], data[i+5]-data[i+3])
 				i += 6
-				
+
 			if curveTuples:
 				newPath.append( ('c', curveTuples) )
-		# convert quadratic curve segments into t where possible	
+		# convert quadratic curve segments into t where possible
 		elif cmd == 'q':
 			quad_ctl_pt = (0,0)
 			i = 0
@@ -2061,16 +2042,16 @@ def cleanPath(element, options) :
 					while j <= 3:
 						curveTuples.append(data[i+j])
 						j += 1
-				
+
 				quad_ctl_pt = (data[i+2]-data[i], data[i+3]-data[i+1])
 				i += 4
-				
+
 			if curveTuples:
 				newPath.append( ('q', curveTuples) )
 		else:
 			newPath.append( (cmd, data) )
 	path = newPath
-		
+
 	# for each h or v, collapse unnecessary coordinates that run in the same direction
 	# i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
 	# Reuse the data structure 'path', since we're not adding or removing subcommands.
@@ -2087,7 +2068,7 @@ def cleanPath(element, options) :
 					numPathSegmentsReduced += 1
 				else:
 					coordIndex += 1
-	
+
 	# it is possible that we have consecutive h, v, c, t commands now
 	# so again collapse all consecutive commands of the same type into one command
 	prevCmd = ''
@@ -2100,11 +2081,11 @@ def cleanPath(element, options) :
 				newPath.append( (prevCmd, prevData) )
 				prevCmd = ''
 				prevData = []
-		
+
 		# if the previous and current commands are the same type, collapse
 		if cmd == prevCmd and cmd != 'm':
 				prevData.extend(data)
-		
+
 		# save last command and data
 		else:
 			prevCmd = cmd
@@ -2113,7 +2094,7 @@ def cleanPath(element, options) :
 	if prevCmd != '':
 		newPath.append( (prevCmd, prevData) )
 	path = newPath
-	
+
 	newPathStr = serializePath(path, options)
 	numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
 	element.setAttribute('d', newPathStr)
@@ -2121,36 +2102,33 @@ def cleanPath(element, options) :
 def parseListOfPoints(s):
 	"""
 		Parse string into a list of points.
-	
+
 		Returns a list of containing an even number of coordinate strings
 	"""
 	i = 0
-	
+
 	# (wsp)? comma-or-wsp-separated coordinate pairs (wsp)?
 	# coordinate-pair = coordinate comma-or-wsp coordinate
 	# coordinate = sign? integer
 	# comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
 	ws_nums = re.split(r"\s*,?\s*", s.strip())
 	nums = []
-	
+
 	# also, if 100-100 is found, split it into two also
 	#  <polygon points="100,-100,100-100,100-100-100,-100-100" />
 	for i in xrange(len(ws_nums)):
 		negcoords = ws_nums[i].split("-")
-		
+
 		# this string didn't have any negative coordinates
 		if len(negcoords) == 1:
 			nums.append(negcoords[0])
 		# we got negative coords
 		else:
 			for j in xrange(len(negcoords)):
+				# first number could be positive
 				if j == 0:
-					# first number could be positive
 					if negcoords[0] != '':
 						nums.append(negcoords[0])
-				# but it could also be negative
-				elif len(nums) == 0:
-					nums.append('-' + negcoords[j])
 				# otherwise all other strings will be negative
 				else:
 					# unless we accidentally split a number that was in scientific notation
@@ -2163,7 +2141,7 @@ def parseListOfPoints(s):
 
 	# if we have an odd number of points, return empty
 	if len(nums) % 2 != 0: return []
-		
+
 	# now resolve into Decimal values
 	i = 0
 	while i < len(nums):
@@ -2172,20 +2150,20 @@ def parseListOfPoints(s):
 			nums[i + 1] = getcontext().create_decimal(nums[i + 1])
 		except decimal.InvalidOperation: # one of the lengths had a unit or is an invalid number
 			return []
-		
+
 		i += 2
 
 	return nums
-	
+
 def cleanPolygon(elem, options):
 	"""
 		Remove unnecessary closing point of polygon points attribute
 	"""
 	global numPointsRemovedFromPolygon
-	
+
 	pts = parseListOfPoints(elem.getAttribute('points'))
 	N = len(pts)/2
-	if N >= 2:		
+	if N >= 2:
 		(startx,starty) = pts[:2]
 		(endx,endy) = pts[-2:]
 		if startx == endx and starty == endy:
@@ -2197,7 +2175,7 @@ def cleanPolyline(elem, options):
 	"""
 		Scour the polyline points attribute
 	"""
-	pts = parseListOfPoints(elem.getAttribute('points'))		
+	pts = parseListOfPoints(elem.getAttribute('points'))
 	elem.setAttribute('points', scourCoordinates(pts, options, True))
 
 def serializePath(pathObj, options):
@@ -2244,12 +2222,12 @@ def scourCoordinates(data, options, forceCommaWsp = False):
 				or (scouredCoord[0] == '.' and not ('.' in previousCoord or 'e' in previousCoord))
 				):
 				newData.append( ' ' )
-				
+
 			# add the scoured coordinate to the path string
 			newData.append( scouredCoord )
 			previousCoord = scouredCoord
 			c += 1
-	
+
 		# What we need to do to work around GNOME bugs 548494, 563933 and
 		# 620565, which are being fixed and unfixed in Ubuntu, is
 		# to make sure that a dot doesn't immediately follow a command
@@ -2265,7 +2243,7 @@ def scourCoordinates(data, options, forceCommaWsp = False):
 				return ''.join(newData)
 		else:
 			return ''.join(newData)
-	
+
 	return ''
 
 def scourLength(length):
@@ -2273,13 +2251,13 @@ def scourLength(length):
 	Scours a length. Accepts units.
 	"""
 	length = SVGLength(length)
-	
+
 	return scourUnitlessLength(length.value) + Unit.str(length.units)
 
 def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a numeric type
 	"""
 	Scours the numeric part of a length only. Does not accept units.
-	
+
 	This is faster than scourLength on elements guaranteed not to
 	contain units.
 	"""
@@ -2290,7 +2268,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
 	# remove those
 	if int(length) == length:
 		length = getcontext().create_decimal(int(length))
-	
+
 	# gather the non-scientific notation version of the coordinate.
 	# this may actually be in scientific notation if the value is
 	# sufficiently large or small, so this is a misnomer.
@@ -2300,12 +2278,12 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
 			nonsci = nonsci[1:] # remove the 0, leave the dot
 		elif len(nonsci) > 3 and nonsci[:3] == '-0.':
 			nonsci = '-' + nonsci[2:] # remove the 0, leave the minus and dot
-	
+
 	if len(nonsci) > 3: # avoid calling normalize unless strictly necessary
 		# and then the scientific notation version, with E+NUMBER replaced with
 		# just eNUMBER, since SVG accepts this.
 		sci = unicode(length.normalize()).lower().replace("e+", "e")
-	
+
 		if len(sci) < len(nonsci): return sci
 		else: return nonsci
 	else: return nonsci
@@ -2314,18 +2292,18 @@ def reducePrecision(element) :
 	"""
 	Because opacities, letter spacings, stroke widths and all that don't need
 	to be preserved in SVG files with 9 digits of precision.
-	
+
 	Takes all of these attributes, in the given element node and its children,
 	and reduces their precision to the current Decimal context's precision.
 	Also checks for the attributes actually being lengths, not 'inherit', 'none'
 	or anything that isn't an SVGLength.
-	
+
 	Returns the number of bytes saved after performing these reductions.
 	"""
 	num = 0
-	
+
 	styles = _getStyle(element)
-	for lengthAttr in ['opacity', 'flood-opacity', 'fill-opacity', 
+	for lengthAttr in ['opacity', 'flood-opacity', 'fill-opacity',
 						'stroke-opacity', 'stop-opacity', 'stroke-miterlimit',
 						'stroke-dashoffset', 'letter-spacing', 'word-spacing',
 						'kerning', 'font-size-adjust', 'font-size',
@@ -2348,11 +2326,11 @@ def reducePrecision(element) :
 					num += len(val) - len(newVal)
 					styles[lengthAttr] = newVal
 	_setStyle(element, styles)
-	
+
 	for child in element.childNodes:
 		if child.nodeType == 1:
 			num += reducePrecision(child)
-	
+
 	return num
 
 def optimizeAngle(angle):
@@ -2381,7 +2359,7 @@ def optimizeTransform(transform):
 	"""
 	Optimises a series of transformations parsed from a single
 	transform="" attribute.
-	
+
 	The transformation list is modified in-place.
 	"""
 	# FIXME: reordering these would optimize even more cases:
@@ -2441,7 +2419,7 @@ def optimizeTransform(transform):
 				else:
 					A =  180 - A
 			transform[0] = ('rotate', [A])
-	
+
 	# Simplify transformations where numbers are optional.
 	for type, args in transform:
 		if type == 'translate':
@@ -2539,31 +2517,31 @@ def optimizeTransform(transform):
 def optimizeTransforms(element, options) :
 	"""
 	Attempts to optimise transform specifications on the given node and its children.
-	
+
 	Returns the number of bytes saved after performing these reductions.
 	"""
 	num = 0
-	
+
 	for transformAttr in ['transform', 'patternTransform', 'gradientTransform']:
 		val = element.getAttribute(transformAttr)
 		if val != '':
 			transform = svg_transform_parser.parse(val)
-			
+
 			optimizeTransform(transform)
-			
+
 			newVal = serializeTransform(transform)
-			
+
 			if len(newVal) < len(val):
 				if len(newVal):
 					element.setAttribute(transformAttr, newVal)
 				else:
 					element.removeAttribute(transformAttr)
 				num += len(val) - len(newVal)
-	
+
 	for child in element.childNodes:
 		if child.nodeType == 1:
 			num += optimizeTransforms(child, options)
-	
+
 	return num
 
 def removeComments(element) :
@@ -2575,21 +2553,17 @@ def removeComments(element) :
 	if isinstance(element, xml.dom.minidom.Document):
 		# must process the document object separately, because its
 		# documentElement's nodes have None as their parentNode
-		# iterate in reverse order to prevent mess-ups with renumbering
-		for index in xrange(len(element.childNodes) - 1, -1, -1):
-			subelement = element.childNodes[index]
-			if isinstance(subelement, xml.dom.minidom.Comment):
-				numCommentBytes += len(subelement.data)
-				element.removeChild(subelement)
+		for subelement in element.childNodes:
+			if isinstance(element, xml.dom.minidom.Comment):
+				numCommentBytes += len(element.data)
+				element.documentElement.removeChild(subelement)
 			else:
 				removeComments(subelement)
 	elif isinstance(element, xml.dom.minidom.Comment):
 		numCommentBytes += len(element.data)
 		element.parentNode.removeChild(element)
 	else:
-		# iterate in reverse order to prevent mess-ups with renumbering
-		for index in xrange(len(element.childNodes) - 1, -1, -1):
-			subelement = element.childNodes[index]
+		for subelement in element.childNodes:
 			removeComments(subelement)
 
 def embedRasters(element, options) :
@@ -2597,18 +2571,18 @@ def embedRasters(element, options) :
 	import urllib
 	"""
 		Converts raster references to inline images.
-		NOTE: there are size limits to base64-encoding handling in browsers 
+		NOTE: there are size limits to base64-encoding handling in browsers
 	"""
 	global numRastersEmbedded
 
 	href = element.getAttributeNS(NS['XLINK'],'href')
-	
+
 	# if xlink:href is set, then grab the id
 	if href != '' and len(href) > 1:
-		# find if href value has filename ext		
+		# find if href value has filename ext
 		ext = os.path.splitext(os.path.basename(href))[1].lower()[1:]
-				
-		# look for 'png', 'jpg', and 'gif' extensions 
+
+		# look for 'png', 'jpg', and 'gif' extensions
 		if ext == 'png' or ext == 'jpg' or ext == 'gif':
 
 			# file:// URLs denote files on the local system too
@@ -2617,7 +2591,7 @@ def embedRasters(element, options) :
 			# does the file exist?
 			if os.path.isfile(href):
 				# if this is not an absolute path, set path relative
-				# to script file based on input arg 
+				# to script file based on input arg
 				infilename = '.'
 				if options.infilename: infilename = options.infilename
 				href = os.path.join(os.path.dirname(infilename), href)
@@ -2632,22 +2606,22 @@ def embedRasters(element, options) :
 				webFile = urllib.urlopen( href )
 				rasterdata = webFile.read()
 				webFile.close()
-			
-			# ... should we remove all images which don't resolve?	
+
+			# ... should we remove all images which don't resolve?
 			if rasterdata != '' :
 				# base64-encode raster
 				b64eRaster = base64.b64encode( rasterdata )
 
 				# set href attribute to base64-encoded equivalent
 				if b64eRaster != '':
-					# PNG and GIF both have MIME Type 'image/[ext]', but 
+					# PNG and GIF both have MIME Type 'image/[ext]', but
 					# JPEG has MIME Type 'image/jpeg'
 					if ext == 'jpg':
 						ext = 'jpeg'
 
 					element.setAttributeNS(NS['XLINK'], 'href', 'data:image/' + ext + ';base64,' + b64eRaster)
 					numRastersEmbedded += 1
-					del b64eRaster				
+					del b64eRaster
 
 def properlySizeDoc(docElement, options):
 	# get doc width and height
@@ -2661,7 +2635,7 @@ def properlySizeDoc(docElement, options):
 			(h.units != Unit.NONE and h.units != Unit.PX)):
 		    return
 
-	# else we have a statically sized image and we should try to remedy that	
+	# else we have a statically sized image and we should try to remedy that
 
 	# parse viewBox attribute
 	vbSep = re.split("\\s*\\,?\\s*", docElement.getAttribute('viewBox'), 3)
@@ -2674,7 +2648,7 @@ def properlySizeDoc(docElement, options):
 			vbY = float(vbSep[1])
 			if vbX != 0 or vbY != 0:
 				return
-				
+
 			# if width or height are not equal to doc width/height then it is not ok to overwrite it
 			vbWidth = float(vbSep[2])
 			vbHeight = float(vbSep[3])
@@ -2683,7 +2657,7 @@ def properlySizeDoc(docElement, options):
 		# if the viewBox did not parse properly it is invalid and ok to overwrite it
 		except ValueError:
 			pass
-	
+
 	# at this point it's safe to set the viewBox and remove width/height
 	docElement.setAttribute('viewBox', '0 0 %s %s' % (w.value, h.value))
 	docElement.removeAttribute('width')
@@ -2691,49 +2665,49 @@ def properlySizeDoc(docElement, options):
 
 def remapNamespacePrefix(node, oldprefix, newprefix):
 	if node == None or node.nodeType != 1: return
-	
+
 	if node.prefix == oldprefix:
 		localName = node.localName
 		namespace = node.namespaceURI
 		doc = node.ownerDocument
 		parent = node.parentNode
-	
+
 		# create a replacement node
 		newNode = None
 		if newprefix != '':
 			newNode = doc.createElementNS(namespace, newprefix+":"+localName)
 		else:
 			newNode = doc.createElement(localName);
-			
+
 		# add all the attributes
 		attrList = node.attributes
 		for i in xrange(attrList.length):
 			attr = attrList.item(i)
 			newNode.setAttributeNS( attr.namespaceURI, attr.localName, attr.nodeValue)
-	
+
 		# clone and add all the child nodes
 		for child in node.childNodes:
 			newNode.appendChild(child.cloneNode(True))
-			
+
 		# replace old node with new node
 		parent.replaceChild( newNode, node )
 		# set the node to the new node in the remapped namespace prefix
 		node = newNode
-	
+
 	# now do all child nodes
 	for child in node.childNodes :
-		remapNamespacePrefix(child, oldprefix, newprefix)	
+		remapNamespacePrefix(child, oldprefix, newprefix)
 
 def makeWellFormed(str):
 	xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
-	
+
 #	starr = []
 #	for c in str:
 #		if c in xml_ents:
 #			starr.append(xml_ents[c])
 #		else:
 #			starr.append(c)
-			
+
 	# this list comprehension is short-form for the above for-loop:
 	return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
 
@@ -2748,7 +2722,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 	I=''
 	if options.indent_type == 'tab': I='\t'
 	elif options.indent_type == 'space': I=' '
-	
+
 	outParts.extend([(I * ind), '<', element.nodeName])
 
 	# always serialize the id or xml:id attributes first
@@ -2764,7 +2738,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 		if id.find('"') != -1:
 			quot = "'"
 		outParts.extend([' xml:id=', quot, id, quot])
-	
+
 	# now serialize the other attributes
 	attrList = element.attributes
 	for num in xrange(attrList.length) :
@@ -2776,7 +2750,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 			quot = "'"
 
 		attrValue = makeWellFormed( attr.nodeValue )
-		
+
 		outParts.append(' ')
 		# preserve xmlns: if it is a namespace prefix declaration
 		if attr.prefix != None:
@@ -2793,12 +2767,12 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 				preserveWhitespace = True
 			elif attrValue == 'default':
 				preserveWhitespace = False
-	
+
 	# if no children, self-close
 	children = element.childNodes
 	if children.length > 0:
 		outParts.append('>')
-	
+
 		onNewLine = False
 		for child in element.childNodes:
 			# element node
@@ -2825,16 +2799,16 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 			# TODO: entities, processing instructions, what else?
 			else: # ignore the rest
 				pass
-				
+
 		if onNewLine: outParts.append(I * ind)
 		outParts.extend(['</', element.nodeName, '>'])
 		if indent > 0: outParts.append('\n')
 	else:
 		outParts.append('/>')
 		if indent > 0: outParts.append('\n')
-		
+
 	return "".join(outParts)
-	
+
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
@@ -2857,17 +2831,17 @@ def scourString(in_string, options=None):
 	# does it have to do with removal of children affecting the childlist?
 	if options.keep_editor_data == False:
 		while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
-			pass	
+			pass
 		while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
 			pass
-		
+
 		# remove the xmlns: declarations now
 		xmlnsDeclsToRemove = []
 		attrList = doc.documentElement.attributes
 		for num in xrange(attrList.length) :
 			if attrList.item(num).nodeValue in unwanted_ns :
 				xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
-		
+
 		for attr in xmlnsDeclsToRemove :
 			doc.documentElement.removeAttribute(attr)
 			numAttrsRemoved += 1
@@ -2877,7 +2851,7 @@ def scourString(in_string, options=None):
 	if doc.documentElement.getAttribute('xmlns') != 'http://www.w3.org/2000/svg':
 		doc.documentElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
 		# TODO: throw error or warning?
-	
+
 	# check for redundant SVG namespace declaration
 	attrList = doc.documentElement.attributes
 	xmlnsDeclsToRemove = []
@@ -2889,10 +2863,10 @@ def scourString(in_string, options=None):
 		if name[0:6] == 'xmlns:' and val == 'http://www.w3.org/2000/svg':
 			redundantPrefixes.append(name[6:])
 			xmlnsDeclsToRemove.append(name)
-			
+
 	for attrName in xmlnsDeclsToRemove:
 		doc.documentElement.removeAttribute(attrName)
-	
+
 	for prefix in redundantPrefixes:
 		remapNamespacePrefix(doc.documentElement, prefix, '')
 
@@ -2905,14 +2879,11 @@ def scourString(in_string, options=None):
 	# convert colors to #RRGGBB format
 	if options.simple_colors:
 		numBytesSavedInColors = convertColors(doc.documentElement)
-	
+
 	# remove <metadata> if the user wants to
 	if options.remove_metadata:
 		removeMetadataElements(doc)
-	
-	# flattend defs elements into just one defs element
-	flattenDefs(doc)
-	
+
 	# remove unreferenced gradients/patterns outside of defs
 	# and most unreferenced elements inside of defs
 	while removeUnreferencedElements(doc) > 0:
@@ -2944,20 +2915,20 @@ def scourString(in_string, options=None):
 
 	while removeDuplicateGradientStops(doc) > 0:
 		pass
-	
+
 	# remove gradients that are only referenced by one other gradient
 	while collapseSinglyReferencedGradients(doc) > 0:
 		pass
-		
+
 	# remove duplicate gradients
 	while removeDuplicateGradients(doc) > 0:
 		pass
-	
+
 	# create <g> elements if there are runs of elements with the same attributes.
 	# this MUST be before moveCommonAttributesToParentGroup.
 	if options.group_create:
 		createGroupsForCommonAttributes(doc.documentElement)
-	
+
 	# move common attributes to parent group
 	# NOTE: the if the <svg> element's immediate children
 	# all have the same value for an attribute, it must not
@@ -2966,10 +2937,10 @@ def scourString(in_string, options=None):
 	referencedIds = findReferencedElements(doc.documentElement)
 	for child in doc.documentElement.childNodes:
 		numAttrsRemoved += moveCommonAttributesToParentGroup(child, referencedIds)
-	
+
 	# remove unused attributes from parent
 	numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
-	
+
 	# Collapse groups LAST, because we've created groups. If done before
 	# moveAttributesToParentGroup, empty <g>'s may remain.
 	if options.group_collapse:
@@ -2990,7 +2961,7 @@ def scourString(in_string, options=None):
 			elem.parentNode.removeChild(elem)
 		else:
 			cleanPath(elem, options)
-	
+
 	# shorten ID names as much as possible
 	if options.shorten_ids:
 		numBytesSavedInIDs += shortenIDs(doc, unprotected_ids(doc, options))
@@ -2998,24 +2969,24 @@ def scourString(in_string, options=None):
 	# scour lengths (including coordinates)
 	for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
 		for elem in doc.getElementsByTagName(type):
-			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry', 
+			for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry',
 						'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
 				if elem.getAttribute(attr) != '':
-					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))	
-	
+					elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
+
 	# more length scouring in this function
 	numBytesSavedInLengths = reducePrecision(doc.documentElement)
-	
+
 	# remove default values of attributes
-	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)	
-	
+	numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)
+
 	# reduce the length of transformation attributes
 	numBytesSavedInTransforms = optimizeTransforms(doc.documentElement, options)
-	
-	# convert rasters references to base64-encoded strings 
+
+	# convert rasters references to base64-encoded strings
 	if options.embed_rasters:
 		for elem in doc.documentElement.getElementsByTagName('image') :
-			embedRasters(elem, options)		
+			embedRasters(elem, options)
 
 	# properly size the SVG document (ideally width/height should be 100% with a viewBox)
 	if options.enable_viewboxing:
@@ -3027,7 +2998,7 @@ def scourString(in_string, options=None):
 	# rolled our own serialize function here to save on space, put id first, customize indentation, etc
 #	out_string = doc.documentElement.toprettyxml(' ')
 	out_string = serializeXML(doc.documentElement, options) + '\n'
-	
+
 	# now strip out empty lines
 	lines = []
 	# Get rid of empty lines
@@ -3040,13 +3011,13 @@ def scourString(in_string, options=None):
 		total_output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
 	else:
 		total_output = ""
-	
+
 	for child in doc.childNodes:
 		if child.nodeType == 1:
 			total_output += "".join(lines)
 		else: # doctypes, entities, comments
 			total_output += child.toxml() + '\n'
-		
+
 	return total_output
 
 # used mostly by unit tests
@@ -3174,7 +3145,7 @@ def parse_args(args=None):
 		outfile = maybe_gziped_file(options.outfilename, "wb")
 	else:
 		outfile = sys.stdout
-		
+
 	return options, [infile, outfile]
 
 def getReport():
@@ -3192,7 +3163,7 @@ def getReport():
 		' Number of bytes saved in lengths: ' + str(numBytesSavedInLengths) + os.linesep + \
 		' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
 
-if __name__ == '__main__':
+def run():
 	if sys.platform == "win32":
 		from time import clock as get_tick
 	else:
@@ -3201,9 +3172,9 @@ if __name__ == '__main__':
 			return os.times()[0]
 
 	start = get_tick()
-	
+
 	options, (input, output) = parse_args()
-	
+
 	if not options.quiet:
 		print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
 
@@ -3223,9 +3194,13 @@ if __name__ == '__main__':
 		print >>sys.stderr, ' File:', input.name, \
 			os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
 			getReport()
-	
+
 		oldsize = len(in_string)
 		newsize = len(out_string)
 		sizediff = (newsize / oldsize) * 100
 		print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
 			'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
+
+if __name__ == '__main__':
+   run()
+
