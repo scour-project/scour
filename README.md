@@ -24,6 +24,26 @@ http://blog.codedread.com/
 
 http://www.codedread.com/scour/
 
+## Usage
+
+Standard:
+
+	scour -i mysvg.svg -o mysvg_opt.svg
+
+Better (this works in IE which needs Viewbox):
+
+	scour -i mysvg.svg -o mysvg_opt.svg --enable-viewboxing
+
+Maximum:
+
+	scour -i mysvg.svg -o mysvg_opt.svg --enable-viewboxing --enable-id-stripping \
+          --enable-comment-stripping --shorten-ids --indent=none
+
+Maximum + Compress:
+
+	scour -i mysvg.svg -o mysvg_opt.svgz --enable-viewboxing --enable-id-stripping \
+          --enable-comment-stripping --shorten-ids --indent=none
+
 ## Notes
 
 Packaging from [sources](http://www.codedread.com/scour/) retrieved on 2013/20/22:
