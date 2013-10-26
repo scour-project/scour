@@ -70,7 +70,7 @@ except ImportError:
    pass
 
 APP = 'scour'
-VER = '0.26'
+VER = '0.27'
 COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
 NS = {   'SVG':      'http://www.w3.org/2000/svg',
@@ -2099,6 +2099,8 @@ def cleanPath(element, options) :
    numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
    element.setAttribute('d', newPathStr)
 
+
+
 def parseListOfPoints(s):
    """
       Parse string into a list of points.
@@ -2155,6 +2157,8 @@ def parseListOfPoints(s):
 
    return nums
 
+
+
 def cleanPolygon(elem, options):
    """
       Remove unnecessary closing point of polygon points attribute
@@ -2171,12 +2175,16 @@ def cleanPolygon(elem, options):
          numPointsRemovedFromPolygon += 1
    elem.setAttribute('points', scourCoordinates(pts, options, True))
 
+
+
 def cleanPolyline(elem, options):
    """
       Scour the polyline points attribute
    """
    pts = parseListOfPoints(elem.getAttribute('points'))
    elem.setAttribute('points', scourCoordinates(pts, options, True))
+
+
 
 def serializePath(pathObj, options):
    """
@@ -2185,6 +2193,8 @@ def serializePath(pathObj, options):
    # elliptical arc commands must have comma/wsp separating the coordinates
    # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a'))  for cmd, data  in pathObj])
+
+
 
 def serializeTransform(transformObj):
    """
@@ -2196,6 +2206,8 @@ def serializeTransform(transformObj):
       ) + ')'
       for command, numbers in transformObj]
    )
+
+
 
 def scourCoordinates(data, options, forceCommaWsp = False):
    """
@@ -2246,6 +2258,8 @@ def scourCoordinates(data, options, forceCommaWsp = False):
 
    return ''
 
+
+
 def scourLength(length):
    """
    Scours a length. Accepts units.
@@ -2253,6 +2267,8 @@ def scourLength(length):
    length = SVGLength(length)
 
    return scourUnitlessLength(length.value) + Unit.str(length.units)
+
+
 
 def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a numeric type
    """
@@ -2287,6 +2303,8 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
       if len(sci) < len(nonsci): return sci
       else: return nonsci
    else: return nonsci
+
+
 
 def reducePrecision(element) :
    """
@@ -2333,6 +2351,8 @@ def reducePrecision(element) :
 
    return num
 
+
+
 def optimizeAngle(angle):
    """
    Because any rotation can be expressed within 360 degrees
@@ -2353,6 +2373,7 @@ def optimizeAngle(angle):
    if  angle >= 270: angle -=  360
    elif angle < -90: angle +=  360
    return angle
+
 
 
 def optimizeTransform(transform):
@@ -2514,6 +2535,8 @@ def optimizeTransform(transform):
       else:
          i += 1
 
+
+
 def optimizeTransforms(element, options) :
    """
    Attempts to optimise transform specifications on the given node and its children.
@@ -2544,6 +2567,8 @@ def optimizeTransforms(element, options) :
 
    return num
 
+
+
 def removeComments(element) :
    """
       Removes comments from the element and its children.
@@ -2565,6 +2590,8 @@ def removeComments(element) :
    else:
       for subelement in element.childNodes:
          removeComments(subelement)
+
+
 
 def embedRasters(element, options) :
    import base64
@@ -2623,6 +2650,8 @@ def embedRasters(element, options) :
                numRastersEmbedded += 1
                del b64eRaster
 
+
+
 def properlySizeDoc(docElement, options):
    # get doc width and height
    w = SVGLength(docElement.getAttribute('width'))
@@ -2663,6 +2692,8 @@ def properlySizeDoc(docElement, options):
    docElement.removeAttribute('width')
    docElement.removeAttribute('height')
 
+
+
 def remapNamespacePrefix(node, oldprefix, newprefix):
    if node == None or node.nodeType != 1: return
 
@@ -2698,6 +2729,8 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
    for child in node.childNodes :
       remapNamespacePrefix(child, oldprefix, newprefix)
 
+
+
 def makeWellFormed(str):
    xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
 
@@ -2710,6 +2743,8 @@ def makeWellFormed(str):
 
    # this list comprehension is short-form for the above for-loop:
    return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
+
+
 
 # hand-rolled serialization function that has the following benefits:
 # - pretty printing
@@ -2808,6 +2843,8 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
       if indent > 0: outParts.append('\n')
 
    return "".join(outParts)
+
+
 
 # this is the main method
 # input is a string representation of the input XML
@@ -3020,6 +3057,8 @@ def scourString(in_string, options=None):
 
    return total_output
 
+
+
 # used mostly by unit tests
 # input is a filename
 # returns the minidom doc representation of the SVG
@@ -3027,6 +3066,8 @@ def scourXmlFile(filename, options=None):
    in_string = open(filename).read()
    out_string = scourString(in_string, options)
    return xml.dom.minidom.parseString(out_string.encode('utf-8'))
+
+
 
 # GZ: Seems most other commandline tools don't do this, is it really wanted?
 class HeaderedFormatter(optparse.IndentedHelpFormatter):
@@ -3037,6 +3078,8 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
    def format_usage(self, usage):
       return "%s %s\n%s\n%s" % (APP, VER, COPYRIGHT,
          optparse.IndentedHelpFormatter.format_usage(self, usage))
+
+
 
 # GZ: would prefer this to be in a function or class scope, but tests etc need
 #     access to the defaults anyway
@@ -3117,11 +3160,15 @@ _options_parser.add_option("--protect-ids-prefix",
    action="store", type="string", dest="protect_ids_prefix", default=None,
    help="Don't change IDs starting with the given prefix")
 
+
+
 def maybe_gziped_file(filename, mode="r"):
    if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
       import gzip
       return gzip.GzipFile(filename, mode)
    return file(filename, mode)
+
+
 
 def parse_args(args=None):
    options, rargs = _options_parser.parse_args(args)
@@ -3148,6 +3195,8 @@ def parse_args(args=None):
 
    return options, [infile, outfile]
 
+
+
 def getReport():
    return ' Number of elements removed: ' + str(numElemsRemoved) + os.linesep + \
       ' Number of attributes removed: ' + str(numAttrsRemoved) + os.linesep + \
@@ -3164,7 +3213,20 @@ def getReport():
       ' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
 
 
-def run():
+
+def generateDefaultOptions():
+   ## FIXME: clean up this mess/hack and refactor arg parsing to argparse
+   class Struct:
+       def __init__(self, **entries):
+           self.__dict__.update(entries)
+
+   d = parse_args()[0].__dict__.copy()
+
+   return Struct(**d)
+
+
+
+def start(options, input, output):
    if sys.platform == "win32":
       from time import clock as get_tick
    else:
@@ -3173,8 +3235,6 @@ def run():
          return os.times()[0]
 
    start = get_tick()
-
-   options, (input, output) = parse_args()
 
    if not options.quiet:
       print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
@@ -3203,6 +3263,12 @@ def run():
          'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
 
 
+
+def run():
+   options, (input, output) = parse_args()
+   start(options, input, output)
+
+
+
 if __name__ == '__main__':
    run()
-

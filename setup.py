@@ -18,15 +18,28 @@
 
 from setuptools import setup, find_packages
 
+LONGDESC = """
+Scour is a SVG optimizer/sanitizer that can be used to produce SVGs for Web deployment.
+
+Website
+  - http://www.codedread.com/scour/ (original website)
+  - https://github.com/oberstet/scour (today)
+
+Authors:
+  - Jeff Schiller, Louis Simard (original authors)
+  - Tobias Oberstein (maintainer)
+"""
+
 setup (
    name = 'scour',
    version = '0.27',
    description = 'Scour SVG Optimizer',
-   long_description = open("README.md").read(),
+#   long_description = open("README.md").read(),
+   long_description = LONGDESC,
    license = 'Apache License 2.0',
    author = 'Jeff Schiller',
    author_email = 'codedread@gmail.com',
-   url = 'http://blog.codedread.com/',
+   url = 'https://github.com/oberstet/scour',
    platforms = ('Any'),
    install_requires = [],
    packages = find_packages(),
