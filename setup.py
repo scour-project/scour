@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'scour',
-   version = '0.26',
+   version = '0.27',
    description = 'Scour SVG Optimizer',
    long_description = open("README.md").read(),
    license = 'Apache License 2.0',

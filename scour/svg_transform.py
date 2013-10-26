@@ -149,8 +149,8 @@ class SVGTransformationParser(object):
         commands = []
         token = next()
         while token[0] is not EOF:
-        	command, token = self.rule_svg_transform(next, token)
-        	commands.append(command)
+         command, token = self.rule_svg_transform(next, token)
+         commands.append(command)
         return commands
 
     def rule_svg_transform(self, next, token):
@@ -177,7 +177,7 @@ class SVGTransformationParser(object):
         number, token = self.rule_optional_number(next, token)
         if number is not None:
             numbers.append(number)
-            
+
         return numbers, token
 
     def rule_1number(self, next, token):
@@ -199,10 +199,10 @@ class SVGTransformationParser(object):
             # but, if the 2nd number is provided, the 3rd is mandatory.
             # we can't have just 2.
             numbers.append(number)
-            
+
             number, token = self.rule_number(next, token)
             numbers.append(number)
-            
+
         return numbers, token
 
     def rule_6numbers(self, next, token):
