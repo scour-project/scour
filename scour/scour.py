@@ -620,7 +620,7 @@ def removeUnreferencedElements(doc):
          num += 1
    return num
 
-def shortenIDs(doc, unprotectedElements=None):
+def shortenIDs(doc, prefix, unprotectedElements=None):
    """
    Shortens ID names used in the document. ID names referenced the most often are assigned the
    shortest ID names.
@@ -647,21 +647,21 @@ def shortenIDs(doc, unprotectedElements=None):
    curIdNum = 1
 
    for rid in idList:
-      curId = intToID(curIdNum)
+      curId = intToID(curIdNum, prefix)
       # First make sure that *this* element isn't already using
       # the ID name we want to give it.
       if curId != rid:
          # Then, skip ahead if the new ID is already in identifiedElement.
          while curId in identifiedElements:
             curIdNum += 1
-            curId = intToID(curIdNum)
+            curId = intToID(curIdNum, prefix)
          # Then go rename it.
          num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
       curIdNum += 1
 
    return num
 
-def intToID(idnum):
+def intToID(idnum, prefix):
    """
    Returns the ID name for the given ID number, spreadsheet-style, i.e. from a to z,
    then from aa to az, ba to bz, etc., until zz.
@@ -673,7 +673,7 @@ def intToID(idnum):
       rid = chr((idnum % 26) + ord('a')) + rid
       idnum = int(idnum / 26)
 
-   return rid
+   return prefix + rid
 
 def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
    """
@@ -3001,7 +3001,7 @@ def scourString(in_string, options=None):
 
    # shorten ID names as much as possible
    if options.shorten_ids:
-      numBytesSavedInIDs += shortenIDs(doc, unprotected_ids(doc, options))
+      numBytesSavedInIDs += shortenIDs(doc, options.shorten_ids_prefix, unprotected_ids(doc, options))
 
    # scour lengths (including coordinates)
    for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
@@ -3113,6 +3113,9 @@ _options_parser.add_option("--enable-comment-stripping",
 _options_parser.add_option("--shorten-ids",
    action="store_true", dest="shorten_ids", default=False,
    help="shorten all ID attributes to the least number of letters possible")
+_options_parser.add_option("--shorten-ids-prefix",
+   action="store", type="string", dest="shorten_ids_prefix", default="",
+   help="shorten all ID attributes with a custom prefix")
 _options_parser.add_option("--disable-embed-rasters",
    action="store_false", dest="embed_rasters", default=True,
    help="won't embed rasters as base64-encoded data")
