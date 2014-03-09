@@ -2105,7 +2105,7 @@ def parseListOfPoints(s):
    """
       Parse string into a list of points.
 
-      Returns a list of containing an even number of coordinate strings
+      Returns a list containing an even number of coordinate strings
    """
    i = 0
 
