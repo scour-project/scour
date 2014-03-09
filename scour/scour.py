@@ -587,7 +587,7 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
             elemsToRemove.append(elem)
    return elemsToRemove
 
-def removeUnreferencedElements(doc):
+def removeUnreferencedElements(doc, keepDefs):
    """
    Removes all unreferenced elements except for <svg>, <font>, <metadata>, <title>, and <desc>.
    Also vacuums the defs of any non-referenced renderable elements.
@@ -610,14 +610,15 @@ def removeUnreferencedElements(doc):
             num += 1
             numElemsRemoved += 1
 
-   # Remove most unreferenced elements inside defs
-   defs = doc.documentElement.getElementsByTagName('defs')
-   for aDef in defs:
-      elemsToRemove = removeUnusedDefs(doc, aDef)
-      for elem in elemsToRemove:
-         elem.parentNode.removeChild(elem)
-         numElemsRemoved += 1
-         num += 1
+   if not keepDefs:
+      # Remove most unreferenced elements inside defs
+      defs = doc.documentElement.getElementsByTagName('defs')
+      for aDef in defs:
+         elemsToRemove = removeUnusedDefs(doc, aDef)
+         for elem in elemsToRemove:
+            elem.parentNode.removeChild(elem)
+            numElemsRemoved += 1
+            num += 1
    return num
 
 def shortenIDs(doc, prefix, unprotectedElements=None):
@@ -2923,7 +2924,7 @@ def scourString(in_string, options=None):
 
    # remove unreferenced gradients/patterns outside of defs
    # and most unreferenced elements inside of defs
-   while removeUnreferencedElements(doc) > 0:
+   while removeUnreferencedElements(doc, options.keep_defs) > 0:
       pass
 
    # remove empty defs, metadata, g
@@ -3119,6 +3120,9 @@ _options_parser.add_option("--shorten-ids-prefix",
 _options_parser.add_option("--disable-embed-rasters",
    action="store_false", dest="embed_rasters", default=True,
    help="won't embed rasters as base64-encoded data")
+_options_parser.add_option("--keep-unreferenced-defs",
+   action="store_true", dest="keep_defs", default=False,
+   help="won't remove elements within the defs container that are unreferenced")
 _options_parser.add_option("--keep-editor-data",
    action="store_true", dest="keep_editor_data", default=False,
    help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
