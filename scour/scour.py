@@ -5,6 +5,7 @@
 #
 #  Copyright 2010 Jeff Schiller
 #  Copyright 2010 Louis Simard
+#  Copyright 2013-2014 Tavendo GmbH
 #
 #  This file is part of Scour, http://www.codedread.com/scour/
 #
@@ -70,7 +71,7 @@ except ImportError:
    pass
 
 APP = 'scour'
-VER = '0.28'
+VER = '0.29'
 COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
 NS = {   'SVG':      'http://www.w3.org/2000/svg',
@@ -3177,10 +3178,10 @@ def maybe_gziped_file(filename, mode="r"):
 
 
 
-def parse_args(args=None):
+def parse_args(args=None, ignore_additional_args=False):
    options, rargs = _options_parser.parse_args(args)
 
-   if rargs:
+   if rargs and not ignore_additional_args:
       _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
    if options.digits < 0:
       _options_parser.error("Can't have negative significant digits, see --help")
@@ -3227,7 +3228,7 @@ def generateDefaultOptions():
        def __init__(self, **entries):
            self.__dict__.update(entries)
 
-   d = parse_args()[0].__dict__.copy()
+   d = parse_args(ignore_additional_args = True)[0].__dict__.copy()
 
    return Struct(**d)
 

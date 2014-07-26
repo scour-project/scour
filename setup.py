@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ Authors:
 
 setup (
    name = 'scour',
-   version = '0.27',
+   version = '0.29',
    description = 'Scour SVG Optimizer',
 #   long_description = open("README.md").read(),
    long_description = LONGDESC,
