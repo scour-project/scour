@@ -32,7 +32,7 @@ Authors:
 
 setup (
    name = 'scour',
-   version = '0.29',
+   version = '0.30',
    description = 'Scour SVG Optimizer',
 #   long_description = open("README.md").read(),
    long_description = LONGDESC,

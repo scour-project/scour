@@ -71,10 +71,10 @@ except ImportError:
    pass
 
 APP = 'scour'
-VER = '0.29'
+VER = '0.30'
 COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
-NS = {   'SVG':      'http://www.w3.org/2000/svg',
+NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
       'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
       'INKSCAPE': 'http://www.inkscape.org/namespaces/inkscape',
@@ -3228,7 +3228,7 @@ def generateDefaultOptions():
        def __init__(self, **entries):
            self.__dict__.update(entries)
 
-   d = parse_args(ignore_additional_args = True)[0].__dict__.copy()
+   d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
 
    return Struct(**d)
 
