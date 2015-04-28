@@ -41,10 +41,11 @@ Out[4]: [('M', [(0.60509999999999997, 0.5)])]
 In [5]: svg_parser.parse('M 100-200')  # Another edge case
 Out[5]: [('M', [(100.0, -200.0)])]
 """
+from __future__ import absolute_import
 
 import re
 from decimal import *
-
+from functools import partial
 
 # Sentinel.
 class _EOF(object):
@@ -145,140 +146,141 @@ class SVGPathParser(object):
     def parse(self, text):
         """ Parse a string of SVG <path> data.
         """
-        next = self.lexer.lex(text).next
-        token = next()
-        return self.rule_svg_path(next, token)
+        gen = self.lexer.lex(text)
+        next_val_fn = partial(next, *(gen,))
+        token = next_val_fn()
+        return self.rule_svg_path(next_val_fn, token)
 
-    def rule_svg_path(self, next, token):
+    def rule_svg_path(self, next_val_fn, token):
         commands = []
         while token[0] is not EOF:
             if token[0] != 'command':
                 raise SyntaxError("expecting a command; got %r" % (token,))
             rule = self.command_dispatch[token[1]]
-            command_group, token = rule(next, token)
+            command_group, token = rule(next_val_fn, token)
             commands.append(command_group)
         return commands
 
-    def rule_closepath(self, next, token):
+    def rule_closepath(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         return (command, []), token
 
-    def rule_moveto_or_lineto(self, next, token):
+    def rule_moveto_or_lineto(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         coordinates = []
         while token[0] in self.number_tokens:
-            pair, token = self.rule_coordinate_pair(next, token)
+            pair, token = self.rule_coordinate_pair(next_val_fn, token)
             coordinates.extend(pair)
         return (command, coordinates), token
 
-    def rule_orthogonal_lineto(self, next, token):
+    def rule_orthogonal_lineto(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         coordinates = []
         while token[0] in self.number_tokens:
-            coord, token = self.rule_coordinate(next, token)
+            coord, token = self.rule_coordinate(next_val_fn, token)
             coordinates.append(coord)
         return (command, coordinates), token
 
-    def rule_curveto3(self, next, token):
+    def rule_curveto3(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         coordinates = []
         while token[0] in self.number_tokens:
-            pair1, token = self.rule_coordinate_pair(next, token)
-            pair2, token = self.rule_coordinate_pair(next, token)
-            pair3, token = self.rule_coordinate_pair(next, token)
+            pair1, token = self.rule_coordinate_pair(next_val_fn, token)
+            pair2, token = self.rule_coordinate_pair(next_val_fn, token)
+            pair3, token = self.rule_coordinate_pair(next_val_fn, token)
             coordinates.extend(pair1)
             coordinates.extend(pair2)
             coordinates.extend(pair3)
         return (command, coordinates), token
 
-    def rule_curveto2(self, next, token):
+    def rule_curveto2(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         coordinates = []
         while token[0] in self.number_tokens:
-            pair1, token = self.rule_coordinate_pair(next, token)
-            pair2, token = self.rule_coordinate_pair(next, token)
+            pair1, token = self.rule_coordinate_pair(next_val_fn, token)
+            pair2, token = self.rule_coordinate_pair(next_val_fn, token)
             coordinates.extend(pair1)
             coordinates.extend(pair2)
         return (command, coordinates), token
 
-    def rule_curveto1(self, next, token):
+    def rule_curveto1(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         coordinates = []
         while token[0] in self.number_tokens:
-            pair1, token = self.rule_coordinate_pair(next, token)
+            pair1, token = self.rule_coordinate_pair(next_val_fn, token)
             coordinates.extend(pair1)
         return (command, coordinates), token
 
-    def rule_elliptical_arc(self, next, token):
+    def rule_elliptical_arc(self, next_val_fn, token):
         command = token[1]
-        token = next()
+        token = next_val_fn()
         arguments = []
         while token[0] in self.number_tokens:
             rx = Decimal(token[1]) * 1
             if rx < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
-            token = next()
+            token = next_val_fn()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             ry = Decimal(token[1]) * 1
             if ry < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
-            token = next()
+            token = next_val_fn()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             axis_rotation = Decimal(token[1]) * 1
 
-            token = next()
+            token = next_val_fn()
             if token[1] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
             large_arc_flag = Decimal(token[1]) * 1
 
-            token = next()
+            token = next_val_fn()
             if token[1] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
             sweep_flag = Decimal(token[1]) * 1
 
-            token = next()
+            token = next_val_fn()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             x = Decimal(token[1]) * 1
 
-            token = next()
+            token = next_val_fn()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             y = Decimal(token[1]) * 1
 
-            token = next()
+            token = next_val_fn()
             arguments.extend([rx, ry, axis_rotation, large_arc_flag, sweep_flag, x, y])
 
         return (command, arguments), token
 
-    def rule_coordinate(self, next, token):
+    def rule_coordinate(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         x = getcontext().create_decimal(token[1])
-        token = next()
+        token = next_val_fn()
         return x, token
 
 
-    def rule_coordinate_pair(self, next, token):
+    def rule_coordinate_pair(self, next_val_fn, token):
         # Inline these since this rule is so common.
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         x = getcontext().create_decimal(token[1])
-        token = next()
+        token = next_val_fn()
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         y = getcontext().create_decimal(token[1])
-        token = next()
+        token = next_val_fn()
         return [x, y], token
 
 

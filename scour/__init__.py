@@ -15,8 +15,3 @@
 ##  limitations under the License.
 ##
 ###############################################################################
-
-import scour
-import svg_regex
-import svg_transform
-import yocto_css
