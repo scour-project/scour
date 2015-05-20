@@ -56,9 +56,12 @@ Multiple transformations are supported:
 In [12]: svg_transform_parser.parse('translate(30 -30) rotate(36)')
 Out[12]: [('translate', [30.0, -30.0]), ('rotate', [36.0])]
 """
+from __future__ import absolute_import
 
 import re
 from decimal import *
+from six.moves import range
+from functools import partial
 
 
 # Sentinel.
@@ -145,88 +148,90 @@ class SVGTransformationParser(object):
     def parse(self, text):
         """ Parse a string of SVG transform="" data.
         """
-        next = self.lexer.lex(text).next
+        gen = self.lexer.lex(text)
+        next_val_fn = partial(next, *(gen,))
+
         commands = []
-        token = next()
+        token = next_val_fn()
         while token[0] is not EOF:
-         command, token = self.rule_svg_transform(next, token)
+         command, token = self.rule_svg_transform(next_val_fn, token)
          commands.append(command)
         return commands
 
-    def rule_svg_transform(self, next, token):
+    def rule_svg_transform(self, next_val_fn, token):
         if token[0] != 'command':
             raise SyntaxError("expecting a transformation type; got %r" % (token,))
         command = token[1]
         rule = self.command_dispatch[command]
-        token = next()
+        token = next_val_fn()
         if token[0] != 'coordstart':
             raise SyntaxError("expecting '('; got %r" % (token,))
-        numbers, token = rule(next, token)
+        numbers, token = rule(next_val_fn, token)
         if token[0] != 'coordend':
             raise SyntaxError("expecting ')'; got %r" % (token,))
-        token = next()
+        token = next_val_fn()
         return (command, numbers), token
 
-    def rule_1or2numbers(self, next, token):
+    def rule_1or2numbers(self, next_val_fn, token):
         numbers = []
         # 1st number is mandatory
-        token = next()
-        number, token = self.rule_number(next, token)
+        token = next_val_fn()
+        number, token = self.rule_number(next_val_fn, token)
         numbers.append(number)
         # 2nd number is optional
-        number, token = self.rule_optional_number(next, token)
+        number, token = self.rule_optional_number(next_val_fn, token)
         if number is not None:
             numbers.append(number)
 
         return numbers, token
 
-    def rule_1number(self, next, token):
+    def rule_1number(self, next_val_fn, token):
         # this number is mandatory
-        token = next()
-        number, token = self.rule_number(next, token)
+        token = next_val_fn()
+        number, token = self.rule_number(next_val_fn, token)
         numbers = [number]
         return numbers, token
 
-    def rule_1or3numbers(self, next, token):
+    def rule_1or3numbers(self, next_val_fn, token):
         numbers = []
         # 1st number is mandatory
-        token = next()
-        number, token = self.rule_number(next, token)
+        token = next_val_fn()
+        number, token = self.rule_number(next_val_fn, token)
         numbers.append(number)
         # 2nd number is optional
-        number, token = self.rule_optional_number(next, token)
+        number, token = self.rule_optional_number(next_val_fn, token)
         if number is not None:
             # but, if the 2nd number is provided, the 3rd is mandatory.
             # we can't have just 2.
             numbers.append(number)
 
-            number, token = self.rule_number(next, token)
+            number, token = self.rule_number(next_val_fn, token)
             numbers.append(number)
 
         return numbers, token
 
-    def rule_6numbers(self, next, token):
+    def rule_6numbers(self, next_val_fn, token):
         numbers = []
-        token = next()
+        token = next_val_fn()
         # all numbers are mandatory
-        for i in xrange(6):
-            number, token = self.rule_number(next, token)
+        for i in range(6):
+            number, token = self.rule_number(next_val_fn, token)
             numbers.append(number)
         return numbers, token
 
-    def rule_number(self, next, token):
+    def rule_number(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         x = Decimal(token[1]) * 1
-        token = next()
+        token = next_val_fn()
         return x, token
 
-    def rule_optional_number(self, next, token):
+    def rule_optional_number(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
             return None, token
         else:
             x = Decimal(token[1]) * 1
-            token = next()
+            token = next_val_fn()
             return x, token
 
 

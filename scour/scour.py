@@ -47,21 +47,27 @@
 # necessary to get true division
 from __future__ import division
 
+# Needed for Python 2/3 compatible print function.
+from __future__ import print_function
+from __future__ import absolute_import
+
 import os
 import sys
 import xml.dom.minidom
 import re
 import math
-from svg_regex import svg_parser
-from svg_transform import svg_transform_parser
+from .svg_regex import svg_parser
+from .svg_transform import svg_transform_parser
 import optparse
-from yocto_css import parseCssString
+from .yocto_css import parseCssString
+import six
+from six.moves import range
 
 # Python 2.3- did not have Decimal
 try:
-   from decimal import *
+   from decimal import Decimal, InvalidOperation, getcontext
 except ImportError:
-   print >>sys.stderr, "Scour requires Python 2.4."
+   print("Scour requires Python 2.4.", file=sys.stderr)
 
 # Import Psyco if available
 try:
@@ -531,7 +537,7 @@ def findReferencingProperty(node, prop, val, ids):
    if prop in referencingProps and val != '' :
       if len(val) >= 7 and val[0:5] == 'url(#' :
          id = val[5:val.find(')')]
-         if ids.has_key(id) :
+         if id in ids :
             ids[id][0] += 1
             ids[id][1].append(node)
          else:
@@ -546,7 +552,7 @@ def findReferencingProperty(node, prop, val, ids):
          elif val[0:6] == "url('#" :
             id = val[6:val.find("')")]
          if id != None:
-            if ids.has_key(id) :
+            if id in ids :
                ids[id][0] += 1
                ids[id][1].append(node)
             else:
@@ -762,7 +768,7 @@ def unprotected_ids(doc, options):
       protect_ids_list = options.protect_ids_list.split(",")
    if options.protect_ids_prefix:
       protect_ids_prefixes = options.protect_ids_prefix.split(",")
-   for id in identifiedElements.keys():
+   for id in list(identifiedElements.keys()):
       protected = False
       if options.protect_ids_noninkscape and not id[-1].isdigit():
          protected = True
@@ -785,9 +791,9 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
    global numIDsRemoved
    keepTags = ['font']
    num = 0;
-   for id in identifiedElements.keys():
+   for id in list(identifiedElements.keys()):
       node = identifiedElements[id]
-      if referencedIDs.has_key(id) == False and not node.nodeName in keepTags:
+      if (id in referencedIDs) == False and not node.nodeName in keepTags:
          node.removeAttribute('id')
          numIDsRemoved += 1
          num += 1
@@ -800,7 +806,7 @@ def removeNamespacedAttributes(node, namespaces):
       # remove all namespace'd attributes from this element
       attrList = node.attributes
       attrsToRemove = []
-      for attrNum in xrange(attrList.length):
+      for attrNum in range(attrList.length):
          attr = attrList.item(attrNum)
          if attr != None and attr.namespaceURI in namespaces:
             attrsToRemove.append(attr.nodeName)
@@ -915,7 +921,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
    # its fill attribute is not what we want to look at, we should look for the first
    # non-animate/set element
    attrList = childElements[0].attributes
-   for num in xrange(attrList.length):
+   for num in range(attrList.length):
       attr = attrList.item(num)
       # this is most of the inheritable properties from http://www.w3.org/TR/SVG11/propidx.html
       # and http://www.w3.org/TR/SVGTiny12/attributeTable.html
@@ -934,7 +940,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
          commonAttrs[attr.nodeName] = attr.nodeValue
 
    # for each subsequent child element
-   for childNum in xrange(len(childElements)):
+   for childNum in range(len(childElements)):
       # skip first child
       if childNum == 0:
          continue
@@ -946,7 +952,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
 
       distinctAttrs = []
       # loop through all current 'common' attributes
-      for name in commonAttrs.keys():
+      for name in list(commonAttrs.keys()):
          # if this child doesn't match that attribute, schedule it for removal
          if child.getAttribute(name) != commonAttrs[name]:
             distinctAttrs.append(name)
@@ -955,7 +961,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
          del commonAttrs[name]
 
    # commonAttrs now has all the inheritable attributes which are common among all child elements
-   for name in commonAttrs.keys():
+   for name in list(commonAttrs.keys()):
       for child in childElements:
          child.removeAttribute(name)
       elem.setAttribute(name, commonAttrs[name])
@@ -1088,7 +1094,7 @@ def removeUnusedAttributesOnParent(elem):
    # get all attribute values on this parent
    attrList = elem.attributes
    unusedAttrs = {}
-   for num in xrange(attrList.length):
+   for num in range(attrList.length):
       attr = attrList.item(num)
       if attr.nodeName in ['clip-rule',
                'display-align',
@@ -1104,10 +1110,10 @@ def removeUnusedAttributesOnParent(elem):
          unusedAttrs[attr.nodeName] = attr.nodeValue
 
    # for each child, if at least one child inherits the parent's attribute, then remove
-   for childNum in xrange(len(childElements)):
+   for childNum in range(len(childElements)):
       child = childElements[childNum]
       inheritedAttrs = []
-      for name in unusedAttrs.keys():
+      for name in list(unusedAttrs.keys()):
          val = child.getAttribute(name)
          if val == '' or val == None or val == 'inherit':
             inheritedAttrs.append(name)
@@ -1115,7 +1121,7 @@ def removeUnusedAttributesOnParent(elem):
          del unusedAttrs[a]
 
    # unusedAttrs now has all the parent attributes that are unused
-   for name in unusedAttrs.keys():
+   for name in list(unusedAttrs.keys()):
       elem.removeAttribute(name)
       num += 1
 
@@ -1145,7 +1151,7 @@ def removeDuplicateGradientStops(doc):
             color = stop.getAttribute('stop-color')
             opacity = stop.getAttribute('stop-opacity')
             style = stop.getAttribute('style')
-            if stops.has_key(offset) :
+            if offset in stops :
                oldStop = stops[offset]
                if oldStop[0] == color and oldStop[1] == opacity and oldStop[2] == style:
                   stopsToRemove.append(stop)
@@ -1166,7 +1172,7 @@ def collapseSinglyReferencedGradients(doc):
    identifiedElements = findElementsWithId(doc.documentElement)
 
    # make sure to reset the ref'ed ids for when we are running this in testscour
-   for rid,nodeCount in findReferencedElements(doc.documentElement).iteritems():
+   for rid,nodeCount in six.iteritems(findReferencedElements(doc.documentElement)):
       count = nodeCount[0]
       nodes = nodeCount[1]
       # Make sure that there's actually a defining element for the current ID name.
@@ -1253,7 +1259,7 @@ def removeDuplicateGradients(doc):
 
             # now compare stops
             stopsNotEqual = False
-            for i in xrange(stops.length):
+            for i in range(stops.length):
                if stopsNotEqual: break
                stop = stops.item(i)
                ostop = ostops.item(i)
@@ -1265,16 +1271,16 @@ def removeDuplicateGradients(doc):
 
             # ograd is a duplicate of grad, we schedule it to be removed UNLESS
             # ograd is ALREADY considered a 'master' element
-            if not gradientsToRemove.has_key(ograd):
-               if not duplicateToMaster.has_key(ograd):
-                  if not gradientsToRemove.has_key(grad):
+            if ograd not in gradientsToRemove:
+               if ograd not in duplicateToMaster:
+                  if grad not in gradientsToRemove:
                      gradientsToRemove[grad] = []
                   gradientsToRemove[grad].append( ograd )
                   duplicateToMaster[ograd] = grad
 
    # get a collection of all elements that are referenced and their referencing elements
    referencedIDs = findReferencedElements(doc.documentElement)
-   for masterGrad in gradientsToRemove.keys():
+   for masterGrad in list(gradientsToRemove.keys()):
       master_id = masterGrad.getAttribute('id')
 #     print 'master='+master_id
       for dupGrad in gradientsToRemove[masterGrad]:
@@ -1322,7 +1328,7 @@ def _getStyle(node):
 
 def _setStyle(node, styleMap):
    u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
-   fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in styleMap.keys()])
+   fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in list(styleMap.keys())])
    if fixedStyle != '' :
       node.setAttribute('style', fixedStyle)
    elif node.getAttribute('style'):
@@ -1337,7 +1343,7 @@ def repairStyle(node, options):
       # I've seen this enough to know that I need to correct it:
       # fill: url(#linearGradient4918) rgb(0, 0, 0);
       for prop in ['fill', 'stroke'] :
-         if styleMap.has_key(prop) :
+         if prop in styleMap :
             chunk = styleMap[prop].split(') ')
             if len(chunk) == 2 and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#") and chunk[1] == 'rgb(0, 0, 0)' :
                styleMap[prop] = chunk[0] + ')'
@@ -1345,23 +1351,23 @@ def repairStyle(node, options):
 
       # Here is where we can weed out unnecessary styles like:
       #  opacity:1
-      if styleMap.has_key('opacity') :
+      if 'opacity' in styleMap :
          opacity = float(styleMap['opacity'])
          # if opacity='0' then all fill and stroke properties are useless, remove them
          if opacity == 0.0 :
             for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
                'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
                'stroke-dashoffset', 'stroke-opacity'] :
-               if styleMap.has_key(uselessStyle):
+               if uselessStyle in styleMap:
                   del styleMap[uselessStyle]
                   num += 1
 
       #  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
       #  TODO: should also detect if the computed value of this element is stroke="none"
-      if styleMap.has_key('stroke') and styleMap['stroke'] == 'none' :
+      if 'stroke' in styleMap and styleMap['stroke'] == 'none' :
          for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit',
                'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
-            if styleMap.has_key(strokestyle) :
+            if strokestyle in styleMap :
                del styleMap[strokestyle]
                num += 1
          # TODO: This is actually a problem if a parent element has a specified stroke
@@ -1369,38 +1375,38 @@ def repairStyle(node, options):
          del styleMap['stroke']
 
       #  if fill:none, then remove all fill-related properties (fill-rule, etc)
-      if styleMap.has_key('fill') and styleMap['fill'] == 'none' :
+      if 'fill' in styleMap and styleMap['fill'] == 'none' :
          for fillstyle in [ 'fill-rule', 'fill-opacity' ] :
-            if styleMap.has_key(fillstyle) :
+            if fillstyle in styleMap :
                del styleMap[fillstyle]
                num += 1
 
       #  fill-opacity: 0
-      if styleMap.has_key('fill-opacity') :
+      if 'fill-opacity' in styleMap :
          fillOpacity = float(styleMap['fill-opacity'])
          if fillOpacity == 0.0 :
             for uselessFillStyle in [ 'fill', 'fill-rule' ] :
-               if styleMap.has_key(uselessFillStyle):
+               if uselessFillStyle in styleMap:
                   del styleMap[uselessFillStyle]
                   num += 1
 
       #  stroke-opacity: 0
-      if styleMap.has_key('stroke-opacity') :
+      if 'stroke-opacity' in styleMap :
          strokeOpacity = float(styleMap['stroke-opacity'])
          if strokeOpacity == 0.0 :
             for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap',
                      'stroke-dasharray', 'stroke-dashoffset' ] :
-               if styleMap.has_key(uselessStrokeStyle):
+               if uselessStrokeStyle in styleMap:
                   del styleMap[uselessStrokeStyle]
                   num += 1
 
       # stroke-width: 0
-      if styleMap.has_key('stroke-width') :
+      if 'stroke-width' in styleMap :
          strokeWidth = SVGLength(styleMap['stroke-width'])
          if strokeWidth.value == 0.0 :
             for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap',
                      'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
-               if styleMap.has_key(uselessStrokeStyle):
+               if uselessStrokeStyle in styleMap:
                   del styleMap[uselessStrokeStyle]
                   num += 1
 
@@ -1413,18 +1419,18 @@ def repairStyle(node, options):
                         'text-align', 'text-anchor', 'text-decoration',
                         'text-rendering', 'unicode-bidi',
                         'word-spacing', 'writing-mode'] :
-            if styleMap.has_key(fontstyle) :
+            if fontstyle in styleMap :
                del styleMap[fontstyle]
                num += 1
 
       # remove inkscape-specific styles
       # TODO: need to get a full list of these
       for inkscapeStyle in ['-inkscape-font-specification']:
-         if styleMap.has_key(inkscapeStyle):
+         if inkscapeStyle in styleMap:
             del styleMap[inkscapeStyle]
             num += 1
 
-      if styleMap.has_key('overflow') :
+      if 'overflow' in styleMap :
          # overflow specified on element other than svg, marker, pattern
          if not node.nodeName in ['svg','marker','pattern']:
             del styleMap['overflow']
@@ -1445,7 +1451,7 @@ def repairStyle(node, options):
       # now if any of the properties match known SVG attributes we prefer attributes
       # over style so emit them and remove them from the style map
       if options.style_to_xml:
-         for propName in styleMap.keys() :
+         for propName in list(styleMap.keys()) :
             if propName in svgAttributes :
                node.setAttribute(propName, styleMap[propName])
                del styleMap[propName]
@@ -1594,7 +1600,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
               for i in range(node.attributes.length)]
    for attribute in attributes:
       if attribute not in tainted:
-         if attribute in default_attributes.keys():
+         if attribute in list(default_attributes.keys()):
             if node.getAttribute(attribute) == default_attributes[attribute]:
                node.removeAttribute(attribute)
                num += 1
@@ -1602,9 +1608,9 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
                tainted = taint(tainted, attribute)
    # These attributes might also occur as styles
    styles = _getStyle(node)
-   for attribute in styles.keys():
+   for attribute in list(styles.keys()):
       if attribute not in tainted:
-         if attribute in default_attributes.keys():
+         if attribute in list(default_attributes.keys()):
             if styles[attribute] == default_attributes[attribute]:
                del styles[attribute]
                num += 1
@@ -1626,7 +1632,7 @@ def convertColor(value):
    """
    s = value
 
-   if s in colors.keys():
+   if s in list(colors.keys()):
       s = colors[s]
 
    rgbpMatch = rgbp.match(s)
@@ -1680,7 +1686,7 @@ def convertColors(element) :
             element.setAttribute(attr, newColorValue)
             numBytes += (oldBytes - len(element.getAttribute(attr)))
       # colors might also hide in styles
-      if attr in styles.keys():
+      if attr in list(styles.keys()):
          oldColorValue = styles[attr]
          newColorValue = convertColor(oldColorValue)
          oldBytes = len(oldColorValue)
@@ -1722,13 +1728,13 @@ def cleanPath(element, options) :
    # convert absolute coordinates into relative ones.
    # Reuse the data structure 'path', since we're not adding or removing subcommands.
    # Also reuse the coordinate lists since we're not adding or removing any.
-   for pathIndex in xrange(0, len(path)):
+   for pathIndex in range(0, len(path)):
       cmd, data = path[pathIndex] # Changes to cmd don't get through to the data structure
       i = 0
       # adjust abs to rel
       # only the A command has some values that we don't want to adjust (radii, rotation, flags)
       if cmd == 'A':
-         for i in xrange(i, len(data), 7):
+         for i in range(i, len(data), 7):
             data[i+5] -= x
             data[i+6] -= y
             x += data[i+5]
@@ -1738,14 +1744,14 @@ def cleanPath(element, options) :
          x += sum(data[5::7])
          y += sum(data[6::7])
       elif cmd == 'H':
-         for i in xrange(i, len(data)):
+         for i in range(i, len(data)):
             data[i] -= x
             x += data[i]
          path[pathIndex] = ('h', data)
       elif cmd == 'h':
          x += sum(data)
       elif cmd == 'V':
-         for i in xrange(i, len(data)):
+         for i in range(i, len(data)):
             data[i] -= y
             y += data[i]
          path[pathIndex] = ('v', data)
@@ -1761,14 +1767,14 @@ def cleanPath(element, options) :
 
          x, y = startx, starty
          i = 2
-         for i in xrange(i, len(data), 2):
+         for i in range(i, len(data), 2):
             data[i] -= x
             data[i+1] -= y
             x += data[i]
             y += data[i+1]
          path[pathIndex] = ('m', data)
       elif cmd in ['L','T']:
-         for i in xrange(i, len(data), 2):
+         for i in range(i, len(data), 2):
             data[i] -= x
             data[i+1] -= y
             x += data[i]
@@ -1784,14 +1790,14 @@ def cleanPath(element, options) :
          else:
             startx = x + data[0]
             starty = y + data[1]
-         for i in xrange(i, len(data), 2):
+         for i in range(i, len(data), 2):
             x += data[i]
             y += data[i+1]
       elif cmd in ['l','t']:
          x += sum(data[0::2])
          y += sum(data[1::2])
       elif cmd in ['S','Q']:
-         for i in xrange(i, len(data), 4):
+         for i in range(i, len(data), 4):
             data[i] -= x
             data[i+1] -= y
             data[i+2] -= x
@@ -1803,7 +1809,7 @@ def cleanPath(element, options) :
          x += sum(data[2::4])
          y += sum(data[3::4])
       elif cmd == 'C':
-         for i in xrange(i, len(data), 6):
+         for i in range(i, len(data), 6):
             data[i] -= x
             data[i+1] -= y
             data[i+2] -= x
@@ -1824,7 +1830,7 @@ def cleanPath(element, options) :
    # Reuse the data structure 'path' and the coordinate lists, even if we're
    # deleting items, because these deletions are relatively cheap.
    if not withRoundLineCaps:
-      for pathIndex in xrange(0, len(path)):
+      for pathIndex in range(0, len(path)):
          cmd, data = path[pathIndex]
          i = 0
          if cmd in ['m','l','t']:
@@ -2059,7 +2065,7 @@ def cleanPath(element, options) :
    # Reuse the data structure 'path', since we're not adding or removing subcommands.
    # Also reuse the coordinate lists, even if we're deleting items, because these
    # deletions are relatively cheap.
-   for pathIndex in xrange(1, len(path)):
+   for pathIndex in range(1, len(path)):
       cmd, data = path[pathIndex]
       if cmd in ['h','v'] and len(data) > 1:
          coordIndex = 1
@@ -2120,7 +2126,7 @@ def parseListOfPoints(s):
 
    # also, if 100-100 is found, split it into two also
    #  <polygon points="100,-100,100-100,100-100-100,-100-100" />
-   for i in xrange(len(ws_nums)):
+   for i in range(len(ws_nums)):
       negcoords = ws_nums[i].split("-")
 
       # this string didn't have any negative coordinates
@@ -2128,7 +2134,7 @@ def parseListOfPoints(s):
          nums.append(negcoords[0])
       # we got negative coords
       else:
-         for j in xrange(len(negcoords)):
+         for j in range(len(negcoords)):
             # first number could be positive
             if j == 0:
                if negcoords[0] != '':
@@ -2152,7 +2158,7 @@ def parseListOfPoints(s):
       try:
          nums[i] = getcontext().create_decimal(nums[i])
          nums[i + 1] = getcontext().create_decimal(nums[i + 1])
-      except decimal.InvalidOperation: # one of the lengths had a unit or is an invalid number
+      except InvalidOperation: # one of the lengths had a unit or is an invalid number
          return []
 
       i += 2
@@ -2251,7 +2257,7 @@ def scourCoordinates(data, options, forceCommaWsp = False):
       # separate from the next number.
       if options.renderer_workaround:
          if len(newData) > 0:
-            for i in xrange(1, len(newData)):
+            for i in range(1, len(newData)):
                if newData[i][0] == '-' and 'e' in newData[i - 1]:
                   newData[i - 1] += ' '
             return ''.join(newData)
@@ -2290,7 +2296,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
    # gather the non-scientific notation version of the coordinate.
    # this may actually be in scientific notation if the value is
    # sufficiently large or small, so this is a misnomer.
-   nonsci = unicode(length).lower().replace("e+", "e")
+   nonsci = six.text_type(length).lower().replace("e+", "e")
    if not needsRendererWorkaround:
       if len(nonsci) > 2 and nonsci[:2] == '0.':
          nonsci = nonsci[1:] # remove the 0, leave the dot
@@ -2300,7 +2306,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
    if len(nonsci) > 3: # avoid calling normalize unless strictly necessary
       # and then the scientific notation version, with E+NUMBER replaced with
       # just eNUMBER, since SVG accepts this.
-      sci = unicode(length.normalize()).lower().replace("e+", "e")
+      sci = six.text_type(length.normalize()).lower().replace("e+", "e")
 
       if len(sci) < len(nonsci): return sci
       else: return nonsci
@@ -2337,7 +2343,7 @@ def reducePrecision(element) :
                num += len(val) - len(newVal)
                element.setAttribute(lengthAttr, newVal)
       # repeat for attributes hidden in styles
-      if lengthAttr in styles.keys():
+      if lengthAttr in list(styles.keys()):
          val = styles[lengthAttr]
          valLen = SVGLength(val)
          if valLen.units != Unit.INVALID:
@@ -2714,7 +2720,7 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 
       # add all the attributes
       attrList = node.attributes
-      for i in xrange(attrList.length):
+      for i in range(attrList.length):
          attr = attrList.item(i)
          newNode.setAttributeNS( attr.namespaceURI, attr.localName, attr.nodeValue)
 
@@ -2778,7 +2784,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
    # now serialize the other attributes
    attrList = element.attributes
-   for num in xrange(attrList.length) :
+   for num in range(attrList.length) :
       attr = attrList.item(num)
       if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
       # if the attribute value contains a double-quote, use single-quotes
@@ -2877,7 +2883,7 @@ def scourString(in_string, options=None):
       # remove the xmlns: declarations now
       xmlnsDeclsToRemove = []
       attrList = doc.documentElement.attributes
-      for num in xrange(attrList.length) :
+      for num in range(attrList.length) :
          if attrList.item(num).nodeValue in unwanted_ns :
             xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
 
@@ -2895,7 +2901,7 @@ def scourString(in_string, options=None):
    attrList = doc.documentElement.attributes
    xmlnsDeclsToRemove = []
    redundantPrefixes = []
-   for i in xrange(attrList.length):
+   for i in range(attrList.length):
       attr = attrList.item(i)
       name = attr.nodeName
       val = attr.nodeValue
@@ -3174,7 +3180,7 @@ def maybe_gziped_file(filename, mode="r"):
    if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
       import gzip
       return gzip.GzipFile(filename, mode)
-   return file(filename, mode)
+   return open(filename, mode)
 
 
 
@@ -3245,7 +3251,7 @@ def start(options, input, output):
    start = get_tick()
 
    if not options.quiet:
-      print >>sys.stderr, "%s %s\n%s" % (APP, VER, COPYRIGHT)
+      print("%s %s\n%s" % (APP, VER, COPYRIGHT), file=sys.stderr)
 
    # do the work
    in_string = input.read()
@@ -3260,15 +3266,15 @@ def start(options, input, output):
 
    # GZ: not using globals would be good too
    if not options.quiet:
-      print >>sys.stderr, ' File:', input.name, \
+      print(' File:', input.name, \
          os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
-         getReport()
+         getReport(), file=sys.stderr)
 
       oldsize = len(in_string)
       newsize = len(out_string)
       sizediff = (newsize / oldsize) * 100
-      print >>sys.stderr, ' Original file size:', oldsize, 'bytes;', \
-         'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)'
+      print(' Original file size:', oldsize, 'bytes;', \
+         'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)', file=sys.stderr)
 
 
 
