@@ -50,3 +50,4 @@ Packaging from [sources](http://www.codedread.com/scour/) retrieved on 2013/20/2
 
   * done by Tavendo GmbH, Tobias Oberstein
   * license same as upstream (Apache 2.0)
+  * now official repo, please see [here](https://github.com/codedread/scour/issues/11)
