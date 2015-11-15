@@ -2763,9 +2763,12 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
    indent = ind
    I=''
-   if options.indent_type == 'tab': I='\t'
-   elif options.indent_type == 'space': I=' '
-   I *= options.indent_depth
+   newline = ''
+   if options.newlines:
+      if options.indent_type == 'tab': I='\t'
+      elif options.indent_type == 'space': I=' '
+      I *= options.indent_depth
+      newline = '\n'
 
    outParts.extend([(I * ind), '<', element.nodeName])
 
@@ -2824,7 +2827,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
             if preserveWhitespace:
                outParts.append(serializeXML(child, options, 0, preserveWhitespace))
             else:
-               outParts.extend(['\n', serializeXML(child, options, indent + 1, preserveWhitespace)])
+               outParts.extend([newline, serializeXML(child, options, indent + 1, preserveWhitespace)])
                onNewLine = True
          # text node
          elif child.nodeType == 3:
@@ -2846,10 +2849,10 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
       if onNewLine: outParts.append(I * ind)
       outParts.extend(['</', element.nodeName, '>'])
-      if indent > 0: outParts.append('\n')
+      if indent > 0: outParts.append(newline)
    else:
       outParts.append('/>')
-      if indent > 0: outParts.append('\n')
+      if indent > 0: outParts.append(newline)
 
    return "".join(outParts)
 
@@ -3168,6 +3171,9 @@ _options_parser.add_option("--indent",
 _options_parser.add_option("--nindent",
    action="store", type=int, dest="indent_depth", default=1,
    help="depth of the indentation, i.e. number of spaces/tabs: (default: %default)")
+_options_parser.add_option("--no-line-breaks",
+   action="store_false", dest="newlines", default=True,
+   help="do not create line breaks in output (also disables indentation; might be overriden by xml:space=\"preserve\")")
 _options_parser.add_option("--protect-ids-noninkscape",
    action="store_true", dest="protect_ids_noninkscape", default=False,
    help="Don't change IDs not ending with a digit")
