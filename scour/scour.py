@@ -2922,6 +2922,9 @@ def scourString(in_string, options=None):
    if options.strip_comments:
       numCommentsRemoved = removeComments(doc)
 
+   if options.strip_xml_space_attribute and doc.documentElement.hasAttribute('xml:space'):
+      doc.documentElement.removeAttribute('xml:space')
+
    # repair style (remove unnecessary style properties and change them into XML attributes)
    numStylePropsFixed = repairStyle(doc.documentElement, options)
 
@@ -3174,6 +3177,9 @@ _options_parser.add_option("--nindent",
 _options_parser.add_option("--no-line-breaks",
    action="store_false", dest="newlines", default=True,
    help="do not create line breaks in output (also disables indentation; might be overriden by xml:space=\"preserve\")")
+_options_parser.add_option("--strip-xml-space",
+   action="store_true", dest="strip_xml_space_attribute", default=False,
+   help="strip the xml:space=\"preserve\" attribute from the root SVG element")
 _options_parser.add_option("--protect-ids-noninkscape",
    action="store_true", dest="protect_ids_noninkscape", default=False,
    help="Don't change IDs not ending with a digit")
