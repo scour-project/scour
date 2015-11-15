@@ -60,8 +60,7 @@ from .svg_regex import svg_parser
 from .svg_transform import svg_transform_parser
 import optparse
 from .yocto_css import parseCssString
-import six
-from six.moves import range
+from . import six
 
 # Python 2.3- did not have Decimal
 try:
