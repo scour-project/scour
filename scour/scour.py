@@ -2765,6 +2765,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
    I=''
    if options.indent_type == 'tab': I='\t'
    elif options.indent_type == 'space': I=' '
+   I *= options.indent_depth
 
    outParts.extend([(I * ind), '<', element.nodeName])
 
@@ -3164,6 +3165,9 @@ _options_parser.add_option("-q", "--quiet",
 _options_parser.add_option("--indent",
    action="store", type="string", dest="indent_type", default="space",
    help="indentation of the output: none, space, tab (default: %default)")
+_options_parser.add_option("--nindent",
+   action="store", type=int, dest="indent_depth", default=1,
+   help="depth of the indentation, i.e. number of spaces/tabs: (default: %default)")
 _options_parser.add_option("--protect-ids-noninkscape",
    action="store_true", dest="protect_ids_noninkscape", default=False,
    help="Don't change IDs not ending with a digit")
@@ -3193,6 +3197,8 @@ def parse_args(args=None, ignore_additional_args=False):
       _options_parser.error("Can't have negative significant digits, see --help")
    if not options.indent_type in ["tab", "space", "none"]:
       _options_parser.error("Invalid value for --indent, see --help")
+   if options.indent_depth < 0:
+      _options_parser.error("Value for --nindent should be positive (or zero), see --help")
    if options.infilename and options.outfilename and options.infilename == options.outfilename:
       _options_parser.error("Input filename is the same as output filename")
 
