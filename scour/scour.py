@@ -3280,8 +3280,3 @@ def start(options, input, output):
 def run():
    options, (input, output) = parse_args()
    start(options, input, output)
-
-
-
-if __name__ == '__main__':
-   run()
