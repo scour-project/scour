@@ -60,7 +60,6 @@ from __future__ import absolute_import
 
 import re
 from decimal import *
-from six.moves import range
 from functools import partial
 
 
