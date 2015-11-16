@@ -24,7 +24,7 @@ Scour is a SVG optimizer/sanitizer that can be used to produce SVGs for Web depl
 
 Website
   - http://www.codedread.com/scour/ (original website)
-  - https://github.com/oberstet/scour (today)
+  - https://github.com/codedread/scour (today)
 
 Authors:
   - Jeff Schiller, Louis Simard (original authors)
