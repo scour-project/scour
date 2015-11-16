@@ -50,7 +50,7 @@ setup (
    license = 'Apache License 2.0',
    author = 'Jeff Schiller',
    author_email = 'codedread@gmail.com',
-   url = 'https://github.com/oberstet/scour',
+   url = 'https://github.com/codedread/scour',
    platforms = ('Any'),
    install_requires = ['six>=1.9.0'],
    packages = find_packages(),
