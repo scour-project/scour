@@ -56,10 +56,10 @@ import sys
 import xml.dom.minidom
 import re
 import math
-from .svg_regex import svg_parser
-from .svg_transform import svg_transform_parser
+from scour.svg_regex import svg_parser
+from scour.svg_transform import svg_transform_parser
 import optparse
-from .yocto_css import parseCssString
+from scour.yocto_css import parseCssString
 import six
 from six.moves import range
 
