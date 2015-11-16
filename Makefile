@@ -13,3 +13,9 @@ publish: clean
 	python setup.py sdist upload
 	python setup.py bdist_egg upload
 	python setup.py bdist_wininst upload
+
+test_version:
+	PYTHONPATH=. python -m scour.scour --version
+
+test_help:
+	PYTHONPATH=. python -m scour.scour --help

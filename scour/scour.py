@@ -76,9 +76,11 @@ try:
 except ImportError:
    pass
 
-APP = 'scour'
-VER = '0.30'
-COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
+from scour import __version__
+
+APP = u'scour'
+VER = __version__
+COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
 
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',

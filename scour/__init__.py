@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2010 Jeff Schiller, 2010 Louis Simard, 2013-2015 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -15,3 +15,5 @@
 ##  limitations under the License.
 ##
 ###############################################################################
+
+__version__ = u'0.31'
