@@ -3301,8 +3301,8 @@ def start(options, input, output):
 
    # GZ: not using globals would be good too
    if not options.quiet:
-      print(' File:', input.name, \
-         os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
+      print(' File:', input.name, os.linesep + \
+         ' Time taken:', str(end-start) + 's', os.linesep + \
          getReport(), file=sys.stderr)
 
       oldsize = len(in_string)
