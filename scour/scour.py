@@ -2934,6 +2934,7 @@ def scourString(in_string, options=None):
 
    for attrName in xmlnsDeclsToRemove:
       doc.documentElement.removeAttribute(attrName)
+      numAttrsRemoved += 1
 
    for prefix in redundantPrefixes:
       remapNamespacePrefix(doc.documentElement, prefix, '')
@@ -2943,6 +2944,7 @@ def scourString(in_string, options=None):
 
    if options.strip_xml_space_attribute and doc.documentElement.hasAttribute('xml:space'):
       doc.documentElement.removeAttribute('xml:space')
+      numAttrsRemoved += 1
 
    # repair style (remove unnecessary style properties and change them into XML attributes)
    numStylePropsFixed = repairStyle(doc.documentElement, options)
