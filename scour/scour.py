@@ -2877,6 +2877,10 @@ def scourString(in_string, options=None):
    global numBytesSavedInTransforms
    doc = xml.dom.minidom.parseString(in_string)
 
+   # remove <metadata> if the user wants to
+   if options.remove_metadata:
+      removeMetadataElements(doc)
+
    # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
    # on the first pass, so we do it multiple times
    # does it have to do with removal of children affecting the childlist?
@@ -2903,7 +2907,17 @@ def scourString(in_string, options=None):
       doc.documentElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
       # TODO: throw error or warning?
 
-   # check for redundant SVG namespace declaration
+   # check for redundant and unused SVG namespace declarations
+   def xmlnsUnused(prefix, namespace):
+      if doc.getElementsByTagNameNS(namespace, "*"):
+         return False
+      else:
+         for element in doc.getElementsByTagName("*"):
+            for attrName in six.iterkeys(element.attributes):
+               if attrName.startswith(prefix):
+                  return False
+      return True
+
    attrList = doc.documentElement.attributes
    xmlnsDeclsToRemove = []
    redundantPrefixes = []
@@ -2911,12 +2925,16 @@ def scourString(in_string, options=None):
       attr = attrList.item(i)
       name = attr.nodeName
       val = attr.nodeValue
-      if name[0:6] == 'xmlns:' and val == 'http://www.w3.org/2000/svg':
-         redundantPrefixes.append(name[6:])
-         xmlnsDeclsToRemove.append(name)
+      if name[0:6] == 'xmlns:':
+         if val == 'http://www.w3.org/2000/svg':
+            redundantPrefixes.append(name[6:])
+            xmlnsDeclsToRemove.append(name)
+         elif xmlnsUnused(name[6:], val):
+            xmlnsDeclsToRemove.append(name)
 
    for attrName in xmlnsDeclsToRemove:
       doc.documentElement.removeAttribute(attrName)
+      numAttrsRemoved += 1
 
    for prefix in redundantPrefixes:
       remapNamespacePrefix(doc.documentElement, prefix, '')
@@ -2926,6 +2944,7 @@ def scourString(in_string, options=None):
 
    if options.strip_xml_space_attribute and doc.documentElement.hasAttribute('xml:space'):
       doc.documentElement.removeAttribute('xml:space')
+      numAttrsRemoved += 1
 
    # repair style (remove unnecessary style properties and change them into XML attributes)
    numStylePropsFixed = repairStyle(doc.documentElement, options)
@@ -2933,10 +2952,6 @@ def scourString(in_string, options=None):
    # convert colors to #RRGGBB format
    if options.simple_colors:
       numBytesSavedInColors = convertColors(doc.documentElement)
-
-   # remove <metadata> if the user wants to
-   if options.remove_metadata:
-      removeMetadataElements(doc)
 
    # remove unreferenced gradients/patterns outside of defs
    # and most unreferenced elements inside of defs
@@ -3286,8 +3301,8 @@ def start(options, input, output):
 
    # GZ: not using globals would be good too
    if not options.quiet:
-      print(' File:', input.name, \
-         os.linesep + ' Time taken:', str(end-start) + 's' + os.linesep, \
+      print(' File:', input.name, os.linesep + \
+         ' Time taken:', str(end-start) + 's', os.linesep + \
          getReport(), file=sys.stderr)
 
       oldsize = len(in_string)
