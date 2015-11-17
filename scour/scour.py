@@ -2903,7 +2903,17 @@ def scourString(in_string, options=None):
       doc.documentElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
       # TODO: throw error or warning?
 
-   # check for redundant SVG namespace declaration
+   # check for redundant and unused SVG namespace declarations
+   def xmlnsUnused(prefix, namespace):
+      if doc.getElementsByTagNameNS(namespace, "*"):
+         return False
+      else:
+         for element in doc.getElementsByTagName("*"):
+            for attrName in six.iterkeys(element.attributes):
+               if attrName.startswith(prefix):
+                  return False
+      return True
+
    attrList = doc.documentElement.attributes
    xmlnsDeclsToRemove = []
    redundantPrefixes = []
@@ -2911,9 +2921,12 @@ def scourString(in_string, options=None):
       attr = attrList.item(i)
       name = attr.nodeName
       val = attr.nodeValue
-      if name[0:6] == 'xmlns:' and val == 'http://www.w3.org/2000/svg':
-         redundantPrefixes.append(name[6:])
-         xmlnsDeclsToRemove.append(name)
+      if name[0:6] == 'xmlns:':
+         if val == 'http://www.w3.org/2000/svg':
+            redundantPrefixes.append(name[6:])
+            xmlnsDeclsToRemove.append(name)
+         elif xmlnsUnused(name[6:], val):
+            xmlnsDeclsToRemove.append(name)
 
    for attrName in xmlnsDeclsToRemove:
       doc.documentElement.removeAttribute(attrName)
