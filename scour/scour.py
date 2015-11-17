@@ -2877,6 +2877,10 @@ def scourString(in_string, options=None):
    global numBytesSavedInTransforms
    doc = xml.dom.minidom.parseString(in_string)
 
+   # remove <metadata> if the user wants to
+   if options.remove_metadata:
+      removeMetadataElements(doc)
+
    # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
    # on the first pass, so we do it multiple times
    # does it have to do with removal of children affecting the childlist?
@@ -2946,10 +2950,6 @@ def scourString(in_string, options=None):
    # convert colors to #RRGGBB format
    if options.simple_colors:
       numBytesSavedInColors = convertColors(doc.documentElement)
-
-   # remove <metadata> if the user wants to
-   if options.remove_metadata:
-      removeMetadataElements(doc)
 
    # remove unreferenced gradients/patterns outside of defs
    # and most unreferenced elements inside of defs
