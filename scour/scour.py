@@ -2913,8 +2913,8 @@ def scourString(in_string, options=None):
          return False
       else:
          for element in doc.getElementsByTagName("*"):
-            for attrName in six.iterkeys(element.attributes):
-               if attrName.startswith(prefix):
+            for attribute in element.attributes.values():
+               if attribute.name.startswith(prefix):
                   return False
       return True
 
