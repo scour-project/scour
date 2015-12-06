@@ -49,17 +49,26 @@ class ScourOptions:
 	simple_colors = True
 	style_to_xml = True
 	group_collapse = True
-	strip_ids = False
-	digits = 5
-	embed_rasters = True
-	keep_editor_data = False
-	strip_xml_prolog = False
-	indent_type = "space"
-	enable_viewboxing = False
-	shorten_ids = False
-	strip_comments = False
-	remove_metadata = False
 	group_create = False
+	strip_ids = False
+	strip_comments = False
+	shorten_ids = False
+	shorten_ids_prefix = ""
+	embed_rasters = True
+	keep_defs = False
+	keep_editor_data = False
+	remove_metadata = False
+	renderer_workaround = True
+	strip_xml_prolog = False
+	enable_viewboxing = False
+	digits = 5
+	indent_type = "space"
+	indent_depth = 1
+	newlines = True
+	strip_xml_space_attribute = False
+	protect_ids_noninkscape = False
+	protect_ids_list = None
+	protect_ids_prefix = None
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
