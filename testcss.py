@@ -29,23 +29,23 @@ from scour.yocto_css import parseCssString
 class Blank(unittest.TestCase):
 	def runTest(self):
 		r = parseCssString('')
-		self.assertEquals( len(r), 0, 'Blank string returned non-empty list')
-		self.assertEquals( type(r), type([]), 'Blank string returned non list')
+		self.assertEqual( len(r), 0, 'Blank string returned non-empty list')
+		self.assertEqual( type(r), type([]), 'Blank string returned non list')
 
 class ElementSelector(unittest.TestCase):
 	def runTest(self):
 		r = parseCssString('foo {}')
-		self.assertEquals( len(r), 1, 'Element selector not returned')
-		self.assertEquals( r[0]['selector'], 'foo', 'Selector for foo not returned')
-		self.assertEquals( len(r[0]['properties']), 0, 'Property list for foo not empty')
+		self.assertEqual( len(r), 1, 'Element selector not returned')
+		self.assertEqual( r[0]['selector'], 'foo', 'Selector for foo not returned')
+		self.assertEqual( len(r[0]['properties']), 0, 'Property list for foo not empty')
 
 class ElementSelectorWithProperty(unittest.TestCase):
 	def runTest(self):
 		r = parseCssString('foo { bar: baz}')
-		self.assertEquals( len(r), 1, 'Element selector not returned')
-		self.assertEquals( r[0]['selector'], 'foo', 'Selector for foo not returned')
-		self.assertEquals( len(r[0]['properties']), 1, 'Property list for foo did not have 1')
-		self.assertEquals( r[0]['properties']['bar'], 'baz', 'Property bar did not have baz value')
+		self.assertEqual( len(r), 1, 'Element selector not returned')
+		self.assertEqual( r[0]['selector'], 'foo', 'Selector for foo not returned')
+		self.assertEqual( len(r[0]['properties']), 1, 'Property list for foo did not have 1')
+		self.assertEqual( r[0]['properties']['bar'], 'baz', 'Property bar did not have baz value')
 
 if __name__ == '__main__':
     unittest.main()

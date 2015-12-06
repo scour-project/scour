@@ -3095,7 +3095,8 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
-   in_string = open(filename).read()
+   with open(filename) as f:
+      in_string = f.read()
    out_string = scourString(in_string, options)
    return xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
