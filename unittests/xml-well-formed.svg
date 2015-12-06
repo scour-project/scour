@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:foo="http://foo/">
-	<!-- &lt;Jack &amp; Jill&gt; -->
-	<title>2 &lt; 5</title>
-	<desc>Peanut Butter &amp; Jelly</desc>
-	<glyph id="lt" unicode="&lt;"/>
-	<glyph id="amp" unicode="&amp;"/>
-	<text x="50" y="50">&#x389;TML &#x26; CSS</text>
-</svg>

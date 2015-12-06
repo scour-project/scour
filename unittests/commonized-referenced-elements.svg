@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-  <g id="g">
-    <rect width="200" height="100" fill="#0f0"/>
-    <rect width="200" height="100" fill="#0f0"/>
-    <rect width="200" height="100" fill="#0f0"/>
-    <circle id="e" r="20" fill="#0f0"/>
-  </g>
-  <use xlink:href="#e" />
-</svg>

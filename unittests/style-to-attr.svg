@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg">
-<defs>
-  <marker id="m">
-    <rect width="200" height="100"/>
-  </marker>
-</defs>
-<line x2="100" style="stroke:#000; marker-start:url(#m); marker-end:url(#m); marker-mid: url(#m)" />
-</svg>
