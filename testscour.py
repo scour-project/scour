@@ -931,12 +931,26 @@ class WellFormedXMLAmpersandInTextContent(unittest.TestCase):
 		self.assertTrue( wellformed.find('<desc>Peanut Butter &amp; Jelly</desc>') != -1,
 			'Improperly serialized &amp; in text content')
 
-class WellFormedXMLNamespacePrefix(unittest.TestCase):
+class WellFormedXMLNamespacePrefixRemoveUnused(unittest.TestCase):
 	def runTest(self):
 		with open('unittests/xml-well-formed.svg') as f:
 			wellformed = scour.scourString(f.read())
-		self.assertTrue( wellformed.find('xmlns:foo=') != -1,
-			'Improperly serialized namespace prefix declarations')
+		self.assertTrue( wellformed.find('xmlns:foo=') == -1,
+			'Improperly serialized namespace prefix declarations: Unused namespace decaration not removed')
+
+class WellFormedXMLNamespacePrefixKeepUsedElementPrefix(unittest.TestCase):
+	def runTest(self):
+		with open('unittests/xml-well-formed.svg') as f:
+			wellformed = scour.scourString(f.read())
+		self.assertTrue( wellformed.find('xmlns:bar=') != -1,
+			'Improperly serialized namespace prefix declarations: Used element prefix removed')
+
+class WellFormedXMLNamespacePrefixKeepUsedAttributePrefix(unittest.TestCase):
+	def runTest(self):
+		with open('unittests/xml-well-formed.svg') as f:
+			wellformed = scour.scourString(f.read())
+		self.assertTrue( wellformed.find('xmlns:baz=') != -1,
+			'Improperly serialized namespace prefix declarations: Used attribute prefix removed')
 
 class NamespaceDeclPrefixesInXMLWhenNotInDefaultNamespace(unittest.TestCase):
 	def runTest(self):
