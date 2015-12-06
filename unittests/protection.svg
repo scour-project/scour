@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <path id="path1" d="m1,1z"/>
+  <path id="path2" d="m1,1z"/>
+  <path id="path3" d="m1,1z"/>
+  <path id="path4" d="m1,1z"/>
+  <path id="p:mypath1" d="m1,1z"/>
+  <path id="p_mypath1" d="m1,1z"/>
+  <path id="otherpath" d="m1,1z"/>
+  <use xlink:href="#path1"/>
+</svg>

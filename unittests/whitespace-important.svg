@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
+</svg>

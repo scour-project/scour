@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="-9 0 9 9">
+ <line stroke="rgba(255,0,0,0.5)" y1="9" x1="9" transform="rotate(719.5)"/>
+ <!--  all rotation angles can be mapped to the shorter range [-90, 270[ -->
+</svg>

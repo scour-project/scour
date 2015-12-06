@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:x="http://ns.adobe.com/Extensibility/1.0/" 
+     xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" 
+     xmlns:graph="http://ns.adobe.com/Graphs/1.0/" 
+     xmlns:a="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/"
+     xmlns:f="http://ns.adobe.com/Flows/1.0/"
+     xmlns:ir="http://ns.adobe.com/ImageReplacement/1.0/"     
+     xmlns:custom="http://ns.adobe.com/GenericCustomNamespace/1.0/"
+     xmlns:xpath="http://ns.adobe.com/XPath/1.0/"
+     xmlns:ok="A.namespace.we.want.left.in"
+     i:viewOrigin="190.2959 599.1841" i:rulerOrigin="0 0" i:pageBounds="0 792 612 0">
+<x:foo>bar</x:foo>
+<i:foo>bar</i:foo>
+<graph:foo>bar</graph:foo>
+<a:foo>bar</a:foo>
+<f:foo>bar</f:foo>
+<ir:foo>bar</ir:foo>
+<custom:foo>bar</custom:foo>
+<xpath:foo>bar</xpath:foo>
+<variableSets xmlns="http://ns.adobe.com/Variables/1.0/">
+	<variableSet varSetName="binding1" locked="none">
+		<variables/>
+		<v:sampleDataSets xmlns="http://ns.adobe.com/GenericCustomNamespace/1.0/" xmlns:v="http://ns.adobe.com/Variables/1.0/"/>
+	</variableSet>
+</variableSets>
+<sfw xmlns="http://ns.adobe.com/SaveForWeb/1.0/">
+	<slices/>
+	<sliceSourceBounds y="191.664" x="190.296" width="225.72" height="407.52" bottomLeftOrigin="true"/>
+</sfw>
+<rect width="300" height="200" fill="green"
+	x:baz="1"
+	i:baz="1"
+	graph:baz="1"
+	a:baz="1"
+	f:baz="1"
+	ir:baz="1"
+	custom:baz='1'
+	xpath:baz="1"
+	xmlns:v="http://ns.adobe.Variables/1.0/"
+	v:baz="1"
+	xmlns:sfw="http://ns.adobe.com/SaveForWeb/1.0/"
+	sfw:baz="1"
+	ok:baz="1" />
+</svg>

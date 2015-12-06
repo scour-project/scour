@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg:svg xmlns:svg="http://www.w3.org/2000/svg" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:cc="http://creativecommons.org/ns#" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <rdf:RDF id="RDF5">
+   <cc:Work id="Work6" rdf:about="">
+    <dc:format id="format7">image/svg+xml</dc:format>
+    <dc:type id="type9" rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:title id="title6241">Open Clip Art Logo</dc:title>
+    <dc:date id="date6243">10-01-2004</dc:date>
+    <dc:creator id="creator6245">
+     <cc:Agent id="Agent6246">
+      <dc:title id="title6247">Andreas Nilsson</dc:title>
+     </cc:Agent>
+    </dc:creator>
+    <cc:license id="license6249" rdf:resource="http://web.resource.org/cc/PublicDomain"/>
+    <dc:contributor id="contributor6254">
+     <cc:Agent id="Agent6255">
+      <dc:title id="title6256">Jon Phillips, Tobias Jakobs</dc:title>
+     </cc:Agent>
+    </dc:contributor>
+    <dc:description id="description6258">This is one version of the official Open Clip Art Library logo.</dc:description>
+    <dc:subject id="subject6260">logo, open clip art library logo, logotype</dc:subject>
+   </cc:Work>
+   <cc:License id="License6250" rdf:about="http://web.resource.org/cc/PublicDomain">
+    <cc:permits id="permits6251" rdf:resource="http://web.resource.org/cc/Reproduction"/>
+    <cc:permits id="permits6252" rdf:resource="http://web.resource.org/cc/Distribution"/>
+    <cc:permits id="permits6253" rdf:resource="http://web.resource.org/cc/DerivativeWorks"/>
+   </cc:License>
+  </rdf:RDF>
+  <svg:rect width="200" height="100" />
+</svg:svg>

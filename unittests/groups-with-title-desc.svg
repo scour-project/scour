@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+<g>
+ <title>Group 1</title>
+ <rect width="300" height="200" fill="green" />
+ <circle cx="200" cy="100" r="50" fill="yellow" />
+</g>
+<g>
+ <desc>Group 1</desc>
+ <rect width="300" height="200" fill="green" />
+ <circle cx="200" cy="100" r="50" fill="yellow" />
+</g>
+</svg>

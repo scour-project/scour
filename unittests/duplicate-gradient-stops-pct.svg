@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1"> 
+<defs>
+    <linearGradient id="sea-gradient" x1="0" x2="0" y1="0" y2="1">
+			<stop offset="0%" stop-color="lightgrey"/>
+			<stop offset="0.5" stop-color="darkgrey"/>
+			<stop offset="50%" stop-color="darkgrey"/>
+			<stop offset="100%" stop-color="white"/>
+    </linearGradient>
+ </defs>
+<rect style="fill: url(#sea-gradient) rgb(0, 0, 0);" y="0" x="0" height="100" width="100"/>
+</svg>

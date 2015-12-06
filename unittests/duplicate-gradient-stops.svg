@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lingrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="red" />
+      <stop offset="0.5" stop-color="blue" />
+      <stop offset="0.5" stop-color="blue" />
+      <stop offset="1.0" stop-color="green" />
+    </linearGradient>
+    <radialGradient id="radgrad">
+      <stop offset="0" stop-color="red" />
+      <stop offset="0.5" stop-color="blue" />
+      <stop offset="0.5" stop-color="blue" />
+      <stop offset="1.0" stop-color="green" />
+    </radialGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#lingrad)" />
+  <rect width="300" height="300" fill="url(#radgrad)" />
+</svg>
