@@ -2123,7 +2123,7 @@ def parseListOfPoints(s):
    # coordinate-pair = coordinate comma-or-wsp coordinate
    # coordinate = sign? integer
    # comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
-   ws_nums = re.split(r"\s*,?\s*", s.strip())
+   ws_nums = re.split(r"\s*[\s,]\s*", s.strip())
    nums = []
 
    # also, if 100-100 is found, split it into two also
