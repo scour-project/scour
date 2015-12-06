@@ -19,8 +19,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import absolute_import
+
 import unittest
+
 from scour.yocto_css import parseCssString
+
 
 class Blank(unittest.TestCase):
 	def runTest(self):

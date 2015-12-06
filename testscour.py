@@ -20,10 +20,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from __future__ import absolute_import
+
+import six
+from six.moves import map, range
+
 import unittest
 import xml.dom.minidom
+
 from scour.svg_regex import svg_parser
 from scour.scour import scourXmlFile, scourString, parse_args, makeWellFormed
+
 
 SVGNS = 'http://www.w3.org/2000/svg'
 
@@ -591,7 +598,7 @@ class ChangeQuadToShorthandInPath(unittest.TestCase):
 class HandleNonAsciiUtf8(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/utf8.svg')
-		desc = unicode(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+		desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
 		self.assertEquals( desc, u'ú',
 			'Did not handle non-ASCII characters' )
 
@@ -1066,7 +1073,7 @@ class RemoveMetadataOption(unittest.TestCase):
 
 class EnableCommentStrippingOption(unittest.TestCase):
 	def runTest(self):
-		docStr = file('unittests/comment-beside-xml-decl.svg').read()
+		docStr = open('unittests/comment-beside-xml-decl.svg').read()
 		docStr = scour.scourString(docStr,
 			scour.parse_args(['--enable-comment-stripping'])[0])
 		self.assertEquals(docStr.find('<!--'), -1,
@@ -1074,7 +1081,7 @@ class EnableCommentStrippingOption(unittest.TestCase):
 
 class StripXmlPrologOption(unittest.TestCase):
 	def runTest(self):
-		docStr = file('unittests/comment-beside-xml-decl.svg').read()
+		docStr = open('unittests/comment-beside-xml-decl.svg').read()
 		docStr = scour.scourString(docStr,
 			scour.parse_args(['--strip-xml-prolog'])[0])
 		self.assertEquals(docStr.find('<?xml'), -1,
@@ -1157,7 +1164,7 @@ class GradientReferencedByStyleCDATA(unittest.TestCase):
 
 class ShortenIDsInStyleCDATA(unittest.TestCase):
 	def runTest(self):
-		docStr = file('unittests/style-cdata.svg').read()
+		docStr = open('unittests/style-cdata.svg').read()
 		docStr = scour.scourString(docStr,
 			scour.parse_args(['--shorten-ids'])[0])
 		self.assertEquals(docStr.find('somethingreallylong'), -1,
@@ -1366,5 +1373,5 @@ class DuplicateGradientsUpdateStyle(unittest.TestCase):
 if __name__ == '__main__':
 	testcss = __import__('testcss')
 	scour = __import__('__main__')
-	suite = unittest.TestSuite( map(unittest.defaultTestLoader.loadTestsFromModule, [testcss, scour]) )
+	suite = unittest.TestSuite( list(map(unittest.defaultTestLoader.loadTestsFromModule, [testcss, scour])) )
 	unittest.main(defaultTest="suite")
