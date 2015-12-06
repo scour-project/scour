@@ -2145,8 +2145,10 @@ def parseListOfPoints(s):
             else:
                # unless we accidentally split a number that was in scientific notation
                # and had a negative exponent (500.00e-1)
-               prev = nums[len(nums)-1]
-               if prev[len(prev)-1] in ['e', 'E']:
+               prev = "";
+               if len(nums):
+                  prev = nums[len(nums)-1]
+               if prev and prev[len(prev)-1] in ['e', 'E']:
                   nums[len(nums)-1] = prev + '-' + negcoords[j]
                else:
                   nums.append( '-'+negcoords[j] )
