@@ -20,7 +20,7 @@
 #   limitations under the License.
 
 import unittest
-from yocto_css import parseCssString
+from scour.yocto_css import parseCssString
 
 class Blank(unittest.TestCase):
 	def runTest(self):

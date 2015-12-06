@@ -22,8 +22,8 @@
 
 import unittest
 import xml.dom.minidom
-from svg_regex import svg_parser
-from scour import scourXmlFile, scourString, parse_args, makeWellFormed
+from scour.svg_regex import svg_parser
+from scour.scour import scourXmlFile, scourString, parse_args, makeWellFormed
 
 SVGNS = 'http://www.w3.org/2000/svg'
 
