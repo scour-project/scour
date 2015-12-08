@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+	<polygon fill="blue" points="50,50 150,50 150,150 50,150 +5e1,500.00e-1" />
+	<polygon fill="green" points="200,50 300,50 300,150 200,150" />
+</svg>

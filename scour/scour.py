@@ -2123,7 +2123,7 @@ def parseListOfPoints(s):
    # coordinate-pair = coordinate comma-or-wsp coordinate
    # coordinate = sign? integer
    # comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
-   ws_nums = re.split(r"\s*,?\s*", s.strip())
+   ws_nums = re.split(r"\s*[\s,]\s*", s.strip())
    nums = []
 
    # also, if 100-100 is found, split it into two also
@@ -2145,8 +2145,10 @@ def parseListOfPoints(s):
             else:
                # unless we accidentally split a number that was in scientific notation
                # and had a negative exponent (500.00e-1)
-               prev = nums[len(nums)-1]
-               if prev[len(prev)-1] in ['e', 'E']:
+               prev = "";
+               if len(nums):
+                  prev = nums[len(nums)-1]
+               if prev and prev[len(prev)-1] in ['e', 'E']:
                   nums[len(nums)-1] = prev + '-' + negcoords[j]
                else:
                   nums.append( '-'+negcoords[j] )
@@ -3095,7 +3097,8 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
-   in_string = open(filename).read()
+   with open(filename) as f:
+      in_string = f.read()
    out_string = scourString(in_string, options)
    return xml.dom.minidom.parseString(out_string.encode('utf-8'))
 

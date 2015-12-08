@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" x="1.0000000" y="1.0000000">
+	<rect x="123.4567" y="123.00" width="300.00001" height="1E+02" fill="lime" />
+	<rect x="123.4567px" y="35.000ex" width="300.00001pt" height="5E+01%" fill="blue" />
+</svg>

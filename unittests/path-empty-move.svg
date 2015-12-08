@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+  <path d="m100 100 l200 100 m0 0z" />
+  <path d="m100 100 v200 m0 0 100 100z" />
+</svg>
