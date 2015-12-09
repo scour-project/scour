@@ -604,9 +604,9 @@ class ChangeQuadToShorthandInPath(unittest.TestCase):
 		self.assertEqual(path.getAttribute('d'), 'm10 100q50-50 100 0t100 0',
 			'Did not change quadratic curves into shorthand curve segments in path')
 
-class HandleUTF8(unittest.TestCase):
+class HandleEncodingUTF8(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/utf8.svg')
+		doc = scour.scourXmlFile('unittests/encoding-utf8.svg')
 		text = u'Hello in many languages:\nar: أهلا\nbn: হ্যালো\nel: Χαίρετε\nen: Hello\nhi: नमस्ते\niw: שלום\nja: こんにちは\nkm: ជំរាបសួរ\nml: ഹലോ\nru: Здравствуйте\nur: ہیلو\nzh: 您好'
 		desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
 		self.assertEqual( desc, text, 'Did not handle international UTF8 characters' )
@@ -616,6 +616,12 @@ class HandleUTF8(unittest.TestCase):
 		self.assertEqual( desc, u':-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔', 'Did not handle mathematical UTF8 characters' )
 		desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[3].firstChild.wholeText).strip()
 		self.assertEqual( desc, u'⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎', 'Did not handle superscript/subscript UTF8 characters' )
+
+class HandleEncodingISO_8859_15(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/encoding-iso-8859-15.svg')
+		desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+		self.assertEqual( desc, u'áèîäöüß€ŠšŽžŒœŸ', 'Did not handle ISO 8859-15 encoded characters' )
 
 class HandleSciNoInPathData(unittest.TestCase):
 	def runTest(self):
