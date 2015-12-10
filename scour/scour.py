@@ -2587,20 +2587,11 @@ def removeComments(element) :
    """
    global numCommentBytes
 
-   if isinstance(element, xml.dom.minidom.Document):
-      # must process the document object separately, because its
-      # documentElement's nodes have None as their parentNode
-      for subelement in element.childNodes:
-         if isinstance(element, xml.dom.minidom.Comment):
-            numCommentBytes += len(element.data)
-            element.documentElement.removeChild(subelement)
-         else:
-            removeComments(subelement)
-   elif isinstance(element, xml.dom.minidom.Comment):
+   if isinstance(element, xml.dom.minidom.Comment):
       numCommentBytes += len(element.data)
       element.parentNode.removeChild(element)
    else:
-      for subelement in element.childNodes:
+      for subelement in element.childNodes[:]:
          removeComments(subelement)
 
 
