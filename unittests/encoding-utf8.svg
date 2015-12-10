@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <desc id="hello">Hello in many languages:
+ar: أهلا
+bn: হ্যালো
+el: Χαίρετε
+en: Hello
+hi: नमस्ते
+iw: שלום
+ja: こんにちは
+km: ជំរាបសួរ
+ml: ഹലോ
+ru: Здравствуйте
+ur: ہیلو
+zh: 您好</desc>
+ <desc id="common">“”‘’–—…‐‒°©®™•½¼¾⅓⅔†‡µ¢£€«»♠♣♥♦¿�</desc>
+ <desc id="math">:-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔</desc>
+ <desc id="supersub">⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎</desc>
+</svg>

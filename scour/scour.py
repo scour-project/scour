@@ -3097,7 +3097,7 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
-   with open(filename) as f:
+   with open(filename, "rb") as f:
       in_string = f.read()
    out_string = scourString(in_string, options)
    return xml.dom.minidom.parseString(out_string.encode('utf-8'))
@@ -3235,15 +3235,24 @@ def parse_args(args=None, ignore_additional_args=False):
       _options_parser.error("Input filename is the same as output filename")
 
    if options.infilename:
-      infile = maybe_gziped_file(options.infilename)
+      infile = maybe_gziped_file(options.infilename, "rb")
       # GZ: could catch a raised IOError here and report
    else:
       # GZ: could sniff for gzip compression here
-      infile = sys.stdin
+      #
+      # open the binary buffer of stdin and let XML parser handle decoding
+      try:
+        infile = sys.stdin.buffer
+      except AttributeError:
+        infile = sys.stdin
    if options.outfilename:
       outfile = maybe_gziped_file(options.outfilename, "wb")
    else:
-      outfile = sys.stdout
+      # open the binary buffer of stdout as the output is already encoded
+      try:
+         outfile = sys.stdout.buffer
+      except AttributeError:
+         outfile = sys.stdout
 
    return options, [infile, outfile]
 
