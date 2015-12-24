@@ -52,13 +52,13 @@ scour -i input.svg -o output.svgz --enable-viewboxing --enable-id-stripping \
   --enable-comment-stripping --shorten-ids --indent=none
 ```
 
-## Licence
+## License
 [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE)
 
 ## Development
 Scour was originally developed by Jeff "codedread" Schiller and Louis Simard. Development is [now maintained](https://github.com/codedread/scour/issues/11) by Tobias "oberstet" Oberstein.
 
-Scour was started as a vehicle for to learn Python. In addition, the goal was to reduce the amount of time spent in cleaning up files that are found on sites such as [openclipart.org](https://openclipart.org).
+Scour was started as a vehicle for learning Python. In addition, the goal was to reduce the amount of time spent on cleaning up files that are found on sites such as [openclipart.org](https://openclipart.org).
 
 Ideas were pulled from three places:
   * the original author's head

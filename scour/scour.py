@@ -95,13 +95,15 @@ NS = {'SVG':      'http://www.w3.org/2000/svg',
       'ADOBE_FLOWS': 'http://ns.adobe.com/Flows/1.0/',
       'ADOBE_IMAGE_REPLACEMENT': 'http://ns.adobe.com/ImageReplacement/1.0/',
       'ADOBE_CUSTOM': 'http://ns.adobe.com/GenericCustomNamespace/1.0/',
-      'ADOBE_XPATH': 'http://ns.adobe.com/XPath/1.0/'
+      'ADOBE_XPATH': 'http://ns.adobe.com/XPath/1.0/',
+      'SKETCH': 'http://www.bohemiancoding.com/sketch/ns'
       }
 
 unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
             NS['ADOBE_GRAPHS'], NS['ADOBE_SVG_VIEWER'], NS['ADOBE_VARIABLES'],
             NS['ADOBE_SFW'], NS['ADOBE_EXTENSIBILITY'], NS['ADOBE_FLOWS'],
-            NS['ADOBE_IMAGE_REPLACEMENT'], NS['ADOBE_CUSTOM'], NS['ADOBE_XPATH'] ]
+            NS['ADOBE_IMAGE_REPLACEMENT'], NS['ADOBE_CUSTOM'],
+            NS['ADOBE_XPATH'], NS['SKETCH'] ]
 
 svgAttributes = [
             'clip-rule',
@@ -3150,7 +3152,7 @@ _options_parser.add_option("--keep-unreferenced-defs",
    help="won't remove elements within the defs container that are unreferenced")
 _options_parser.add_option("--keep-editor-data",
    action="store_true", dest="keep_editor_data", default=False,
-   help="won't remove Inkscape, Sodipodi or Adobe Illustrator elements and attributes")
+   help="won't remove Inkscape, Sodipodi, Adobe Illustrator or Sketch elements and attributes")
 _options_parser.add_option("--remove-metadata",
    action="store_true", dest="remove_metadata", default=False,
    help="remove <metadata> elements (which may contain license metadata etc.)")
