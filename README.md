@@ -10,10 +10,18 @@ This Github repository is the official one. The official website as well as olde
 
 ## Installation
 
-Scour requires [Python](https://www.python.org) 2.6 or 2.7 (Python 3 currently does NOT work - see [here](https://github.com/codedread/scour/issues/30)). Further, for installation, use [pip](https://pip.pypa.io):
+Scour requires [Python](https://www.python.org) 2.6 or 2.7 (Python 3 currently does NOT work - see [here](https://github.com/codedread/scour/issues/30)). Further, for installation, [pip](https://pip.pypa.io) should be used.
+
+To install the [latest release](https://pypi.python.org/pypi/scour) of Scour from PyPI:
 
 ```console
 pip install scour
+```
+
+To install the [latest trunk](https://github.com/codedread/scour) version (which might be broken!) from GitHub:
+
+```console
+pip install https://github.com/codedread/scour/archive/master.zip
 ```
 
 ## Usage
