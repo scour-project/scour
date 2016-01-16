@@ -32,7 +32,11 @@ Authors:
   - Tobias Oberstein (maintainer)
 """
 
-VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
+old_path = os.getcwd()
+src_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(src_path)
+
+VERSIONFILE = "scour/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -74,3 +78,5 @@ setup (
                   "Topic :: Utilities"],
    keywords = 'svg optimizer'
 )
+
+os.chdir(old_path)
