@@ -56,6 +56,7 @@ import sys
 import xml.dom.minidom
 import re
 import math
+import time
 from scour.svg_regex import svg_parser
 from scour.svg_transform import svg_transform_parser
 import optparse
@@ -67,7 +68,7 @@ from six.moves import range
 try:
    from decimal import Decimal, InvalidOperation, getcontext
 except ImportError:
-   print("Scour requires Python 2.4.", file=sys.stderr)
+   print("Scour requires at least Python 2.6+ or Python 3.3+.")
 
 # Import Psyco if available
 try:
@@ -75,6 +76,12 @@ try:
    psyco.full()
 except ImportError:
    pass
+
+# select the most precise walltime measurement function available on the platform
+if sys.platform.startswith('win'):
+   walltime = time.clock
+else:
+   walltime = time.time
 
 from scour import __version__
 
@@ -3181,6 +3188,9 @@ _options_parser.add_option("-o",
 _options_parser.add_option("-q", "--quiet",
    action="store_true", dest="quiet", default=False,
    help="suppress non-error output")
+_options_parser.add_option("-v", "--verbose",
+   action="store_true", dest="verbose", default=False,
+   help="verbose log output (eg report processed elements and such)")
 _options_parser.add_option("--indent",
    action="store", type="string", dest="indent_type", default="space",
    help="indentation of the output: none, space, tab (default: %default)")
@@ -3279,19 +3289,9 @@ def generateDefaultOptions():
    return Struct(**d)
 
 
-
 def start(options, input, output):
-   if sys.platform == "win32":
-      from time import clock as get_tick
-   else:
-      # GZ: is this different from time.time() in any way?
-      def get_tick():
-         return os.times()[0]
 
-   start = get_tick()
-
-   if not options.quiet:
-      print("%s %s\n%s" % (APP, VER, COPYRIGHT), file=sys.stderr)
+   start = walltime()
 
    # do the work
    in_string = input.read()
@@ -3302,26 +3302,29 @@ def start(options, input, output):
    input.close()
    output.close()
 
-   end = get_tick()
+   end = walltime()
 
-   # GZ: not using globals would be good too
+   # run-time in ms
+   duration = int(round((end - start) * 1000.))
+
+   oldsize = len(in_string)
+   newsize = len(out_string)
+   sizediff = (newsize / oldsize) * 100.
+
    if not options.quiet:
-      print(' File:', input.name, os.linesep + \
-         ' Time taken:', str(end-start) + 's', os.linesep + \
-         getReport(), file=sys.stderr)
-
-      oldsize = len(in_string)
-      newsize = len(out_string)
-      sizediff = (newsize / oldsize) * 100
-      print(' Original file size:', oldsize, 'bytes;', \
-         'new file size:', newsize, 'bytes (' + str(sizediff)[:5] + '%)', file=sys.stderr)
-
+      print('Scour processed file "{}" in {} ms: {}/{} bytes orig/new -> {:.1f}%'.format(
+         input.name,
+         duration,
+         oldsize,
+         newsize,
+         sizediff))
+      if options.verbose:
+         print(getReport())
 
 
 def run():
    options, (input, output) = parse_args()
    start(options, input, output)
-
 
 
 if __name__ == '__main__':
