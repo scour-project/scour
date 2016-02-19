@@ -2866,8 +2866,9 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 # input is a string representation of the input XML
 # returns a string representation of the output XML
 def scourString(in_string, options=None):
-   if options is None:
-      options = _options_parser.get_default_values()
+   # sanitize options (take missing attributes from defaults, discard unknown attributes)
+   options = sanitizeOptions(options)
+
    getcontext().prec = options.digits
    global numAttrsRemoved
    global numStylePropsFixed
@@ -3287,6 +3288,18 @@ def generateDefaultOptions():
    d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
 
    return Struct(**d)
+
+
+
+# sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
+def sanitizeOptions(options):
+   optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
+
+   sanitizedOptions = _options_parser.get_default_values()
+   sanitizedOptions._update_careful(optionsDict)
+
+   return sanitizedOptions
+
 
 
 def start(options, input, output):
