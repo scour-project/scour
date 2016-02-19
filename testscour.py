@@ -45,30 +45,31 @@ def walkTree(elem, func):
 		if walkTree(child, func) == False: return False
 	return True
 
+
 class ScourOptions:
-	simple_colors = True
-	style_to_xml = True
-	group_collapse = True
-	group_create = False
-	strip_ids = False
-	strip_comments = False
-	shorten_ids = False
-	shorten_ids_prefix = ""
-	embed_rasters = True
-	keep_defs = False
-	keep_editor_data = False
-	remove_metadata = False
-	renderer_workaround = True
-	strip_xml_prolog = False
-	enable_viewboxing = False
-	digits = 5
-	indent_type = "space"
-	indent_depth = 1
-	newlines = True
-	strip_xml_space_attribute = False
-	protect_ids_noninkscape = False
-	protect_ids_list = None
-	protect_ids_prefix = None
+	pass
+
+
+class EmptyOptions(unittest.TestCase):
+	def runTest(self):
+		options = ScourOptions
+		try:
+			scour.scourXmlFile('unittests/ids-to-strip.svg', options)
+			fail = False
+		except:
+			fail = True
+		self.assertEqual(fail, False, 'Exception when calling Scour with empty options object')
+
+class InvalidOptions(unittest.TestCase):
+	def runTest(self):
+		options = ScourOptions
+		options.invalidOption = "invalid value"
+		try:
+			scour.scourXmlFile('unittests/ids-to-strip.svg', options)
+			fail = False
+		except:
+			fail = True
+		self.assertEqual(fail, False, 'Exception when calling Scour with invalid options')
 
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
