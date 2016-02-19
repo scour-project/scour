@@ -3325,11 +3325,11 @@ def start(options, input, output):
    sizediff = (newsize / oldsize) * 100.
 
    if not options.quiet:
-      print('Scour processed file "{}" in {} ms: {}/{} bytes orig/new -> {:.1f}%'.format(
+      print('Scour processed file "{}" in {} ms: {}/{} bytes new/orig -> {:.1f}%'.format(
          input.name,
          duration,
-         oldsize,
          newsize,
+         oldsize,
          sizediff))
       if options.verbose:
          print(getReport())
