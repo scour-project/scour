@@ -3120,11 +3120,10 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
 # GZ: would prefer this to be in a function or class scope, but tests etc need
 #     access to the defaults anyway
 _options_parser = optparse.OptionParser(
-   usage="%prog [-i input.svg] [-o output.svg] [OPTIONS]",
-   description=("If the input/output files are specified with a svgz"
-   " extension, then compressed SVG is assumed. If the input file is not"
-   " specified, stdin is used. If the output file is not specified, "
-   " stdout is used."),
+   usage="%prog [input.svg [output.svg]] [OPTIONS]",
+   description=("If the input/output files are not specified, stdin/stdout is used. "
+                "If the input/output files are specified with a svgz extension, "
+                "then compressed SVG is assumed."),
    formatter=HeaderedFormatter(max_help_position=30),
    version=VER)
 
@@ -3227,8 +3226,13 @@ def maybe_gziped_file(filename, mode="r"):
 def parse_args(args=None, ignore_additional_args=False):
    options, rargs = _options_parser.parse_args(args)
 
-   if rargs and not ignore_additional_args:
-      _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
+   if rargs:
+      if not options.infilename:
+         options.infilename = rargs.pop(0)
+      if not options.outfilename and rargs:
+         options.outfilename = rargs.pop(0)
+      if not ignore_additional_args and rargs:
+         _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
    if options.digits < 0:
       _options_parser.error("Can't have negative significant digits, see --help")
    if not options.indent_type in ["tab", "space", "none"]:
