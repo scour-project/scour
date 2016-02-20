@@ -3120,98 +3120,110 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
 # GZ: would prefer this to be in a function or class scope, but tests etc need
 #     access to the defaults anyway
 _options_parser = optparse.OptionParser(
-   usage="%prog [input.svg [output.svg]] [OPTIONS]",
-   description=("If the input/output files are not specified, stdin/stdout is used. "
+   usage="%prog [INPUT.SVG [OUTPUT.SVG]] [OPTIONS]",
+   description=("If the input/output files are not specified, stdin/stdout are used. "
                 "If the input/output files are specified with a svgz extension, "
                 "then compressed SVG is assumed."),
-   formatter=HeaderedFormatter(max_help_position=30),
+   formatter=HeaderedFormatter(max_help_position=33),
    version=VER)
 
-_options_parser.add_option("--disable-simplify-colors",
-   action="store_false", dest="simple_colors", default=True,
-   help="won't convert all colors to #RRGGBB format")
-_options_parser.add_option("--disable-style-to-xml",
-   action="store_false", dest="style_to_xml", default=True,
-   help="won't convert styles into XML attributes")
-_options_parser.add_option("--disable-group-collapsing",
-   action="store_false", dest="group_collapse", default=True,
-   help="won't collapse <g> elements")
-_options_parser.add_option("--create-groups",
-   action="store_true", dest="group_create", default=False,
-   help="create <g> elements for runs of elements with identical attributes")
-_options_parser.add_option("--enable-id-stripping",
-   action="store_true", dest="strip_ids", default=False,
-   help="remove all un-referenced ID attributes")
-_options_parser.add_option("--enable-comment-stripping",
-   action="store_true", dest="strip_comments", default=False,
-   help="remove all <!-- --> comments")
-_options_parser.add_option("--shorten-ids",
-   action="store_true", dest="shorten_ids", default=False,
-   help="shorten all ID attributes to the least number of letters possible")
-_options_parser.add_option("--shorten-ids-prefix",
-   action="store", type="string", dest="shorten_ids_prefix", default="",
-   help="shorten all ID attributes with a custom prefix")
-_options_parser.add_option("--disable-embed-rasters",
-   action="store_false", dest="embed_rasters", default=True,
-   help="won't embed rasters as base64-encoded data")
-_options_parser.add_option("--keep-unreferenced-defs",
-   action="store_true", dest="keep_defs", default=False,
-   help="won't remove elements within the defs container that are unreferenced")
-_options_parser.add_option("--keep-editor-data",
-   action="store_true", dest="keep_editor_data", default=False,
-   help="won't remove Inkscape, Sodipodi, Adobe Illustrator or Sketch elements and attributes")
-_options_parser.add_option("--remove-metadata",
-   action="store_true", dest="remove_metadata", default=False,
-   help="remove <metadata> elements (which may contain license metadata etc.)")
-_options_parser.add_option("--renderer-workaround",
-   action="store_true", dest="renderer_workaround", default=True,
-   help="work around various renderer bugs (currently only librsvg) (default)")
-_options_parser.add_option("--no-renderer-workaround",
-   action="store_false", dest="renderer_workaround", default=True,
-   help="do not work around various renderer bugs (currently only librsvg)")
-_options_parser.add_option("--strip-xml-prolog",
-   action="store_true", dest="strip_xml_prolog", default=False,
-   help="won't output the <?xml ?> prolog")
-_options_parser.add_option("--enable-viewboxing",
-   action="store_true", dest="enable_viewboxing", default=False,
-   help="changes document width/height to 100%/100% and creates viewbox coordinates")
-
-# GZ: this is confusing, most people will be thinking in terms of
-#     decimal places, which is not what decimal precision is doing
-_options_parser.add_option("-p", "--set-precision",
-   action="store", type=int, dest="digits", default=5,
-   help="set number of significant digits (default: %default)")
-_options_parser.add_option("-i",
-   action="store", dest="infilename", help=optparse.SUPPRESS_HELP)
-_options_parser.add_option("-o",
-   action="store", dest="outfilename", help=optparse.SUPPRESS_HELP)
 _options_parser.add_option("-q", "--quiet",
    action="store_true", dest="quiet", default=False,
    help="suppress non-error output")
 _options_parser.add_option("-v", "--verbose",
    action="store_true", dest="verbose", default=False,
-   help="verbose log output (eg report processed elements and such)")
-_options_parser.add_option("--indent",
-   action="store", type="string", dest="indent_type", default="space",
+   help="verbose output (optimization statistics, etc.)")
+_options_parser.add_option("-i",
+   action="store", dest="infilename", metavar="INPUT.SVG",
+   help="alternative way to specify input filename")
+_options_parser.add_option("-o",
+   action="store", dest="outfilename", metavar="OUTPUT.SVG",
+   help="alternative way to specify output filename")
+
+_option_group_optimization = optparse.OptionGroup(_options_parser, "Optimization")
+_option_group_optimization.add_option("-p", "--set-precision",
+   action="store", type=int, dest="digits", default=5, metavar="NUM",
+   help="set number of significant digits (default: %default)")
+_option_group_optimization.add_option("--disable-simplify-colors",
+   action="store_false", dest="simple_colors", default=True,
+   help="won't convert all colors to #RRGGBB format")
+_option_group_optimization.add_option("--disable-style-to-xml",
+   action="store_false", dest="style_to_xml", default=True,
+   help="won't convert styles into XML attributes")
+_option_group_optimization.add_option("--disable-group-collapsing",
+   action="store_false", dest="group_collapse", default=True,
+   help="won't collapse <g> elements")
+_option_group_optimization.add_option("--create-groups",
+   action="store_true", dest="group_create", default=False,
+   help="create <g> elements for runs of elements with identical attributes")
+_option_group_optimization.add_option("--keep-editor-data",
+   action="store_true", dest="keep_editor_data", default=False,
+   help="won't remove Inkscape, Sodipodi, Adobe Illustrator or Sketch elements and attributes")
+_option_group_optimization.add_option("--keep-unreferenced-defs",
+   action="store_true", dest="keep_defs", default=False,
+   help="won't remove elements within the defs container that are unreferenced")
+_option_group_optimization.add_option("--renderer-workaround",
+   action="store_true", dest="renderer_workaround", default=True,
+   help="work around various renderer bugs (currently only librsvg) (default)")
+_option_group_optimization.add_option("--no-renderer-workaround",
+   action="store_false", dest="renderer_workaround", default=True,
+   help="do not work around various renderer bugs (currently only librsvg)")
+_options_parser.add_option_group(_option_group_optimization)
+
+_option_group_document = optparse.OptionGroup(_options_parser, "SVG document")
+_option_group_document.add_option("--strip-xml-prolog",
+   action="store_true", dest="strip_xml_prolog", default=False,
+   help="won't output the XML prolog (<?xml ?>)")
+_option_group_document.add_option("--remove-metadata",
+   action="store_true", dest="remove_metadata", default=False,
+   help="remove <metadata> elements (which may contain license/author information etc.)")
+_option_group_document.add_option("--enable-comment-stripping",
+   action="store_true", dest="strip_comments", default=False,
+   help="remove all comments (<!-- -->)")
+_option_group_document.add_option("--disable-embed-rasters",
+   action="store_false", dest="embed_rasters", default=True,
+   help="won't embed rasters as base64-encoded data")
+_option_group_document.add_option("--enable-viewboxing",
+   action="store_true", dest="enable_viewboxing", default=False,
+   help="changes document width/height to 100%/100% and creates viewbox coordinates")
+_options_parser.add_option_group(_option_group_document)
+
+_option_group_formatting = optparse.OptionGroup(_options_parser, "Output formatting")
+_option_group_formatting.add_option("--indent",
+   action="store", type="string", dest="indent_type", default="space", metavar="TYPE",
    help="indentation of the output: none, space, tab (default: %default)")
-_options_parser.add_option("--nindent",
-   action="store", type=int, dest="indent_depth", default=1,
+_option_group_formatting.add_option("--nindent",
+   action="store", type=int, dest="indent_depth", default=1, metavar="NUM",
    help="depth of the indentation, i.e. number of spaces/tabs: (default: %default)")
-_options_parser.add_option("--no-line-breaks",
+_option_group_formatting.add_option("--no-line-breaks",
    action="store_false", dest="newlines", default=True,
-   help="do not create line breaks in output (also disables indentation; might be overriden by xml:space=\"preserve\")")
-_options_parser.add_option("--strip-xml-space",
+   help="do not create line breaks in output"
+        "(also disables indentation; might be overriden by xml:space=\"preserve\")")
+_option_group_formatting.add_option("--strip-xml-space",
    action="store_true", dest="strip_xml_space_attribute", default=False,
    help="strip the xml:space=\"preserve\" attribute from the root SVG element")
-_options_parser.add_option("--protect-ids-noninkscape",
+_options_parser.add_option_group(_option_group_formatting)
+
+_option_group_ids = optparse.OptionGroup(_options_parser, "ID attributes")
+_option_group_ids.add_option("--enable-id-stripping",
+   action="store_true", dest="strip_ids", default=False,
+   help="remove all unreferenced IDs")
+_option_group_ids.add_option("--shorten-ids",
+   action="store_true", dest="shorten_ids", default=False,
+   help="shorten all IDs to the least number of letters possible")
+_option_group_ids.add_option("--shorten-ids-prefix",
+   action="store", type="string", dest="shorten_ids_prefix", metavar="PREFIX",
+   help="add custom prefix to shortened IDs")
+_option_group_ids.add_option("--protect-ids-noninkscape",
    action="store_true", dest="protect_ids_noninkscape", default=False,
-   help="Don't change IDs not ending with a digit")
-_options_parser.add_option("--protect-ids-list",
-   action="store", type="string", dest="protect_ids_list", default=None,
-   help="Don't change IDs given in a comma-separated list")
-_options_parser.add_option("--protect-ids-prefix",
-   action="store", type="string", dest="protect_ids_prefix", default=None,
-   help="Don't change IDs starting with the given prefix")
+   help="don't remove IDs not ending with a digit")
+_option_group_ids.add_option("--protect-ids-list",
+   action="store", type="string", dest="protect_ids_list", metavar="LIST",
+   help="don't remove IDs given in this comma-separated list")
+_option_group_ids.add_option("--protect-ids-prefix",
+   action="store", type="string", dest="protect_ids_prefix", metavar="PREFIX",
+   help="don't remove IDs starting with the given prefix")
+_options_parser.add_option_group(_option_group_ids)
 
 
 
