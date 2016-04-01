@@ -3212,7 +3212,7 @@ _option_group_ids.add_option("--shorten-ids",
    action="store_true", dest="shorten_ids", default=False,
    help="shorten all IDs to the least number of letters possible")
 _option_group_ids.add_option("--shorten-ids-prefix",
-   action="store", type="string", dest="shorten_ids_prefix", metavar="PREFIX",
+   action="store", type="string", dest="shorten_ids_prefix", default="", metavar="PREFIX",
    help="add custom prefix to shortened IDs")
 _option_group_ids.add_option("--protect-ids-noninkscape",
    action="store_true", dest="protect_ids_noninkscape", default=False,
