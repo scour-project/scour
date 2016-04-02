@@ -3237,6 +3237,7 @@ _option_group_compatibility = optparse.OptionGroup(_options_parser, "SVG compati
 _option_group_compatibility.add_option("--error-on-flowtext",
    action="store_true", dest="error_on_flowtext", default=False,
    help="In case the input SVG uses flow text, bail out with error. Otherwise only warn. (default: False)")
+_options_parser.add_option_group(_option_group_compatibility)
 
 
 def maybe_gziped_file(filename, mode="r"):
