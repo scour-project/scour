@@ -17,3 +17,9 @@ test_version:
 
 test_help:
 	PYTHONPATH=. python -m scour.scour --help
+
+test_error_on_flowtext:
+	# this is fine ..
+	PYTHONPATH=. scour --error-on-flowtext unittests/flowtext-less.svg /dev/null
+	# .. and this should bail out!
+	PYTHONPATH=. scour --error-on-flowtext unittests/flowtext.svg /dev/null
