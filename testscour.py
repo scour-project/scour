@@ -1416,6 +1416,19 @@ class DuplicateGradientsUpdateStyle(unittest.TestCase):
 		self.assertEqual('fill:url(#' + gradientTag.getAttribute('id') + ')', rectTag1.getAttribute('style'),
 			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" was not updated to reflect this')
 
+class DocWithFlowtext(unittest.TestCase):
+    def runTest(self):
+        with self.assertRaises(Exception):
+            scour.scourXmlFile('unittests/flowtext.svg',
+                               scour.parse_args(['--error-on-flowtext'])[0])
+
+class DocWithNoFlowtext(unittest.TestCase):
+    def runTest(self):
+        try:
+            scour.scourXmlFile('unittests/flowtext-less.svg',
+                               scour.parse_args(['--error-on-flowtext'])[0])
+        except Exception as e:
+            self.fail("exception '{}' was raised, and we didn't expect that!".format(e))
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters

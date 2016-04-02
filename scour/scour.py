@@ -2884,9 +2884,11 @@ def scourString(in_string, options=None):
    # flowRoot elements don't render at all on current browsers (04/2016)
    cnt_flowText_el = len(doc.getElementsByTagName('flowRoot'))
    if cnt_flowText_el:
-      print("SVG input document uses {} flow text elements, which won't render on browsers!".format(cnt_flowText_el))
+      errmsg = "SVG input document uses {} flow text elements, which won't render on browsers!".format(cnt_flowText_el)
       if options.error_on_flowtext:
-         sys.exit(1)
+         raise Exception(errmsg)
+      else:
+         print("WARNING: {}".format(errmsg))
 
    # remove <metadata> if the user wants to
    if options.remove_metadata:
