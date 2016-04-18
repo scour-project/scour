@@ -2880,6 +2880,16 @@ def scourString(in_string, options=None):
    global numBytesSavedInTransforms
    doc = xml.dom.minidom.parseString(in_string)
 
+   # determine number of flowRoot elements in input document
+   # flowRoot elements don't render at all on current browsers (04/2016)
+   cnt_flowText_el = len(doc.getElementsByTagName('flowRoot'))
+   if cnt_flowText_el:
+      errmsg = "SVG input document uses {} flow text elements, which won't render on browsers!".format(cnt_flowText_el)
+      if options.error_on_flowtext:
+         raise Exception(errmsg)
+      else:
+         print("WARNING: {}".format(errmsg))
+
    # remove <metadata> if the user wants to
    if options.remove_metadata:
       removeMetadataElements(doc)
@@ -3225,6 +3235,11 @@ _option_group_ids.add_option("--protect-ids-prefix",
    help="don't remove IDs starting with the given prefix")
 _options_parser.add_option_group(_option_group_ids)
 
+_option_group_compatibility = optparse.OptionGroup(_options_parser, "SVG compatibility checks")
+_option_group_compatibility.add_option("--error-on-flowtext",
+   action="store_true", dest="error_on_flowtext", default=False,
+   help="In case the input SVG uses flow text, bail out with error. Otherwise only warn. (default: False)")
+_options_parser.add_option_group(_option_group_compatibility)
 
 
 def maybe_gziped_file(filename, mode="r"):
