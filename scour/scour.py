@@ -3090,7 +3090,10 @@ def scourString(in_string, options=None):
 
    # return the string with its XML prolog and surrounding comments
    if options.strip_xml_prolog == False:
-      total_output = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+      total_output = '<?xml version="1.0" encoding="UTF-8"'
+      if doc.standalone:
+         total_output += ' standalone="yes"'
+      total_output += '?>\n'
    else:
       total_output = ""
 

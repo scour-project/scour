@@ -1031,7 +1031,7 @@ class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
 	def runTest(self):
 		with open('unittests/whitespace-important.svg') as f:
 			s = scour.scourString(f.read()).splitlines()
-		c = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+		c = '''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
 </svg>
@@ -1044,7 +1044,7 @@ class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
 	def runTest(self):
 		with open('unittests/whitespace-nested.svg') as f:
 			s = scour.scourString(f.read()).splitlines()
-		c = '''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+		c = '''<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg">
  <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
 </svg>
