@@ -2792,7 +2792,11 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
    # now serialize the other attributes
    attrList = element.attributes
-   for num in range(attrList.length) :
+   attrIndices = range(attrList.length)
+   if options.order_attributes :
+      attrName2Index = dict([(attrList.item(i).nodeName, i) for i in attrIndices])
+      attrIndices = [attrName2Index[name] for name in sorted(attrName2Index.keys())]
+   for num in attrIndices :
       attr = attrList.item(num)
       if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
       # if the attribute value contains a double-quote, use single-quotes
@@ -3215,6 +3219,9 @@ _option_group_formatting.add_option("--no-line-breaks",
 _option_group_formatting.add_option("--strip-xml-space",
    action="store_true", dest="strip_xml_space_attribute", default=False,
    help="strip the xml:space=\"preserve\" attribute from the root SVG element")
+_option_group_formatting.add_option("--order-attributes",
+   action="store_true", dest="order_attributes", default=False,
+   help="order attributes alphabetically (except \"id\")")
 _options_parser.add_option_group(_option_group_formatting)
 
 _option_group_ids = optparse.OptionGroup(_options_parser, "ID attributes")
