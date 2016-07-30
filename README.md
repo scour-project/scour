@@ -1,6 +1,6 @@
 # Scour
 
-**Build status:** [![Build Status](https://travis-ci.org/scour-project/scour.svg?branch=master]](https://travis-ci.org/scour-project/scour)
+**Build status:** [![Build Status](https://travis-ci.org/scour-project/scour.svg?branch=master)](https://travis-ci.org/scour-project/scour)
 
 ---
 
