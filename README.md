@@ -1,5 +1,9 @@
 # Scour
 
+**Build status:** [![Build Status](https://travis-ci.org/scour-project/scour.svg?branch=master](https://travis-ci.org/scour-project/scour)
+
+---
+
 Scour is a Python tool that takes an SVG file and produces a cleaner and more concise file. It is intended to be used **after** exporting to SVG with a GUI editor, such as Inkscape or Adobe Illustrator.
 
 Scour is open-source and licensed under [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE).
