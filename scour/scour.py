@@ -68,7 +68,7 @@ from six.moves import range
 try:
    from decimal import Decimal, InvalidOperation, getcontext
 except ImportError:
-   print("Scour requires at least Python 2.6+ or Python 3.3+.")
+   print("Scour requires at least Python 2.7 or Python 3.3+.")
 
 # Import Psyco if available
 try:
