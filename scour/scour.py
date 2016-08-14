@@ -658,10 +658,13 @@ def shortenIDs(doc, prefix, unprotectedElements=None):
    # descending, so the highest reference count is first.
    # First check that there's actually a defining element for the current ID name.
    # (Cyn: I've seen documents with #id references but no element with that ID!)
-   idList = [(referencedIDs[rid][0], rid)  for rid in referencedIDs
+   idList = [(referencedIDs[rid][0], rid) for rid in referencedIDs
             if rid in unprotectedElements]
    idList.sort(reverse=True)
    idList = [rid for count, rid in idList]
+   
+   # Add unreferenced IDs to end of idList in arbitrary order
+   idList.extend([rid for rid in unprotectedElements if not rid in idList])
 
    curIdNum = 1
 
@@ -712,59 +715,62 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
    definingNode.setAttribute("id", idTo)
    del identifiedElements[idFrom]
    identifiedElements[idTo] = definingNode
+   num += len(idFrom) - len(idTo)
 
-   referringNodes = referencedIDs[idFrom]
+   # Update references to renamed node
+   referringNodes = referencedIDs.get(idFrom)
+   if referringNodes is not None:
 
-   # Look for the idFrom ID name in each of the referencing elements,
-   # exactly like findReferencedElements would.
-   # Cyn: Duplicated processing!
+      # Look for the idFrom ID name in each of the referencing elements,
+      # exactly like findReferencedElements would.
+      # Cyn: Duplicated processing!
 
-   for node in referringNodes[1]:
-      # if this node is a style element, parse its text into CSS
-      if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
-         # node.firstChild will be either a CDATA or a Text node now
-         if node.firstChild != None:
-            # concatenate the value of all children, in case
-            # there's a CDATASection node surrounded by whitespace
-            # nodes
-            # (node.normalize() will NOT work here, it only acts on Text nodes)
-            oldValue = "".join([child.nodeValue for child in node.childNodes])
-            # not going to reparse the whole thing
-            newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
-            newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
-            newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
-            # and now replace all the children with this new stylesheet.
-            # again, this is in case the stylesheet was a CDATASection
-            node.childNodes[:] = [node.ownerDocument.createTextNode(newValue)]
-            num += len(oldValue) - len(newValue)
+      for node in referringNodes[1]:
+         # if this node is a style element, parse its text into CSS
+         if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
+            # node.firstChild will be either a CDATA or a Text node now
+            if node.firstChild != None:
+               # concatenate the value of all children, in case
+               # there's a CDATASection node surrounded by whitespace
+               # nodes
+               # (node.normalize() will NOT work here, it only acts on Text nodes)
+               oldValue = "".join([child.nodeValue for child in node.childNodes])
+               # not going to reparse the whole thing
+               newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+               newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
+               newValue = newValue.replace('url(#"' + idFrom + '")', 'url(#' + idTo + ')')
+               # and now replace all the children with this new stylesheet.
+               # again, this is in case the stylesheet was a CDATASection
+               node.childNodes[:] = [node.ownerDocument.createTextNode(newValue)]
+               num += len(oldValue) - len(newValue)
 
-      # if xlink:href is set to #idFrom, then change the id
-      href = node.getAttributeNS(NS['XLINK'],'href')
-      if href == '#' + idFrom:
-         node.setAttributeNS(NS['XLINK'],'href', '#' + idTo)
-         num += len(idFrom) - len(idTo)
+         # if xlink:href is set to #idFrom, then change the id
+         href = node.getAttributeNS(NS['XLINK'],'href')
+         if href == '#' + idFrom:
+            node.setAttributeNS(NS['XLINK'],'href', '#' + idTo)
+            num += len(idFrom) - len(idTo)
 
-      # if the style has url(#idFrom), then change the id
-      styles = node.getAttribute('style')
-      if styles != '':
-         newValue = styles.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
-         newValue = newValue.replace("url('#" + idFrom + "')", 'url(#' + idTo + ')')
-         newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
-         node.setAttribute('style', newValue)
-         num += len(styles) - len(newValue)
-
-      # now try the fill, stroke, filter attributes
-      for attr in referencingProps:
-         oldValue = node.getAttribute(attr)
-         if oldValue != '':
-            newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+         # if the style has url(#idFrom), then change the id
+         styles = node.getAttribute('style')
+         if styles != '':
+            newValue = styles.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
             newValue = newValue.replace("url('#" + idFrom + "')", 'url(#' + idTo + ')')
             newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
-            node.setAttribute(attr, newValue)
-            num += len(oldValue) - len(newValue)
+            node.setAttribute('style', newValue)
+            num += len(styles) - len(newValue)
 
-   del referencedIDs[idFrom]
-   referencedIDs[idTo] = referringNodes
+         # now try the fill, stroke, filter attributes
+         for attr in referencingProps:
+            oldValue = node.getAttribute(attr)
+            if oldValue != '':
+               newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
+               newValue = newValue.replace("url('#" + idFrom + "')", 'url(#' + idTo + ')')
+               newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
+               node.setAttribute(attr, newValue)
+               num += len(oldValue) - len(newValue)
+
+      del referencedIDs[idFrom]
+      referencedIDs[idTo] = referringNodes
 
    return num
 
