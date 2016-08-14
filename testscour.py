@@ -176,6 +176,35 @@ class RemoveUnreferencedElementInDefs(unittest.TestCase):
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
 			'Unreferenced rect left in defs' )
 
+class RemoveUnreferencedDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-defs.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 1,
+			'Referenced linearGradient removed from defs' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')), 0,
+			'Unreferenced radialGradient left in defs' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'pattern')), 0,
+			'Unreferenced pattern left in defs' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+			'Referenced rect removed from defs' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 0,
+			'Unreferenced circle left in defs' )
+
+class KeepUnreferencedDefs(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/unreferenced-defs.svg',
+			scour.parse_args(['--keep-unreferenced-defs'])[0])
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 1,
+			'Referenced linearGradient removed from defs with `--keep-unreferenced-defs`' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')), 1,
+			'Unreferenced radialGradient removed from defs with `--keep-unreferenced-defs`' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'pattern')), 1,
+			'Unreferenced pattern removed from defs with `--keep-unreferenced-defs`' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+			'Referenced rect removed from defs with `--keep-unreferenced-defs`' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 1,
+			'Unreferenced circle removed from defs with `--keep-unreferenced-defs`' )
+
 class DoNotRemoveChainedRefsInDefs(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/refs-in-defs.svg')

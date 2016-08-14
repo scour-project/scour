@@ -623,7 +623,9 @@ def removeUnreferencedElements(doc, keepDefs):
    for id in identifiedElements:
       if not id in referencedIDs:
          goner = identifiedElements[id]
-         if goner != None and goner.parentNode != None and goner.nodeName in removeTags:
+         if (goner != None and goner.nodeName in removeTags
+                           and goner.parentNode != None
+                           and goner.parentNode.tagName != 'defs'):
             goner.parentNode.removeChild(goner)
             num += 1
             numElemsRemoved += 1
