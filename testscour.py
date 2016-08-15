@@ -1114,7 +1114,7 @@ class EnsureLineEndings(unittest.TestCase):
 
 class XmlEntities(unittest.TestCase):
 	def runTest(self):
-		self.assertEqual( scour.makeWellFormed('<>&"\''), '&lt;&gt;&amp;&quot;&apos;',
+		self.assertEqual( scour.makeWellFormed('<>&'), '&lt;&gt;&amp;',
 			'Incorrectly translated XML entities')
 
 class DoNotStripCommentsOutsideOfRoot(unittest.TestCase):
