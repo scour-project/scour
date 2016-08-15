@@ -3306,6 +3306,9 @@ def parse_args(args=None, ignore_additional_args=False):
          outfile = sys.stdout.buffer
       except AttributeError:
          outfile = sys.stdout
+      # enable quiet mode when writing output to stdout
+      # otherwise informational text output would be mixed into the SVG output
+      options.quiet = True
 
    return options, [infile, outfile]
 
