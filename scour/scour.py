@@ -2752,7 +2752,10 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 
 
 def makeWellFormed(str):
-   xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
+   # Don't escape quotation marks for now as they are fine in text nodes
+   # as well as in attributes if used reciprocally
+   #    xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
+   xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;'}
 
 #  starr = []
 #  for c in str:
