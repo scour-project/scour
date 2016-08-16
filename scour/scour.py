@@ -3290,6 +3290,11 @@ def parse_args(args=None, ignore_additional_args=False):
    if options.infilename and options.outfilename and options.infilename == options.outfilename:
       _options_parser.error("Input filename is the same as output filename")
 
+   return options
+
+
+
+def getInOut(options):
    if options.infilename:
       infile = maybe_gziped_file(options.infilename, "rb")
       # GZ: could catch a raised IOError here and report
@@ -3298,12 +3303,13 @@ def parse_args(args=None, ignore_additional_args=False):
       #
       # open the binary buffer of stdin and let XML parser handle decoding
       try:
-        infile = sys.stdin.buffer
+         infile = sys.stdin.buffer
       except AttributeError:
-        infile = sys.stdin
+         infile = sys.stdin
       # the user probably does not want to manually enter SVG code into the terminal...
       if sys.stdin.isatty():
          _options_parser.error("No input file specified, see --help for detailed usage information")
+
    if options.outfilename:
       outfile = maybe_gziped_file(options.outfilename, "wb")
    else:
@@ -3313,7 +3319,7 @@ def parse_args(args=None, ignore_additional_args=False):
       except AttributeError:
          outfile = sys.stdout
 
-   return options, [infile, outfile]
+   return [infile, outfile]
 
 
 
@@ -3391,7 +3397,8 @@ def start(options, input, output):
 
 
 def run():
-   options, (input, output) = parse_args()
+   options = parse_args()
+   (input, output) = getInOut(options)
    start(options, input, output)
 
 
