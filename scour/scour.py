@@ -3293,7 +3293,7 @@ def generateDefaultOptions():
        def __init__(self, **entries):
            self.__dict__.update(entries)
 
-   d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
+   d = parse_args(args = [], ignore_additional_args = True).__dict__.copy()
 
    return Struct(**d)
 
