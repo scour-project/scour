@@ -3301,6 +3301,9 @@ def parse_args(args=None, ignore_additional_args=False):
         infile = sys.stdin.buffer
       except AttributeError:
         infile = sys.stdin
+      # the user probably does not want to manually enter SVG code into the terminal...
+      if sys.stdin.isatty():
+         _options_parser.error("No input file specified, see --help for detailed usage information")
    if options.outfilename:
       outfile = maybe_gziped_file(options.outfilename, "wb")
    else:
