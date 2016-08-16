@@ -3263,13 +3263,6 @@ _option_group_compatibility.add_option("--error-on-flowtext",
 _options_parser.add_option_group(_option_group_compatibility)
 
 
-def maybe_gziped_file(filename, mode="r"):
-   if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
-      import gzip
-      return gzip.GzipFile(filename, mode)
-   return open(filename, mode)
-
-
 
 def parse_args(args=None, ignore_additional_args=False):
    options, rargs = _options_parser.parse_args(args)
@@ -3291,6 +3284,37 @@ def parse_args(args=None, ignore_additional_args=False):
       _options_parser.error("Input filename is the same as output filename")
 
    return options
+
+
+
+def generateDefaultOptions():
+   ## FIXME: clean up this mess/hack and refactor arg parsing to argparse
+   class Struct:
+       def __init__(self, **entries):
+           self.__dict__.update(entries)
+
+   d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
+
+   return Struct(**d)
+
+
+
+# sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
+def sanitizeOptions(options):
+   optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
+
+   sanitizedOptions = _options_parser.get_default_values()
+   sanitizedOptions._update_careful(optionsDict)
+
+   return sanitizedOptions
+
+
+
+def maybe_gziped_file(filename, mode="r"):
+   if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
+      import gzip
+      return gzip.GzipFile(filename, mode)
+   return open(filename, mode)
 
 
 
@@ -3337,29 +3361,6 @@ def getReport():
       ' Number of bytes saved in id attributes: ' + str(numBytesSavedInIDs) + os.linesep + \
       ' Number of bytes saved in lengths: ' + str(numBytesSavedInLengths) + os.linesep + \
       ' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
-
-
-
-def generateDefaultOptions():
-   ## FIXME: clean up this mess/hack and refactor arg parsing to argparse
-   class Struct:
-       def __init__(self, **entries):
-           self.__dict__.update(entries)
-
-   d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
-
-   return Struct(**d)
-
-
-
-# sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
-def sanitizeOptions(options):
-   optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
-
-   sanitizedOptions = _options_parser.get_default_values()
-   sanitizedOptions._update_careful(optionsDict)
-
-   return sanitizedOptions
 
 
 
