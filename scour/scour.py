@@ -68,7 +68,7 @@ from six.moves import range
 try:
    from decimal import Decimal, InvalidOperation, getcontext
 except ImportError:
-   print("Scour requires at least Python 2.7 or Python 3.3+.")
+   sys.stderr.write("Scour requires at least Python 2.7 or Python 3.3+.")
 
 # Import Psyco if available
 try:
@@ -1301,14 +1301,11 @@ def removeDuplicateGradients(doc):
    referencedIDs = findReferencedElements(doc.documentElement)
    for masterGrad in list(gradientsToRemove.keys()):
       master_id = masterGrad.getAttribute('id')
-#     print 'master='+master_id
       for dupGrad in gradientsToRemove[masterGrad]:
          # if the duplicate gradient no longer has a parent that means it was
          # already re-mapped to another master gradient
          if not dupGrad.parentNode: continue
          dup_id = dupGrad.getAttribute('id')
-#        print 'dup='+dup_id
-#        print referencedIDs[dup_id]
          # for each element that referenced the gradient we are going to remove
          for elem in referencedIDs[dup_id][1]:
             # find out which attribute referenced the duplicate gradient
@@ -2903,7 +2900,7 @@ def scourString(in_string, options=None):
       if options.error_on_flowtext:
          raise Exception(errmsg)
       else:
-         print("WARNING: {}".format(errmsg))
+         print("WARNING: {}".format(errmsg), file = options.ensure_value("stdout", sys.stdout))
 
    # remove <metadata> if the user wants to
    if options.remove_metadata:
@@ -3342,6 +3339,8 @@ def getInOut(options):
          outfile = sys.stdout.buffer
       except AttributeError:
          outfile = sys.stdout
+      # redirect informational output to stderr when SVG is output to stdout
+      options.stdout = sys.stderr
 
    return [infile, outfile]
 
@@ -3392,9 +3391,9 @@ def start(options, input, output):
          duration,
          newsize,
          oldsize,
-         sizediff))
+         sizediff), file = options.ensure_value("stdout", sys.stdout))
       if options.verbose:
-         print(getReport())
+         print(getReport(), file = options.ensure_value("stdout", sys.stdout))
 
 
 def run():
