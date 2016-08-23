@@ -3342,6 +3342,9 @@ def getInOut(options):
          outfile = sys.stdout.buffer
       except AttributeError:
          outfile = sys.stdout
+      # enable quiet mode when writing output to stdout
+      # otherwise informational text output would be mixed into the SVG output
+      options.quiet = True
 
    return [infile, outfile]
 
