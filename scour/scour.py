@@ -3263,13 +3263,6 @@ _option_group_compatibility.add_option("--error-on-flowtext",
 _options_parser.add_option_group(_option_group_compatibility)
 
 
-def maybe_gziped_file(filename, mode="r"):
-   if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
-      import gzip
-      return gzip.GzipFile(filename, mode)
-   return open(filename, mode)
-
-
 
 def parse_args(args=None, ignore_additional_args=False):
    options, rargs = _options_parser.parse_args(args)
@@ -3290,6 +3283,42 @@ def parse_args(args=None, ignore_additional_args=False):
    if options.infilename and options.outfilename and options.infilename == options.outfilename:
       _options_parser.error("Input filename is the same as output filename")
 
+   return options
+
+
+
+def generateDefaultOptions():
+   ## FIXME: clean up this mess/hack and refactor arg parsing to argparse
+   class Struct:
+       def __init__(self, **entries):
+           self.__dict__.update(entries)
+
+   d = parse_args(args = [], ignore_additional_args = True).__dict__.copy()
+
+   return Struct(**d)
+
+
+
+# sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
+def sanitizeOptions(options):
+   optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
+
+   sanitizedOptions = _options_parser.get_default_values()
+   sanitizedOptions._update_careful(optionsDict)
+
+   return sanitizedOptions
+
+
+
+def maybe_gziped_file(filename, mode="r"):
+   if os.path.splitext(filename)[1].lower() in (".svgz", ".gz"):
+      import gzip
+      return gzip.GzipFile(filename, mode)
+   return open(filename, mode)
+
+
+
+def getInOut(options):
    if options.infilename:
       infile = maybe_gziped_file(options.infilename, "rb")
       # GZ: could catch a raised IOError here and report
@@ -3298,9 +3327,13 @@ def parse_args(args=None, ignore_additional_args=False):
       #
       # open the binary buffer of stdin and let XML parser handle decoding
       try:
-        infile = sys.stdin.buffer
+         infile = sys.stdin.buffer
       except AttributeError:
-        infile = sys.stdin
+         infile = sys.stdin
+      # the user probably does not want to manually enter SVG code into the terminal...
+      if sys.stdin.isatty():
+         _options_parser.error("No input file specified, see --help for detailed usage information")
+
    if options.outfilename:
       outfile = maybe_gziped_file(options.outfilename, "wb")
    else:
@@ -3310,7 +3343,7 @@ def parse_args(args=None, ignore_additional_args=False):
       except AttributeError:
          outfile = sys.stdout
 
-   return options, [infile, outfile]
+   return [infile, outfile]
 
 
 
@@ -3328,29 +3361,6 @@ def getReport():
       ' Number of bytes saved in id attributes: ' + str(numBytesSavedInIDs) + os.linesep + \
       ' Number of bytes saved in lengths: ' + str(numBytesSavedInLengths) + os.linesep + \
       ' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
-
-
-
-def generateDefaultOptions():
-   ## FIXME: clean up this mess/hack and refactor arg parsing to argparse
-   class Struct:
-       def __init__(self, **entries):
-           self.__dict__.update(entries)
-
-   d = parse_args(args = [], ignore_additional_args = True)[0].__dict__.copy()
-
-   return Struct(**d)
-
-
-
-# sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
-def sanitizeOptions(options):
-   optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
-
-   sanitizedOptions = _options_parser.get_default_values()
-   sanitizedOptions._update_careful(optionsDict)
-
-   return sanitizedOptions
 
 
 
@@ -3388,7 +3398,8 @@ def start(options, input, output):
 
 
 def run():
-   options, (input, output) = parse_args()
+   options = parse_args()
+   (input, output) = getInOut(options)
    start(options, input, output)
 
 

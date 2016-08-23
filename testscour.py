@@ -193,7 +193,7 @@ class RemoveUnreferencedDefs(unittest.TestCase):
 class KeepUnreferencedDefs(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/unreferenced-defs.svg',
-			scour.parse_args(['--keep-unreferenced-defs'])[0])
+			scour.parse_args(['--keep-unreferenced-defs']))
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'linearGradient')), 1,
 			'Referenced linearGradient removed from defs with `--keep-unreferenced-defs`' )
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'radialGradient')), 1,
@@ -233,7 +233,7 @@ class KeepUnreferencedIDsWhenEnabled(unittest.TestCase):
 class RemoveUnreferencedIDsWhenEnabled(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/ids-to-strip.svg',
-			scour.parse_args(['--enable-id-stripping'])[0])
+			scour.parse_args(['--enable-id-stripping']))
 		self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'svg')[0].getAttribute('id'), '',
 			'<svg> ID not stripped' )
 
@@ -246,7 +246,7 @@ class RemoveUselessNestedGroups(unittest.TestCase):
 class DoNotRemoveUselessNestedGroups(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/nested-useless-groups.svg',
-			scour.parse_args(['--disable-group-collapsing'])[0])
+			scour.parse_args(['--disable-group-collapsing']))
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'g')), 2,
 			'Useless nested groups were removed despite --disable-group-collapsing' )
 
@@ -495,7 +495,7 @@ class RemoveFillOpacityWhenFillNone(unittest.TestCase):
 class ConvertFillPropertyToAttr(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/fill-none.svg',
-			scour.parse_args(['--disable-simplify-colors'])[0])
+			scour.parse_args(['--disable-simplify-colors']))
 		self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'path')[1].getAttribute('fill'), 'black',
 			'fill property not converted to XML attribute' )
 
@@ -1144,7 +1144,7 @@ class PathImplicitLineWithMoveCommands(unittest.TestCase):
 class RemoveMetadataOption(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/full-metadata.svg',
-			scour.parse_args(['--remove-metadata'])[0])
+			scour.parse_args(['--remove-metadata']))
 		self.assertEqual(doc.childNodes.length, 1,
 			'Did not remove <metadata> tag with --remove-metadata')
 
@@ -1153,7 +1153,7 @@ class EnableCommentStrippingOption(unittest.TestCase):
 		with open('unittests/comment-beside-xml-decl.svg') as f:
 			docStr = f.read()
 		docStr = scour.scourString(docStr,
-			scour.parse_args(['--enable-comment-stripping'])[0])
+			scour.parse_args(['--enable-comment-stripping']))
 		self.assertEqual(docStr.find('<!--'), -1,
 			'Did not remove document-level comment with --enable-comment-stripping')
 
@@ -1162,14 +1162,14 @@ class StripXmlPrologOption(unittest.TestCase):
 		with open('unittests/comment-beside-xml-decl.svg') as f:
 			docStr = f.read()
 		docStr = scour.scourString(docStr,
-			scour.parse_args(['--strip-xml-prolog'])[0])
+			scour.parse_args(['--strip-xml-prolog']))
 		self.assertEqual(docStr.find('<?xml'), -1,
 			'Did not remove <?xml?> with --strip-xml-prolog')
 
 class ShortenIDsOption(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/shorten-ids.svg',
-			scour.parse_args(['--shorten-ids'])[0])
+			scour.parse_args(['--shorten-ids']))
 		gradientTag = doc.getElementsByTagName('linearGradient')[0]
 		self.assertEqual(gradientTag.getAttribute('id'), 'a',
 			"Did not shorten a linear gradient's ID with --shorten-ids")
@@ -1186,28 +1186,28 @@ class MustKeepGInSwitch(unittest.TestCase):
 class MustKeepGInSwitch2(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/groups-in-switch-with-id.svg',
-			scour.parse_args(['--enable-id-stripping'])[0])
+			scour.parse_args(['--enable-id-stripping']))
 		self.assertEqual(doc.getElementsByTagName('g').length, 1,
 			'Erroneously removed a <g> in a <switch>')
 
 class GroupCreation(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/group-creation.svg',
-			scour.parse_args(['--create-groups'])[0])
+			scour.parse_args(['--create-groups']))
 		self.assertEqual(doc.getElementsByTagName('g').length, 1,
 			'Did not create a <g> for a run of elements having similar attributes')
 
 class GroupCreationForInheritableAttributesOnly(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/group-creation.svg',
-			scour.parse_args(['--create-groups'])[0])
+			scour.parse_args(['--create-groups']))
 		self.assertEqual(doc.getElementsByTagName('g').item(0).getAttribute('y'), '',
 			'Promoted the uninheritable attribute y to a <g>')
 
 class GroupNoCreation(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/group-no-creation.svg',
-			scour.parse_args(['--create-groups'])[0])
+			scour.parse_args(['--create-groups']))
 		self.assertEqual(doc.getElementsByTagName('g').length, 0,
 			'Created a <g> for a run of elements having dissimilar attributes')
 
@@ -1246,7 +1246,7 @@ class ShortenIDsInStyleCDATA(unittest.TestCase):
 		with open('unittests/style-cdata.svg') as f:
 			docStr = f.read()
 		docStr = scour.scourString(docStr,
-			scour.parse_args(['--shorten-ids'])[0])
+			scour.parse_args(['--shorten-ids']))
 		self.assertEqual(docStr.find('somethingreallylong'), -1,
 			'Did not shorten IDs in the internal stylesheet')
 
@@ -1436,7 +1436,7 @@ class TransformIdentityTranslate(unittest.TestCase):
 class DuplicateGradientsUpdateStyle(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradients-update-style.svg',
-			scour.parse_args(['--disable-style-to-xml'])[0])
+			scour.parse_args(['--disable-style-to-xml']))
 		gradientTag = doc.getElementsByTagName('linearGradient')[0]
 		rectTag0 = doc.getElementsByTagName('rect')[0]
 		rectTag1 = doc.getElementsByTagName('rect')[1]
@@ -1449,13 +1449,13 @@ class DocWithFlowtext(unittest.TestCase):
     def runTest(self):
         with self.assertRaises(Exception):
             scour.scourXmlFile('unittests/flowtext.svg',
-                               scour.parse_args(['--error-on-flowtext'])[0])
+                               scour.parse_args(['--error-on-flowtext']))
 
 class DocWithNoFlowtext(unittest.TestCase):
     def runTest(self):
         try:
             scour.scourXmlFile('unittests/flowtext-less.svg',
-                               scour.parse_args(['--error-on-flowtext'])[0])
+                               scour.parse_args(['--error-on-flowtext']))
         except Exception as e:
             self.fail("exception '{}' was raised, and we didn't expect that!".format(e))
 
