@@ -3126,7 +3126,20 @@ def scourXmlFile(filename, options=None):
    with open(filename, "rb") as f:
       in_string = f.read()
    out_string = scourString(in_string, options)
-   return xml.dom.minidom.parseString(out_string.encode('utf-8'))
+
+   doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
+
+   # since minidom does not seem to parse DTDs properly
+   # manually declare all attributes with name "id" to be of type ID
+   # (otherwise things like doc.getElementById() won't work)
+   all_nodes = doc.getElementsByTagName("*")
+   for node in all_nodes:
+      try:
+         node.setIdAttribute('id')
+      except:
+         pass
+
+   return doc
 
 
 

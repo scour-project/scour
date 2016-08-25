@@ -71,18 +71,25 @@ class InvalidOptions(unittest.TestCase):
 			fail = True
 		self.assertEqual(fail, False, 'Exception when calling Scour with invalid options')
 
+class GetElementById(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/ids.svg')
+		self.assertIsNotNone(doc.getElementById('svg1'), 'Root SVG element not found by ID')
+		self.assertIsNotNone(doc.getElementById('linearGradient1'), 'linearGradient not found by ID')
+		self.assertIsNotNone(doc.getElementById('layer1'), 'g not found by ID')
+		self.assertIsNotNone(doc.getElementById('rect1'), 'rect not found by ID')
+		self.assertIsNone(doc.getElementById('rect2'), 'Non-existing element found by ID')
+
 class NoInkscapeElements(unittest.TestCase):
 	def runTest(self):
 		self.assertNotEqual(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement,
 			lambda e: e.namespaceURI != 'http://www.inkscape.org/namespaces/inkscape'), False,
 			'Found Inkscape elements' )
-
 class NoSodipodiElements(unittest.TestCase):
 	def runTest(self):
 		self.assertNotEqual(walkTree(scour.scourXmlFile('unittests/sodipodi.svg').documentElement,
 			lambda e: e.namespaceURI != 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd'), False,
 			'Found Sodipodi elements' )
-
 class NoAdobeIllustratorElements(unittest.TestCase):
 	def runTest(self):
 		self.assertNotEqual(walkTree(scour.scourXmlFile('unittests/adobe.svg').documentElement,
