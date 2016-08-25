@@ -1550,28 +1550,38 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
       node.removeAttribute('spreadMethod')
       num += 1
 
-   # x1: 0%
+   # x1 - line: 0
+   #      linearGradient: 0%
    if node.getAttribute('x1') != '':
       x1 = SVGLength(node.getAttribute('x1'))
       if x1.value == 0:
          node.removeAttribute('x1')
          num += 1
 
-   # y1: 0%
+   # y1 - line: 0
+   #      linearGradient: 0%
    if node.getAttribute('y1') != '':
       y1 = SVGLength(node.getAttribute('y1'))
       if y1.value == 0:
          node.removeAttribute('y1')
          num += 1
 
-   # x2: 100%
+   # x2 - line: 0
+   #      linearGradient: 100% (x2="1" usually equals "1px" which only equals "100%" if gradientUnits="objectBoundingBox")
    if node.getAttribute('x2') != '':
       x2 = SVGLength(node.getAttribute('x2'))
-      if (x2.value == 100 and x2.units == Unit.PCT) or (x2.value == 1 and x2.units == Unit.NONE):
-         node.removeAttribute('x2')
-         num += 1
+      if node.nodeName == 'line':
+         if x2.value == 0:
+           node.removeAttribute('x2')
+           num += 1
+      elif node.nodeName == 'linearGradient':
+         if ( (x2.value == 100 and x2.units == Unit.PCT) or
+              (x2.value == 1   and x2.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
+            node.removeAttribute('x2')
+            num += 1
 
-   # y2: 0%
+   # y2 - line: 0
+   #      linearGradient: 0%
    if node.getAttribute('y2') != '':
       y2 = SVGLength(node.getAttribute('y2'))
       if y2.value == 0:
@@ -1590,26 +1600,42 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
          node.removeAttribute('fy')
          num += 1
 
-   # cx: 50%
+   # cx - circle / ellipse: 0
+   #      radialGradient: 50% (cx="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
    if node.getAttribute('cx') != '':
       cx = SVGLength(node.getAttribute('cx'))
-      if (cx.value == 50 and cx.units == Unit.PCT) or (cx.value == 0.5 and cx.units == Unit.NONE):
-         node.removeAttribute('cx')
-         num += 1
+      if node.nodeName in ['circle', 'ellipse']:
+         if cx.value == 0:
+            node.removeAttribute('cx')
+            num += 1
+      elif node.nodeName == "radialGradient":
+         if ( (cx.value == 50  and cx.units == Unit.PCT) or
+              (cx.value == 0.5 and cx.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
+            node.removeAttribute('cx')
+            num += 1
 
-   # cy: 50%
+   # cy - circle / ellipse: 0
+   #      radialGradient: 50% (cy="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
    if node.getAttribute('cy') != '':
       cy = SVGLength(node.getAttribute('cy'))
-      if (cy.value == 50 and cy.units == Unit.PCT) or (cy.value == 0.5 and cy.units == Unit.NONE):
-         node.removeAttribute('cy')
-         num += 1
+      if node.nodeName in ['circle', 'ellipse']:
+         if cy.value == 0:
+            node.removeAttribute('cy')
+            num += 1
+      elif node.nodeName == "radialGradient":
+         if ( (cy.value == 50  and cy.units == Unit.PCT) or
+              (cy.value == 0.5 and cy.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
+            node.removeAttribute('cy')
+            num += 1
 
-   # r: 50%
+   # r - radialGradient: 50% (r="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
    if node.getAttribute('r') != '':
-      r = SVGLength(node.getAttribute('r'))
-      if (r.value == 50 and r.units == Unit.PCT) or (r.value == 0.5 and r.units == Unit.NONE):
-         node.removeAttribute('r')
-         num += 1
+      if node.nodeName == 'radialGradient':
+         r = SVGLength(node.getAttribute('r'))
+         if ( (r.value == 50  and r.units == Unit.PCT) or
+              (r.value == 0.5 and r.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
+            node.removeAttribute('r')
+            num += 1
 
    # Summarily get rid of some more attributes
    attributes = [node.attributes.item(i).nodeName
