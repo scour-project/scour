@@ -880,67 +880,71 @@ class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
 
 class RemoveDefaultGradX1Value(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
 		self.assertEqual( g.getAttribute('x1'), '',
 			'x1="0" not removed')
 
 class RemoveDefaultGradY1Value(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
 		self.assertEqual( g.getAttribute('y1'), '',
 			'y1="0" not removed')
 
 class RemoveDefaultGradX2Value(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
-		self.assertEqual( g.getAttribute('x2'), '',
+		doc = scour.scourXmlFile('unittests/gradient-default-attrs.svg')
+		self.assertEqual( doc.getElementById('grad1').getAttribute('x2'), '',
 			'x2="100%" not removed')
+		self.assertEqual( doc.getElementById('grad1b').getAttribute('x2'), '',
+			'x2="1" not removed, which is equal to the default x2="100%" when gradientUnits="objectBoundingBox"')
+		self.assertNotEqual( doc.getElementById('grad1c').getAttribute('x2'), '',
+			'x2="1" removed, which is NOT equal to the default x2="100%" when gradientUnits="userSpaceOnUse"')
 
 class RemoveDefaultGradY2Value(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
 		self.assertEqual( g.getAttribute('y2'), '',
 			'y2="0" not removed')
 
 class RemoveDefaultGradGradientUnitsValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
 		self.assertEqual( g.getAttribute('gradientUnits'), '',
 			'gradientUnits="objectBoundingBox" not removed')
 
 class RemoveDefaultGradSpreadMethodValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'linearGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
 		self.assertEqual( g.getAttribute('spreadMethod'), '',
 			'spreadMethod="pad" not removed')
 
 class RemoveDefaultGradCXValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad2')
 		self.assertEqual( g.getAttribute('cx'), '',
 			'cx="50%" not removed')
 
 class RemoveDefaultGradCYValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad2')
 		self.assertEqual( g.getAttribute('cy'), '',
 			'cy="50%" not removed')
 
 class RemoveDefaultGradRValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad2')
 		self.assertEqual( g.getAttribute('r'), '',
 			'r="50%" not removed')
 
 class RemoveDefaultGradFXValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad2')
 		self.assertEqual( g.getAttribute('fx'), '',
 			'fx matching cx not removed')
 
 class RemoveDefaultGradFYValue(unittest.TestCase):
 	def runTest(self):
-		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementsByTagNameNS(SVGNS, 'radialGradient')[0]
+		g = scour.scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad2')
 		self.assertEqual( g.getAttribute('fy'), '',
 			'fy matching cy not removed')
 
