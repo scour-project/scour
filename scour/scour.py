@@ -57,6 +57,7 @@ import xml.dom.minidom
 import re
 import math
 import time
+from collections import namedtuple
 from scour.svg_regex import svg_parser
 from scour.svg_transform import svg_transform_parser
 import optparse
@@ -1522,6 +1523,39 @@ def mayContainTextNodes(node):
    node.mayContainTextNodes = result
    return result
 
+
+# An extended list of default attributes that are safe to remove if all conditions are fulfilled
+# Each default attribute is an object of type 'DefaultAttribute' with the following fields:
+#    name       - name of the attribute to be matched
+#    value      - default value of the attribute
+#    units      - the unit(s) for which 'value' is valid (see 'Unit' class for possible specifications)
+#    elements   - name(s) of SVG element(s) for which the attribute specification is valid
+#    conditions - additional conditions that have to be fulfilled for removal of the specified default attribute
+#                 implemented as lambda functions with one argument (a xml.dom.minidom node) evaluating to True or False
+# When not specifying a field value, it will be ignored (i.e. always matches)
+DefaultAttribute = namedtuple('DefaultAttribute', ['name', 'value', 'units', 'elements', 'conditions'])
+DefaultAttribute.__new__.__defaults__ = (None,) * len(DefaultAttribute._fields)
+default_attributes_ex = [
+   DefaultAttribute('gradientUnits', 'objectBoundingBox'),
+   DefaultAttribute('spreadMethod' , 'pad'),
+   DefaultAttribute('x1', 0),
+   DefaultAttribute('y1', 0),
+   DefaultAttribute('x2', 0, elements = "line"),
+   DefaultAttribute('y2', 0),
+   DefaultAttribute('x2', 100 , Unit.PCT,  "linearGradient"),
+   DefaultAttribute('x2', 1   , Unit.NONE, "linearGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('fx', conditions = lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
+   DefaultAttribute('fy', conditions = lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
+   DefaultAttribute('cx', 0   , elements = ["circle", "ellipse"]),
+   DefaultAttribute('cy', 0   , elements = ["circle", "ellipse"]),
+   DefaultAttribute('cx', 50  , Unit.PCT , "radialGradient"),
+   DefaultAttribute('cy', 50  , Unit.PCT , "radialGradient"),
+   DefaultAttribute('cx', 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('cy', 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('r' , 50  , Unit.PCT , "radialGradient"),
+   DefaultAttribute('r' , 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse')
+]
+
 def taint(taintedSet, taintedAttribute):
    u"""Adds an attribute to a set of attributes.
 
@@ -1533,6 +1567,32 @@ def taint(taintedSet, taintedAttribute):
       taintedSet.add('marker')
    return taintedSet
 
+def removeDefaultAttributeValue(node, attribute):
+   """
+   Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
+   """
+   if not node.hasAttribute(attribute.name):
+      return 0
+
+   if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
+      return 0
+
+   # differentiate between text and numeric values
+   if isinstance(attribute.value, str):
+      if node.getAttribute(attribute.name) == attribute.value:
+         if (attribute.conditions is None) or attribute.conditions(node):
+            node.removeAttribute(attribute.name)
+            return 1
+   else:
+      nodeValue = SVGLength(node.getAttribute(attribute.name))
+      if (attribute.value is None) or (nodeValue.value == attribute.value):
+         if (attribute.units is None) or (nodeValue.units == attribute.units) or (isinstance(attribute.units, list) and nodeValue.units in attribute.units):
+            if (attribute.conditions is None) or attribute.conditions(node):
+               node.removeAttribute(attribute.name)
+               return 1
+
+   return 0
+
 def removeDefaultAttributeValues(node, options, tainted=set()):
    u"""'tainted' keeps a set of attributes defined in parent nodes.
 
@@ -1540,102 +1600,9 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
    num = 0
    if node.nodeType != 1: return 0
 
-   # gradientUnits: objectBoundingBox
-   if node.getAttribute('gradientUnits') == 'objectBoundingBox':
-      node.removeAttribute('gradientUnits')
-      num += 1
-
-   # spreadMethod: pad
-   if node.getAttribute('spreadMethod') == 'pad':
-      node.removeAttribute('spreadMethod')
-      num += 1
-
-   # x1 - line: 0
-   #      linearGradient: 0%
-   if node.getAttribute('x1') != '':
-      x1 = SVGLength(node.getAttribute('x1'))
-      if x1.value == 0:
-         node.removeAttribute('x1')
-         num += 1
-
-   # y1 - line: 0
-   #      linearGradient: 0%
-   if node.getAttribute('y1') != '':
-      y1 = SVGLength(node.getAttribute('y1'))
-      if y1.value == 0:
-         node.removeAttribute('y1')
-         num += 1
-
-   # x2 - line: 0
-   #      linearGradient: 100% (x2="1" usually equals "1px" which only equals "100%" if gradientUnits="objectBoundingBox")
-   if node.getAttribute('x2') != '':
-      x2 = SVGLength(node.getAttribute('x2'))
-      if node.nodeName == 'line':
-         if x2.value == 0:
-           node.removeAttribute('x2')
-           num += 1
-      elif node.nodeName == 'linearGradient':
-         if ( (x2.value == 100 and x2.units == Unit.PCT) or
-              (x2.value == 1   and x2.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
-            node.removeAttribute('x2')
-            num += 1
-
-   # y2 - line: 0
-   #      linearGradient: 0%
-   if node.getAttribute('y2') != '':
-      y2 = SVGLength(node.getAttribute('y2'))
-      if y2.value == 0:
-         node.removeAttribute('y2')
-         num += 1
-
-   # fx: equal to rx
-   if node.getAttribute('fx') != '':
-      if node.getAttribute('fx') == node.getAttribute('cx'):
-         node.removeAttribute('fx')
-         num += 1
-
-   # fy: equal to ry
-   if node.getAttribute('fy') != '':
-      if node.getAttribute('fy') == node.getAttribute('cy'):
-         node.removeAttribute('fy')
-         num += 1
-
-   # cx - circle / ellipse: 0
-   #      radialGradient: 50% (cx="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
-   if node.getAttribute('cx') != '':
-      cx = SVGLength(node.getAttribute('cx'))
-      if node.nodeName in ['circle', 'ellipse']:
-         if cx.value == 0:
-            node.removeAttribute('cx')
-            num += 1
-      elif node.nodeName == "radialGradient":
-         if ( (cx.value == 50  and cx.units == Unit.PCT) or
-              (cx.value == 0.5 and cx.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
-            node.removeAttribute('cx')
-            num += 1
-
-   # cy - circle / ellipse: 0
-   #      radialGradient: 50% (cy="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
-   if node.getAttribute('cy') != '':
-      cy = SVGLength(node.getAttribute('cy'))
-      if node.nodeName in ['circle', 'ellipse']:
-         if cy.value == 0:
-            node.removeAttribute('cy')
-            num += 1
-      elif node.nodeName == "radialGradient":
-         if ( (cy.value == 50  and cy.units == Unit.PCT) or
-              (cy.value == 0.5 and cy.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
-            node.removeAttribute('cy')
-            num += 1
-
-   # r - radialGradient: 50% (r="0.5" usually equals "0.5px" which only equals "50%" if gradientUnits="objectBoundingBox")
-   if node.getAttribute('r') != '':
-      if node.nodeName == 'radialGradient':
-         r = SVGLength(node.getAttribute('r'))
-         if ( (r.value == 50  and r.units == Unit.PCT) or
-              (r.value == 0.5 and r.units == Unit.NONE and not node.getAttribute('gradientUnits') == 'userSpaceOnUse') ):
-            node.removeAttribute('r')
-            num += 1
+   # Conditionally remove all default attributes defined in the 'default_attributes_ex' (a list of 'DefaultAttribute's)
+   for attribute in default_attributes_ex:
+      num += removeDefaultAttributeValue(node, attribute)
 
    # Summarily get rid of some more attributes
    attributes = [node.attributes.item(i).nodeName
