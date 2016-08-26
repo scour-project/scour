@@ -940,8 +940,8 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
    # its fill attribute is not what we want to look at, we should look for the first
    # non-animate/set element
    attrList = childElements[0].attributes
-   for num in range(attrList.length):
-      attr = attrList.item(num)
+   for index in range(attrList.length):
+      attr = attrList.item(index)
       # this is most of the inheritable properties from http://www.w3.org/TR/SVG11/propidx.html
       # and http://www.w3.org/TR/SVGTiny12/attributeTable.html
       if attr.nodeName in ['clip-rule',
@@ -1113,8 +1113,8 @@ def removeUnusedAttributesOnParent(elem):
    # get all attribute values on this parent
    attrList = elem.attributes
    unusedAttrs = {}
-   for num in range(attrList.length):
-      attr = attrList.item(num)
+   for index in range(attrList.length):
+      attr = attrList.item(index)
       if attr.nodeName in ['clip-rule',
                'display-align',
                'fill', 'fill-opacity', 'fill-rule',
@@ -2804,8 +2804,8 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
    if options.order_attributes :
       attrName2Index = dict([(attrList.item(i).nodeName, i) for i in attrIndices])
       attrIndices = [attrName2Index[name] for name in sorted(attrName2Index.keys())]
-   for num in attrIndices :
-      attr = attrList.item(num)
+   for index in attrIndices :
+      attr = attrList.item(index)
       if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
       # if the attribute value contains a double-quote, use single-quotes
       quot = '"'
@@ -2918,9 +2918,9 @@ def scourString(in_string, options=None):
       # remove the xmlns: declarations now
       xmlnsDeclsToRemove = []
       attrList = doc.documentElement.attributes
-      for num in range(attrList.length) :
-         if attrList.item(num).nodeValue in unwanted_ns :
-            xmlnsDeclsToRemove.append(attrList.item(num).nodeName)
+      for index in range(attrList.length) :
+         if attrList.item(index).nodeValue in unwanted_ns :
+            xmlnsDeclsToRemove.append(attrList.item(index).nodeName)
 
       for attr in xmlnsDeclsToRemove :
          doc.documentElement.removeAttribute(attr)
