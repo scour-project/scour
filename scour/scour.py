@@ -296,7 +296,14 @@ colors = {
    'yellowgreen': 'rgb(154, 205, 50)',
    }
 
-default_attributes = { # excluded all attributes with 'auto' as default
+# A list of default poperties that are safe to remove
+#
+# Sources for this list:
+#    https://www.w3.org/TR/SVG/propidx.html              (implemented)
+#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
+#    https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
+#
+default_properties = { # excluded all properties with 'auto' as default
    # SVG 1.1 presentation attributes
    'baseline-shift': 'baseline',
    'clip-path': 'none',
@@ -1524,7 +1531,7 @@ def mayContainTextNodes(node):
    return result
 
 
-# An extended list of default attributes that are safe to remove if all conditions are fulfilled
+# A list of default attributes that are safe to remove if all conditions are fulfilled
 #
 # Each default attribute is an object of type 'DefaultAttribute' with the following fields:
 #    name       - name of the attribute to be matched
@@ -1536,11 +1543,13 @@ def mayContainTextNodes(node):
 # When not specifying a field value, it will be ignored (i.e. always matches)
 #
 # Sources for this list:
-#    https://www.w3.org/TR/SVG/attindex.html
+#    https://www.w3.org/TR/SVG/attindex.html             (mostly implemented)
+#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (not yet implemented)
+#    https://www.w3.org/TR/SVG2/attindex.html            (not yet implemented)
 #
 DefaultAttribute = namedtuple('DefaultAttribute', ['name', 'value', 'units', 'elements', 'conditions'])
 DefaultAttribute.__new__.__defaults__ = (None,) * len(DefaultAttribute._fields)
-default_attributes_ex = [
+default_attributes = [
    # unit systems
    DefaultAttribute('clipPathUnits', 'userSpaceOnUse', elements = 'clipPath'),
    DefaultAttribute('filterUnits', 'objectBoundingBox', elements = 'filter'),
@@ -1696,27 +1705,26 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
    num = 0
    if node.nodeType != 1: return 0
 
-   # Conditionally remove all default attributes defined in the 'default_attributes_ex' (a list of 'DefaultAttribute's)
-   for attribute in default_attributes_ex:
+   # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
+   for attribute in default_attributes:
       num += removeDefaultAttributeValue(node, attribute)
 
-   # Summarily get rid of some more attributes
-   attributes = [node.attributes.item(i).nodeName
-              for i in range(node.attributes.length)]
+   # Summarily get rid of default properties
+   attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
    for attribute in attributes:
       if attribute not in tainted:
-         if attribute in list(default_attributes.keys()):
-            if node.getAttribute(attribute) == default_attributes[attribute]:
+         if attribute in list(default_properties.keys()):
+            if node.getAttribute(attribute) == default_properties[attribute]:
                node.removeAttribute(attribute)
                num += 1
             else:
                tainted = taint(tainted, attribute)
-   # These attributes might also occur as styles
+   # Properties might also occur as styles, remove them too
    styles = _getStyle(node)
    for attribute in list(styles.keys()):
       if attribute not in tainted:
-         if attribute in list(default_attributes.keys()):
-            if styles[attribute] == default_attributes[attribute]:
+         if attribute in list(default_properties.keys()):
+            if styles[attribute] == default_properties[attribute]:
                del styles[attribute]
                num += 1
             else:
