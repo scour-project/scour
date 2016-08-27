@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<linearGradient id="g" x1="0" y1='0' x2='100%' y2='0.0' gradientUnits="objectBoundingBox" spreadMethod="pad">
-  <stop offset="0" stop-color="black"/>
-  <stop offset="1" stop-color="white"/>
-</linearGradient>
-<radialGradient id="g2" xlink:href="#g1" cx="50%" cy="0.5" r="50%" fx="50%" fy="0.5"/>
-<rect width="100" height="100" fill="url(#g)"/>
-<rect width="50" height="50" fill="url(#g2)"/>
+  <linearGradient id="grad1" x1="0" y1='0' x2='100%' y2='0.0' gradientUnits="objectBoundingBox" spreadMethod="pad">
+    <stop offset="0" stop-color="black"/>
+    <stop offset="1" stop-color="white"/>
+  </linearGradient>
+  <linearGradient id="grad1b" x2='1.0' gradientUnits="objectBoundingBox">
+    <stop offset="0" stop-color="black"/>
+    <stop offset="1" stop-color="white"/>
+  </linearGradient>
+  <linearGradient id="grad1c" x2='1' gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="black"/>
+    <stop offset="1" stop-color="white"/>
+  </linearGradient>
+  <radialGradient id="grad2" xlink:href="#grad1" cx="50%" cy="0.5" r="50%" fx="50%" fy="0.5"/>
+  
+  <rect width="100" height="100" fill="url(#grad1)"/>
+  <rect width="100" height="100" fill="url(#grad1b)"/>
+  <rect width="100" height="100" fill="url(#grad1c)"/>
+  <rect width="50" height="50" fill="url(#grad2)"/>
 </svg>
