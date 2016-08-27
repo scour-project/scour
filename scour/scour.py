@@ -665,7 +665,7 @@ def shortenIDs(doc, prefix, unprotectedElements=None):
             if rid in unprotectedElements]
    idList.sort(reverse=True)
    idList = [rid for count, rid in idList]
-   
+
    # Add unreferenced IDs to end of idList in arbitrary order
    idList.extend([rid for rid in unprotectedElements if not rid in idList])
 
@@ -1525,6 +1525,7 @@ def mayContainTextNodes(node):
 
 
 # An extended list of default attributes that are safe to remove if all conditions are fulfilled
+#
 # Each default attribute is an object of type 'DefaultAttribute' with the following fields:
 #    name       - name of the attribute to be matched
 #    value      - default value of the attribute
@@ -1533,27 +1534,122 @@ def mayContainTextNodes(node):
 #    conditions - additional conditions that have to be fulfilled for removal of the specified default attribute
 #                 implemented as lambda functions with one argument (a xml.dom.minidom node) evaluating to True or False
 # When not specifying a field value, it will be ignored (i.e. always matches)
+#
+# Sources for this list:
+#    https://www.w3.org/TR/SVG/attindex.html
+#
 DefaultAttribute = namedtuple('DefaultAttribute', ['name', 'value', 'units', 'elements', 'conditions'])
 DefaultAttribute.__new__.__defaults__ = (None,) * len(DefaultAttribute._fields)
 default_attributes_ex = [
-   DefaultAttribute('gradientUnits', 'objectBoundingBox'),
-   DefaultAttribute('spreadMethod' , 'pad'),
-   DefaultAttribute('x1', 0),
-   DefaultAttribute('y1', 0),
-   DefaultAttribute('x2', 0, elements = "line"),
-   DefaultAttribute('y2', 0),
-   DefaultAttribute('x2', 100 , Unit.PCT,  "linearGradient"),
-   DefaultAttribute('x2', 1   , Unit.NONE, "linearGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
-   DefaultAttribute('fx', conditions = lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
-   DefaultAttribute('fy', conditions = lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
-   DefaultAttribute('cx', 0   , elements = ["circle", "ellipse"]),
-   DefaultAttribute('cy', 0   , elements = ["circle", "ellipse"]),
-   DefaultAttribute('cx', 50  , Unit.PCT , "radialGradient"),
-   DefaultAttribute('cy', 50  , Unit.PCT , "radialGradient"),
-   DefaultAttribute('cx', 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
-   DefaultAttribute('cy', 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
-   DefaultAttribute('r' , 50  , Unit.PCT , "radialGradient"),
-   DefaultAttribute('r' , 0.5 , Unit.NONE, "radialGradient" , lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse')
+   # unit systems
+   DefaultAttribute('clipPathUnits', 'userSpaceOnUse', elements = 'clipPath'),
+   DefaultAttribute('filterUnits', 'objectBoundingBox', elements = 'filter'),
+   DefaultAttribute('gradientUnits', 'objectBoundingBox', elements = ['linearGradient', 'radialGradient']),
+   DefaultAttribute('maskUnits', 'objectBoundingBox', elements = 'mask'),
+   DefaultAttribute('maskContentUnits', 'userSpaceOnUse', elements = 'mask'),
+   DefaultAttribute('patternUnits', 'objectBoundingBox', elements = 'pattern'),
+   DefaultAttribute('patternContentUnits', 'userSpaceOnUse', elements = 'pattern'),
+   DefaultAttribute('primitiveUnits', 'userSpaceOnUse', elements = 'filter'),
+
+   DefaultAttribute('externalResourcesRequired', 'false', elements = ['a', 'altGlyph', 'animate', 'animateColor',
+      'animateMotion', 'animateTransform', 'circle', 'clipPath', 'cursor', 'defs', 'ellipse', 'feImage', 'filter',
+      'font', 'foreignObject', 'g', 'image', 'line', 'linearGradient', 'marker', 'mask', 'mpath', 'path', 'pattern',
+      'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'svg', 'switch', 'symbol', 'text', 'textPath',
+      'tref', 'tspan', 'use', 'view']),
+
+   # svg elements
+   DefaultAttribute('width', 100, Unit.PCT, elements = 'svg'),
+   DefaultAttribute('height', 100, Unit.PCT, elements = 'svg'),
+   DefaultAttribute('baseProfile', 'none', elements = 'svg'),
+   DefaultAttribute('preserveAspectRatio', 'xMidYMid meet', elements = ['feImage', 'image', 'marker', 'pattern', 'svg', 'symbol', 'view']),
+
+   # common attributes / basic types
+   DefaultAttribute('x',  0, elements = ['cursor', 'fePointLight', 'feSpotLight', 'foreignObject', 'image', 'pattern', 'rect', 'svg', 'text', 'use']),
+   DefaultAttribute('y',  0, elements = ['cursor', 'fePointLight', 'feSpotLight', 'foreignObject', 'image', 'pattern', 'rect', 'svg', 'text', 'use']),
+   DefaultAttribute('z',  0, elements = ['fePointLight', 'feSpotLight']),
+   DefaultAttribute('x1', 0, elements = 'line'),
+   DefaultAttribute('y1', 0, elements = 'line'),
+   DefaultAttribute('x2', 0, elements = 'line'),
+   DefaultAttribute('y2', 0, elements = 'line'),
+   DefaultAttribute('cx', 0, elements = ['circle', 'ellipse']),
+   DefaultAttribute('cy', 0, elements = ['circle', 'ellipse']),
+
+   # markers
+   DefaultAttribute('markerUnits', 'strokeWidth', elements = 'marker'),
+   DefaultAttribute('refX', 0, elements = 'marker'),
+   DefaultAttribute('refY', 0, elements = 'marker'),
+   DefaultAttribute('markerHeight', 3, elements = 'marker'),
+   DefaultAttribute('markerWidth', 3, elements = 'marker'),
+   DefaultAttribute('orient', 0, elements = 'marker'),
+
+   # text / textPath / tspan / tref
+   DefaultAttribute('lengthAdjust', 'spacing', elements = ['text', 'textPath', 'tref', 'tspan']),
+   DefaultAttribute('startOffset', 0, elements = 'textPath'),
+   DefaultAttribute('method', 'align', elements = 'textPath'),
+   DefaultAttribute('spacing', 'exact', elements = 'textPath'),
+
+   # filters and masks
+   DefaultAttribute('x', -10, Unit.PCT, ['filter', 'mask']),
+   DefaultAttribute('x', -0.1, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('y', -10, Unit.PCT, ['filter', 'mask']),
+   DefaultAttribute('y', -0.1, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('width', 120, Unit.PCT, ['filter', 'mask']),
+   DefaultAttribute('width', 1.2, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('height', 120, Unit.PCT, ['filter', 'mask']),
+   DefaultAttribute('height', 1.2, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+
+   # gradients
+   DefaultAttribute('x1', 0, elements = 'linearGradient'),
+   DefaultAttribute('y1', 0, elements = 'linearGradient'),
+   DefaultAttribute('y2', 0, elements = 'linearGradient'),
+   DefaultAttribute('x2', 100, Unit.PCT, 'linearGradient'),
+   DefaultAttribute('x2', 1, Unit.NONE, 'linearGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   # remove fx/fy before cx/cy to catch the case where fx = cx = 50% or fy = cy = 50% respectively
+   DefaultAttribute('fx', elements = 'radialGradient', conditions = lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
+   DefaultAttribute('fy', elements = 'radialGradient', conditions = lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
+   DefaultAttribute('r',  50, Unit.PCT, 'radialGradient'),
+   DefaultAttribute('r',  0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('cx', 50, Unit.PCT, 'radialGradient'),
+   DefaultAttribute('cx', 0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('cy', 50, Unit.PCT, 'radialGradient'),
+   DefaultAttribute('cy', 0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+   DefaultAttribute('spreadMethod', 'pad'),
+
+   # filter effects
+   DefaultAttribute('amplitude', 1, elements = ['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+   DefaultAttribute('azimuth', 0, elements = 'feDistantLight'),
+   DefaultAttribute('baseFrequency', 0, elements = ['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+   DefaultAttribute('bias', 1, elements = 'feConvolveMatrix'),
+   DefaultAttribute('diffuseConstant', 1, elements = 'feDiffuseLighting'),
+   DefaultAttribute('edgeMode', 'duplicate', elements = 'feConvolveMatrix'),
+   DefaultAttribute('elevation', 0, elements = 'feDistantLight'),
+   DefaultAttribute('exponent', 1, elements = ['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+   DefaultAttribute('intercept', 0, elements = ['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+   DefaultAttribute('k1', 0, elements = 'feComposite'),
+   DefaultAttribute('k2', 0, elements = 'feComposite'),
+   DefaultAttribute('k3', 0, elements = 'feComposite'),
+   DefaultAttribute('k4', 0, elements = 'feComposite'),
+   DefaultAttribute('mode', 'normal', elements = 'feBlend'),
+   DefaultAttribute('numOctaves', 1, elements = 'feTurbulence'),
+   DefaultAttribute('offset', 0, elements = ['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+   DefaultAttribute('operator', 'over', elements = 'feComposite'),
+   DefaultAttribute('operator', 'erode', elements = 'feMorphology'),
+   DefaultAttribute('order', 3, elements = 'feConvolveMatrix'),
+   DefaultAttribute('pointsAtX', 0, elements = 'feSpotLight'),
+   DefaultAttribute('pointsAtY', 0, elements = 'feSpotLight'),
+   DefaultAttribute('pointsAtZ', 0, elements = 'feSpotLight'),
+   DefaultAttribute('preserveAlpha', 'false', elements = 'feConvolveMatrix'),
+   DefaultAttribute('scale', 0, elements = 'feDisplacementMap'),
+   DefaultAttribute('seed', 0, elements = 'feTurbulence'),
+   DefaultAttribute('specularConstant', 1, elements = 'feSpecularLighting'),
+   DefaultAttribute('specularExponent', 1, elements = ['feSpecularLighting', 'feSpotLight']),
+   DefaultAttribute('stdDeviation', 0, elements = 'feGaussianBlur'),
+   DefaultAttribute('stitchTiles', 'noStitch', elements = 'feTurbulence'),
+   DefaultAttribute('surfaceScale', 1, elements = ['feDiffuseLighting', 'feSpecularLighting']),
+   DefaultAttribute('type', 'matrix', elements = 'feColorMatrix'),
+   DefaultAttribute('type', 'turbulence', elements = 'feTurbulence'),
+   DefaultAttribute('xChannelSelector', 'A', elements = 'feDisplacementMap'),
+   DefaultAttribute('yChannelSelector', 'A', elements = 'feDisplacementMap')
 ]
 
 def taint(taintedSet, taintedAttribute):
