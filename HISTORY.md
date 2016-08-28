@@ -1,5 +1,78 @@
 # Release Notes for Scour
 
+## Version 0.35 (not released yet)
+
+* Add `--order-attributes` option which orders attributes alphabetically in output. (#59)
+* Drop official support for Python 2.6. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 2.6 and should find/fix any compatibility issues pull requests are welcome, though.)
+* Fix: Unused IDs were not shortended when `--shorten-ids` was used.
+* Fix: Most elements were still removed from `<defs>` when `--keep-unreferenced-defs` was used. (#62)
+* Improve escaping of single/double quotes ('/") in attributes. (#64)
+* Print usage information if no input file was specified (and no data is available from `stdin`).(#65)
+* Redirect informational output to `stderr` when SVG is output to `stdout`. (#67)
+* Allow elements to be found via `Document.getElementById()` in the minidom document returned by scourXmlFile(). (#68)
+* Improve code to remove default attribute values and add a lot of new default values. (#70)
+
+## Version 0.34 (2016-07-25)
+
+* Add a function to sanitize an arbitrary Python object containing options for Scour as attributes (usage: `Scour.sanitizeOptions(options)`).<br>This simplifies usage of the Scour module by other scripts while avoiding any compatibility issues that might arise when options are added/removed/renamed in Scour. (#44)
+* Input/output file can now be specified as positional arguments (e.g. `scour input.svg output.svg`). (#46)
+* Improve `--help` output by intuitively arranging options in groups. (#46)
+* Add option `--error-on-flowtext` to raise an exception whenever a non-standard `<flowText>` element is found (which is only supported in Inkscape). If this option is not specified a warning will be shown. (#53)
+* Automate tests with continouous integration via Travis. (#52)
+
+
+## Version 0.33 (2016-01-29)
+
+* Add support for removal of editor data of Sketch. (#37)
+* Add option `--verbose` (or `-v`) to show detailed statistics after running Scour. By default only a single line containing the most important information is output now.
+
+
+## Version 0.32 (2015-12-10)
+
+* Add functionality to remove unused XML namespace declarations from the `<svg>` root element. (#14)
+* Restore unittests which were lost during move to GitHub. (#24)
+* Fix a potential regex matching issue in `points` attribute of `<polygon>` and `<polyline>` elements. (#24)
+* Fix a crash with `points` attribute of `<polygon>` and `<polyline>` starting with a negative number. (#24)
+* Fix encoding issues when input file contained unicode characters. (#27)
+* Fix encoding issues when using `stding`/`stdout` as input/output.  (#27)
+* Fix removal of comments. If a node contained multiple comments usually not all of them were removed. (#28)
+
+
+## Version 0.31 (2015-11-16)
+
+* Ensure Python 3 compatibility. (#8)
+* Add option `--nindent` to set the number of spaces/tabs used for indentation (defaults to 1). (#13)
+* Add option `--no-line-breaks` to suppress output of line breaks and indentation altogether. (#13)
+* Add option `--strip-xml-space` which removes the specification of `xml:space="preserve"` on the `<svg>` root element which would otherwise disallow Scour to make any whitespace changes in output. (#13)
+
+
+## Version 0.30 (2014-08-05)
+
+* Fix ingoring of additional args when invoked from scons.
+
+
+## Version 0.29 (2014-07-26)
+
+* Add option `--keep-unreferenced-defs` to preserve elements in `<defs>` that are not referenced and would be removed otherwise. (#2)
+* Add option to ingore unknown cmd line opts.
+
+
+## Version 0.28 (2014-01-12)
+
+* Add option `--shorten-ids-prefix` which allows to add a custom prefix to all shortened IDs. (#1)
+
+
+## Version 0.27 (2013-10-26)
+
+* Allow direct calling of the Scour module.
+
+
+## Version 0.26 (2013-10-22)
+
+* Re-release of Scour 0.26, re-packaged as a Python module [available from PyPI](https://pypi.python.org/pypi/scour) (Thanks to [Tobias Oberstet](https://github.com/oberstet)!).
+* Development moved to GitHub (https://github.com/scour-project/scour).
+
+
 ## Version 0.26 (2011-05-09)
 
 * Fix [Bug 702423](https://bugs.launchpad.net/scour/+bug/702423) to function well in the presence of multiple identical gradients and `--disable-style-to-xml`.
