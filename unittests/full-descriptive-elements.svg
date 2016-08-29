@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg">
+    <title xmlns:mytitle="http://example.org/mytitle">
+      <mytitle:title>This is an example SVG file</mytitle:title>
+      <mytitle:desc>Unit test for Scour's --remove-titles option</mytitle:desc>
+    </title>
+    <desc xmlns:mydesc="http://example.org/mydesc">
+      <mydesc:title>This is an example SVG file</mydesc:title>
+      <mydesc:para>Unit test for Scour's
+      <mydesc:emph>--remove-descriptions</mydesc:emph> option</mydesc:para>
+    </desc>
     <metadata>
       <rdf:RDF
            xmlns:rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
