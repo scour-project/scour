@@ -1529,22 +1529,22 @@ def repairStyle(node, options):
             num += 1
 
       if 'overflow' in styleMap :
-         # overflow specified on element other than svg, marker, pattern
-         if not node.nodeName in ['svg','marker','pattern']:
+         # remove overflow from elements to which it does not apply,
+         # see https://www.w3.org/TR/SVG/masking.html#OverflowProperty
+         if not node.nodeName in ['svg','symbol','image','foreignObject','marker','pattern']:
             del styleMap['overflow']
             num += 1
-         # it is a marker, pattern or svg
-         # as long as this node is not the document <svg>, then only
-         # remove overflow='hidden'.  See
-         # http://www.w3.org/TR/2010/WD-SVG11-20100622/masking.html#OverflowProperty
+         # if the node is not the root <svg> element the SVG's user agent style sheet
+         # overrides the initial (i.e. default) value with the value 'hidden', which can consequently be removed
+         # (see last bullet point in the link above)
          elif node != node.ownerDocument.documentElement:
             if styleMap['overflow'] == 'hidden':
                del styleMap['overflow']
                num += 1
-         # else if outer svg has a overflow="visible", we can remove it
+         # on the root <svg> element the CSS2 default overflow="visible" is the initial value and we can remove it
          elif styleMap['overflow'] == 'visible':
-               del styleMap['overflow']
-               num += 1
+            del styleMap['overflow']
+            num += 1
 
       # now if any of the properties match known SVG attributes we prefer attributes
       # over style so emit them and remove them from the style map
