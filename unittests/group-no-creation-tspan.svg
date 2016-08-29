@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg height="100" width="100" xmlns="http://www.w3.org/2000/svg" >
+ <text>
+  <tspan x="10" y="30" style="font-family:sans-serif">text1</tspan>
+  <tspan x="10" y="50" style="font-family:sans-serif">text2</tspan>
+  <tspan x="10" y="70" style="font-family:sans-serif">text3</tspan>
+ </text>
+</svg>

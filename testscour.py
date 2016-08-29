@@ -1222,6 +1222,13 @@ class GroupNoCreation(unittest.TestCase):
 		self.assertEqual(doc.getElementsByTagName('g').length, 0,
 			'Created a <g> for a run of elements having dissimilar attributes')
 
+class GroupNoCreationForTspan(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/group-no-creation-tspan.svg',
+			scour.parse_args(['--create-groups']))
+		self.assertEqual(doc.getElementsByTagName('g').length, 0,
+			'Created a <g> for a run of <tspan>s that are not allowed as children according to content model')
+
 class DoNotCommonizeAttributesOnReferencedElements(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/commonized-referenced-elements.svg')
