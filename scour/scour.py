@@ -113,26 +113,59 @@ unwanted_ns = [ NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
             NS['ADOBE_IMAGE_REPLACEMENT'], NS['ADOBE_CUSTOM'],
             NS['ADOBE_XPATH'], NS['SKETCH'] ]
 
+# A list of all SVG presentation properties
+#
+# Sources for this list:
+#    https://www.w3.org/TR/SVG/propidx.html              (implemented)
+#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
+#    https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
+#
 svgAttributes = [
+            # SVG 1.1
+            'alignment-baseline',
+            'baseline-shift',
+            'clip',
+            'clip-path',
             'clip-rule',
+            'color',
+            'color-interpolation',
+            'color-interpolation-filters',
+            'color-profile',
+            'color-rendering',
+            'cursor',
+            'direction',
             'display',
+            'dominant-baseline',
+            'enable-background',
             'fill',
             'fill-opacity',
             'fill-rule',
             'filter',
+            'flood-color',
+            'flood-opacity',
+            'font',
             'font-family',
             'font-size',
+            'font-size-adjust',
             'font-stretch',
             'font-style',
             'font-variant',
             'font-weight',
-            'line-height',
+            'glyph-orientation-horizontal',
+            'glyph-orientation-vertical',
+            'image-rendering',
+            'kerning',
+            'letter-spacing',
+            'lighting-color',
             'marker',
             'marker-end',
             'marker-mid',
             'marker-start',
+            'mask',
             'opacity',
             'overflow',
+            'pointer-events',
+            'shape-rendering',
             'stop-color',
             'stop-opacity',
             'stroke',
@@ -143,7 +176,24 @@ svgAttributes = [
             'stroke-miterlimit',
             'stroke-opacity',
             'stroke-width',
-            'visibility'
+            'text-anchor',
+            'text-decoration',
+            'text-rendering',
+            'unicode-bidi',
+            'visibility',
+            'word-spacing',
+            'writing-mode',
+            # SVG 1.2 Tiny
+            'audio-level',
+            'buffered-rendering',
+            'display-align',
+            'line-increment',
+            'solid-color',
+            'solid-opacity',
+            'text-align',
+            'vector-effect',
+            'viewport-fill',
+            'viewport-fill-opacity',
             ]
 
 colors = {
