@@ -12,6 +12,7 @@
 * Allow elements to be found via `Document.getElementById()` in the minidom document returned by scourXmlFile(). ([#68](https://github.com/scour-project/scour/issues/68))
 * Improve code to remove default attribute values and add a lot of new default values. ([#70](https://github.com/scour-project/scour/issues/70))
 * Fix: Only attempt to group elements that the content model allows to be children of a `<g>` when `--create-groups` is specified. (#98)
+* Fix: Update list of SVG presentation attributes allowing more styles to be converted to attributes and remove two entries (`line-height` and `visibility`) that were actually invalid. (#99)
 
 
 ## Version 0.34 (2016-07-25)
