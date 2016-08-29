@@ -71,13 +71,6 @@ try:
 except ImportError:
    sys.stderr.write("Scour requires at least Python 2.7 or Python 3.3+.")
 
-# Import Psyco if available
-try:
-   import psyco
-   psyco.full()
-except ImportError:
-   pass
-
 # select the most precise walltime measurement function available on the platform
 if sys.platform.startswith('win'):
    walltime = time.clock
