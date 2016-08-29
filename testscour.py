@@ -1238,10 +1238,18 @@ class DoNotCommonizeAttributesOnReferencedElements(unittest.TestCase):
 class DoNotRemoveOverflowVisibleOnMarker(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/overflow-marker.svg')
-		self.assertEqual(doc.getElementsByTagName('marker')[0].getAttribute('overflow'), 'visible',
+		self.assertEqual(doc.getElementById('m1').getAttribute('overflow'), 'visible',
 			'Removed the overflow attribute when it was not using the default value')
-		self.assertEqual(doc.getElementsByTagName('marker')[1].getAttribute('overflow'), '',
+		self.assertEqual(doc.getElementById('m2').getAttribute('overflow'), '',
 			'Did not remove the overflow attribute when it was using the default value')
+
+class DoNotRemoveOrientAutoOnMarker(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/orient-marker.svg')
+		self.assertEqual(doc.getElementById('m1').getAttribute('orient'), 'auto',
+			'Removed the orient attribute when it was not using the default value')
+		self.assertEqual(doc.getElementById('m2').getAttribute('orient'), '',
+			'Did not remove the orient attribute when it was using the default value')
 
 class MarkerOnSvgElements(unittest.TestCase):
 	def runTest(self):
