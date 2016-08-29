@@ -910,11 +910,25 @@ def removeNamespacedElements(node, namespaces):
          num += removeNamespacedElements(child, namespaces)
    return num
 
-def removeMetadataElements(doc):
+def removeDescriptiveElements(doc, options):
+   elementTypes = []
+   if options.remove_descriptive_elements:
+      elementTypes.extend(("title", "desc", "metadata"))
+   else:
+      if options.remove_titles:
+         elementTypes.append("title")
+      if options.remove_descriptions:
+         elementTypes.append("desc")
+      if options.remove_metadata:
+         elementTypes.append("metadata")
+   if not elementTypes:
+      return
+
    global numElemsRemoved
    num = 0
-   # clone the list, as the tag list is live from the DOM
-   elementsToRemove = [element for element in doc.documentElement.getElementsByTagName('metadata')]
+   elementsToRemove = []
+   for elementType in elementTypes:
+      elementsToRemove.extend(doc.documentElement.getElementsByTagName(elementType))
 
    for element in elementsToRemove:
       element.parentNode.removeChild(element)
@@ -1082,7 +1096,7 @@ def createGroupsForCommonAttributes(elem):
                   # SVG 1.1 (see https://www.w3.org/TR/SVG/struct.html#GElement)
                   'animate', 'animateColor', 'animateMotion', 'animateTransform', 'set', # animation elements
                   'desc', 'metadata', 'title',                                           # descriptive elements
-                  'circle', 'ellipse', 'line', 'path', 'polygon', 'polyline', 'rect',    # shape elements 
+                  'circle', 'ellipse', 'line', 'path', 'polygon', 'polyline', 'rect',    # shape elements
                   'defs', 'g', 'svg', 'symbol', 'use',                                   # structural elements
                   'linearGradient', 'radialGradient',                                    # gradient elements
                   'a', 'altGlyphDef', 'clipPath', 'color-profile', 'cursor', 'filter',
@@ -3059,9 +3073,8 @@ def scourString(in_string, options=None):
       else:
          print("WARNING: {}".format(errmsg), file = options.ensure_value("stdout", sys.stdout))
 
-   # remove <metadata> if the user wants to
-   if options.remove_metadata:
-      removeMetadataElements(doc)
+   # remove descriptive elements
+   removeDescriptiveElements(doc, options)
 
    # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
    # on the first pass, so we do it multiple times
@@ -3142,7 +3155,7 @@ def scourString(in_string, options=None):
 
    # remove empty defs, metadata, g
    # NOTE: these elements will be removed if they just have whitespace-only text nodes
-   for tag in ['defs', 'metadata', 'g'] :
+   for tag in ['defs', 'title', 'desc', 'metadata', 'g'] :
       for elem in doc.documentElement.getElementsByTagName(tag) :
          removeElem = not elem.hasChildNodes()
          if removeElem == False :
@@ -3369,9 +3382,18 @@ _option_group_document = optparse.OptionGroup(_options_parser, "SVG document")
 _option_group_document.add_option("--strip-xml-prolog",
    action="store_true", dest="strip_xml_prolog", default=False,
    help="won't output the XML prolog (<?xml ?>)")
+_option_group_document.add_option("--remove-titles",
+   action="store_true", dest="remove_titles", default=False,
+   help="remove <title> elements")
+_option_group_document.add_option("--remove-descriptions",
+   action="store_true", dest="remove_descriptions", default=False,
+   help="remove <desc> elements")
 _option_group_document.add_option("--remove-metadata",
    action="store_true", dest="remove_metadata", default=False,
    help="remove <metadata> elements (which may contain license/author information etc.)")
+_option_group_document.add_option("--remove-descriptive-elements",
+   action="store_true", dest="remove_descriptive_elements", default=False,
+   help="remove <title>, <desc> and <metadata> elements")
 _option_group_document.add_option("--enable-comment-stripping",
    action="store_true", dest="strip_comments", default=False,
    help="remove all comments (<!-- -->)")
