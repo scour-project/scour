@@ -141,15 +141,59 @@ class NoAdobeXPathElements(unittest.TestCase):
 			lambda e: e.namespaceURI != 'http://ns.adobe.com/XPath/1.0/'), False,
 			'Found Adobe XPath elements' )
 
+class DoNotRemoveTitleWithOnlyText(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/descriptive-elements-with-text.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 1,
+			'Removed title element with only text child' )
+
+class RemoveEmptyTitleElement(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-descriptive-elements.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 0,
+			'Did not remove empty title element' )
+
+class DoNotRemoveDescriptionWithOnlyText(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/descriptive-elements-with-text.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'desc')), 1,
+			'Removed description element with only text child' )
+
+class RemoveEmptyDescriptionElement(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-descriptive-elements.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'desc')), 0,
+			'Did not remove empty description element' )
+
 class DoNotRemoveMetadataWithOnlyText(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/metadata-with-text.svg')
+		doc = scour.scourXmlFile('unittests/descriptive-elements-with-text.svg')
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 1,
 			'Removed metadata element with only text child' )
 
 class RemoveEmptyMetadataElement(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/empty-metadata.svg')
+		doc = scour.scourXmlFile('unittests/empty-descriptive-elements.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 0,
+			'Did not remove empty metadata element' )
+
+class DoNotRemoveDescriptiveElementsWithOnlyText(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/descriptive-elements-with-text.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 1,
+			'Removed title element with only text child' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'desc')), 1,
+			'Removed description element with only text child')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 1,
+			'Removed metadata element with only text child' )
+
+class RemoveEmptyDescriptiveElements(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/empty-descriptive-elements.svg')
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'title')), 0,
+			'Did not remove empty title element' )
+		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'desc')), 0,
+			'Did not remove empty description element' )
 		self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'metadata')), 0,
 			'Did not remove empty metadata element' )
 
@@ -1152,12 +1196,33 @@ class PathImplicitLineWithMoveCommands(unittest.TestCase):
 		self.assertEqual( path.getAttribute('d'), "m100 100v100m200-100h-200m200 100v-100",
 			"Implicit line segments after move not preserved")
 
+class RemoveTitlesOption(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/full-descriptive-elements.svg',
+			scour.parse_args(['--remove-titles']))
+		self.assertEqual(doc.childNodes.length, 1,
+			'Did not remove <title> tag with --remove-titles')
+
+class RemoveDescriptionsOption(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/full-descriptive-elements.svg',
+			scour.parse_args(['--remove-descriptions']))
+		self.assertEqual(doc.childNodes.length, 1,
+			'Did not remove <desc> tag with --remove-descriptions')
+
 class RemoveMetadataOption(unittest.TestCase):
 	def runTest(self):
-		doc = scour.scourXmlFile('unittests/full-metadata.svg',
+		doc = scour.scourXmlFile('unittests/full-descriptive-elements.svg',
 			scour.parse_args(['--remove-metadata']))
 		self.assertEqual(doc.childNodes.length, 1,
 			'Did not remove <metadata> tag with --remove-metadata')
+
+class RemoveDescriptiveElementsOption(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/full-descriptive-elements.svg',
+			scour.parse_args(['--remove-descriptive-elements']))
+		self.assertEqual(doc.childNodes.length, 1,
+			'Did not remove <title>, <desc> and <metadata> tags with --remove-descriptive-elements')
 
 class EnableCommentStrippingOption(unittest.TestCase):
 	def runTest(self):
