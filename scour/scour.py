@@ -2971,11 +2971,14 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
 
    # now serialize the other attributes
    known_attr = [
+      # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
+      # (but should be kept inuitively ordered)
       'id', 'class',
       'transform',
       'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
+      'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
       'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
-      'd',
+      'd', 'points',
    ] + sorted(svgAttributes) + [
       'style',
    ]
