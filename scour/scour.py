@@ -2970,11 +2970,24 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
       outParts.extend([' xml:id=', quot, id, quot])
 
    # now serialize the other attributes
+   known_attr = [
+      'id', 'class',
+      'transform',
+      'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
+      'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
+      'd',
+   ] + sorted(svgAttributes) + [
+      'style',
+   ]
    attrList = element.attributes
-   attrIndices = range(attrList.length)
-   if options.order_attributes :
-      attrName2Index = dict([(attrList.item(i).nodeName, i) for i in attrIndices])
-      attrIndices = [attrName2Index[name] for name in sorted(attrName2Index.keys())]
+   attrName2Index = dict([(attrList.item(i).nodeName, i) for i in range(attrList.length)])
+   # use custom order for known attributes and alphabetical order for the rest
+   attrIndices = []
+   for name in known_attr:
+      if name in attrName2Index:
+         attrIndices.append(attrName2Index[name])
+         del attrName2Index[name]
+   attrIndices += [attrName2Index[name] for name in sorted(attrName2Index.keys())]
    for index in attrIndices :
       attr = attrList.item(index)
       if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
@@ -3419,9 +3432,6 @@ _option_group_formatting.add_option("--no-line-breaks",
 _option_group_formatting.add_option("--strip-xml-space",
    action="store_true", dest="strip_xml_space_attribute", default=False,
    help="strip the xml:space=\"preserve\" attribute from the root SVG element")
-_option_group_formatting.add_option("--order-attributes",
-   action="store_true", dest="order_attributes", default=False,
-   help="order attributes alphabetically (except \"id\")")
 _options_parser.add_option_group(_option_group_formatting)
 
 _option_group_ids = optparse.OptionGroup(_options_parser, "ID attributes")
