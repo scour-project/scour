@@ -64,12 +64,7 @@ import optparse
 from scour.yocto_css import parseCssString
 import six
 from six.moves import range
-
-# Python 2.3- did not have Decimal
-try:
-   from decimal import Decimal, InvalidOperation, getcontext
-except ImportError:
-   sys.stderr.write("Scour requires at least Python 2.7 or Python 3.3+.")
+from decimal import Context, Decimal, InvalidOperation, getcontext
 
 # select the most precise walltime measurement function available on the platform
 if sys.platform.startswith('win'):
@@ -2474,9 +2469,13 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
    This is faster than scourLength on elements guaranteed not to
    contain units.
    """
-   # reduce to the proper number of digits
    if not isinstance(length, Decimal):
       length = getcontext().create_decimal(str(length))
+
+   # reduce numeric precision
+   # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
+   length = scouringContext.plus(length)
+
    # if the value is an integer, it may still have .0[...] attached to it for some reason
    # remove those
    if int(length) == length:
@@ -3068,7 +3067,11 @@ def scourString(in_string, options=None):
    # sanitize options (take missing attributes from defaults, discard unknown attributes)
    options = sanitizeOptions(options)
 
-   getcontext().prec = options.digits
+   # create decimal context with reduced precision for scouring numbers
+   # calculations should be done in the default context (precision defaults to 28 significant digits) to minimize errors
+   global scouringContext
+   scouringContext = Context(prec = options.digits)
+
    global numAttrsRemoved
    global numStylePropsFixed
    global numElemsRemoved
