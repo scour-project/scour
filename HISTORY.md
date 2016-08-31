@@ -2,7 +2,6 @@
 
 ## Version 0.35 (not released yet)
 
-* Add `--order-attributes` option which orders attributes alphabetically in output. ([#59](https://github.com/scour-project/scour/issues/59))
 * Drop official support for Python 2.6. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 2.6 and should find/fix any compatibility issues pull requests are welcome, though.)
 * Fix: Unused IDs were not shortended when `--shorten-ids` was used.
 * Fix: Most elements were still removed from `<defs>` when `--keep-unreferenced-defs` was used. ([#62](https://github.com/scour-project/scour/issues/62))
@@ -18,6 +17,8 @@
    * `--remove-descriptions` (removes `<desc>` elements)
    * `--remove-descriptive-elements` (removes all of the descriptive elements, i.e. `<title>`, `<desc>` and `<metadata>`)
 * Fix removal rules for the `overflow` attribute ([#104](https://github.com/scour-project/scour/issues/104))
+* Improvement: Automatically order all attributes ([#105](https://github.com/scour-project/scour/issues/105)), as well as `style` declarations ([#107](https://github.com/scour-project/scour/issues/107)) allowing for a constant output across multiple runs of Scour. Before order could change arbitrarily.
+* Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all caculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
 
 
 ## Version 0.34 (2016-07-25)
