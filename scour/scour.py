@@ -2286,8 +2286,12 @@ def cleanPath(element, options) :
    path = newPath
 
    newPathStr = serializePath(path, options)
-   numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
-   element.setAttribute('d', newPathStr)
+
+   # if for whatever reason we actually made the path longer don't use it
+   # TODO: maybe we could compare path lengths after each optimization step and use the shortest
+   if len(newPathStr) <= len(oldPathStr):
+      numBytesSavedInPathData += ( len(oldPathStr) - len(newPathStr) )
+      element.setAttribute('d', newPathStr)
 
 
 
