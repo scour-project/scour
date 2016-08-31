@@ -685,6 +685,14 @@ class ChangeQuadToShorthandInPath(unittest.TestCase):
 		self.assertEqual(path.getAttribute('d'), 'm10 100q50-50 100 0t100 0',
 			'Did not change quadratic curves into shorthand curve segments in path')
 
+class DoNotOptimzePathIfLarger(unittest.TestCase):
+	def runTest(self):
+		p = scour.scourXmlFile('unittests/path-no-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
+		self.assertTrue(len(p.getAttribute('d')) <= len("M100,100 L200.12345,200.12345 C215,205 185,195 200.12,200.12 Z"),
+			'Made path data longer during optimization')
+        # this was the scoured path data as of 2016-08-31 without the length check in cleanPath(): 
+        #    d="m100 100l100.12 100.12c14.877 4.8766-15.123-5.1234-0.00345-0.00345z"
+
 class HandleEncodingUTF8(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/encoding-utf8.svg')
@@ -877,7 +885,7 @@ class RereferenceForRadialGradient(unittest.TestCase):
 class CollapseSamePathPoints(unittest.TestCase):
 	def runTest(self):
 		p = scour.scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0];
-		self.assertEqual(p.getAttribute('d'), "m100 100l100.12 100.12c14.88 4.88-15.12-5.12 0 0z",
+		self.assertEqual(p.getAttribute('d'), "m100 100l100.12 100.12c14.877 4.8766-15.123-5.1234 0 0z",
 			'Did not collapse same path points')
 
 class ScourUnitlessLengths(unittest.TestCase):
