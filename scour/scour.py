@@ -2476,10 +2476,12 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
    # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
    length = scouringContext.plus(length)
 
-   # if the value is an integer, it may still have .0[...] attached to it for some reason
-   # remove those
-   if int(length) == length:
-      length = getcontext().create_decimal(int(length))
+   # remove trailing zeroes as we do not care for significance
+   intLength = length.to_integral_value()
+   if length == intLength:
+      length = Decimal(intLength)
+   else:
+      length = length.normalize()
 
    # gather the non-scientific notation version of the coordinate.
    # this may actually be in scientific notation if the value is
@@ -2491,14 +2493,22 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
       elif len(nonsci) > 3 and nonsci[:3] == '-0.':
          nonsci = '-' + nonsci[2:] # remove the 0, leave the minus and dot
 
-   if len(nonsci) > 3: # avoid calling normalize unless strictly necessary
-      # and then the scientific notation version, with E+NUMBER replaced with
-      # just eNUMBER, since SVG accepts this.
-      sci = six.text_type(length.normalize()).lower().replace("e+", "e")
+   # Gather the scientific notation version of the coordinate which
+   # can only be shorter if the length of the number is at least 4 characters (e.g. 1000 = 1e3).
+   if len(nonsci) > 3: 
+      # We have to implement this ourselves since both 'normalize()' and 'to_sci_string()'
+      # don't handle negative exponents in a reasonable way (e.g. 0.000001 remains unchanged)
+      exponent = length.adjusted() # how far do we have to shift the dot?
+      length = length.scaleb(-exponent).normalize() # shift the dot and remove potential trailing zeroes
 
-      if len(sci) < len(nonsci): return sci
-      else: return nonsci
-   else: return nonsci
+      sci = six.text_type(length) + 'e' + six.text_type(exponent)
+
+      if len(sci) < len(nonsci):
+         return sci
+      else:
+         return nonsci
+   else:
+      return nonsci
 
 
 
