@@ -864,9 +864,9 @@ class RereferenceForLinearGradient(unittest.TestCase):
 		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
 		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
 		self.assertEqual(rects[0].getAttribute('fill'), rects[1].getAttribute('stroke'),
-			'Rect not changed after removing duplicate linear gradient')
+			'Reference not updated after removing duplicate linear gradient')
 		self.assertEqual(rects[0].getAttribute('fill'), rects[4].getAttribute('fill'),
-			'Rect not changed after removing duplicate linear gradient')
+			'Reference not updated after removing duplicate linear gradient')
 
 class RemoveDuplicateRadialGradients(unittest.TestCase):
 	def runTest(self):
@@ -880,7 +880,15 @@ class RereferenceForRadialGradient(unittest.TestCase):
 		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
 		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
 		self.assertEqual(rects[2].getAttribute('stroke'), rects[3].getAttribute('fill'),
-			'Rect not changed after removing duplicate radial gradient')
+			'Reference not updated after removing duplicate radial gradient')
+
+class RereferenceForGradientWithFallback(unittest.TestCase):
+	def runTest(self):
+		svgdoc = scour.scourXmlFile('unittests/remove-duplicate-gradients.svg')
+		rects = svgdoc.getElementsByTagNameNS(SVGNS, 'rect')
+		self.assertEqual(rects[0].getAttribute('fill') + ' #fff', rects[5].getAttribute('fill'),
+			'Reference (with fallback) not updated after removing duplicate linear gradient')
+
 
 class CollapseSamePathPoints(unittest.TestCase):
 	def runTest(self):
@@ -1536,13 +1544,14 @@ class DuplicateGradientsUpdateStyle(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/duplicate-gradients-update-style.svg',
 			scour.parse_args(['--disable-style-to-xml']))
-		gradientTag = doc.getElementsByTagName('linearGradient')[0]
-		rectTag0 = doc.getElementsByTagName('rect')[0]
-		rectTag1 = doc.getElementsByTagName('rect')[1]
-		self.assertEqual('fill:url(#' + gradientTag.getAttribute('id') + ')', rectTag0.getAttribute('style'),
+		gradient = doc.getElementsByTagName('linearGradient')[0]
+		rects = doc.getElementsByTagName('rect')
+		self.assertEqual('fill:url(#' + gradient.getAttribute('id') + ')', rects[0].getAttribute('style'),
 			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" was not updated to reflect this')
-		self.assertEqual('fill:url(#' + gradientTag.getAttribute('id') + ')', rectTag1.getAttribute('style'),
+		self.assertEqual('fill:url(#' + gradient.getAttribute('id') + ')', rects[1].getAttribute('style'),
 			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" was not updated to reflect this')
+		self.assertEqual('fill:url(#' + gradient.getAttribute('id') + ') #fff', rects[2].getAttribute('style'),
+			'Either of #duplicate-one or #duplicate-two was removed, but style="fill:" (with fallback) was not updated to reflect this')
 
 class DocWithFlowtext(unittest.TestCase):
     def runTest(self):
