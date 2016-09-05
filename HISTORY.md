@@ -3,10 +3,10 @@
 ## Version 0.35 (not released yet)
 
 * Drop official support for Python 2.6. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 2.6 and should find/fix any compatibility issues pull requests are welcome, though.)
-* Fix: Unused IDs were not shortended when `--shorten-ids` was used.
+* Fix: Unused IDs were not shortended when `--shorten-ids` was used. ([#19](https://github.com/scour-project/scour/issues/62))
 * Fix: Most elements were still removed from `<defs>` when `--keep-unreferenced-defs` was used. ([#62](https://github.com/scour-project/scour/issues/62))
 * Improve escaping of single/double quotes ('/") in attributes. ([#64](https://github.com/scour-project/scour/issues/64))
-* Print usage information if no input file was specified (and no data is available from `stdin`).([#65](https://github.com/scour-project/scour/issues/65))
+* Print usage information if no input file was specified (and no data is available from `stdin`). ([#65](https://github.com/scour-project/scour/issues/65))
 * Redirect informational output to `stderr` when SVG is output to `stdout`. ([#67](https://github.com/scour-project/scour/issues/67))
 * Allow elements to be found via `Document.getElementById()` in the minidom document returned by scourXmlFile(). ([#68](https://github.com/scour-project/scour/issues/68))
 * Improve code to remove default attribute values and add a lot of new default values. ([#70](https://github.com/scour-project/scour/issues/70))
@@ -16,9 +16,10 @@
    * `--remove-titles` (removes `<title>` elements)
    * `--remove-descriptions` (removes `<desc>` elements)
    * `--remove-descriptive-elements` (removes all of the descriptive elements, i.e. `<title>`, `<desc>` and `<metadata>`)
-* Fix removal rules for the `overflow` attribute ([#104](https://github.com/scour-project/scour/issues/104))
+* Fix removal rules for the `overflow` attribute. ([#104](https://github.com/scour-project/scour/issues/104))
 * Improvement: Automatically order all attributes ([#105](https://github.com/scour-project/scour/issues/105)), as well as `style` declarations ([#107](https://github.com/scour-project/scour/issues/107)) allowing for a constant output across multiple runs of Scour. Before order could change arbitrarily.
 * Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all caculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
+* Fix replacement of removed duplicate gradients if the `fill`/`stroke` properties contained a fallback. ([#109](https://github.com/scour-project/scour/issues/109))
 
 
 ## Version 0.34 (2016-07-25)
