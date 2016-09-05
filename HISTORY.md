@@ -20,6 +20,7 @@
 * Improvement: Automatically order all attributes ([#105](https://github.com/scour-project/scour/issues/105)), as well as `style` declarations ([#107](https://github.com/scour-project/scour/issues/107)) allowing for a constant output across multiple runs of Scour. Before order could change arbitrarily.
 * Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all caculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
 * Fix replacement of removed duplicate gradients if the `fill`/`stroke` properties contained a fallback. ([#109](https://github.com/scour-project/scour/issues/109))
+* Fix conversion of cubic Bézier "curveto" commands into "shorthand/smooth curveto" commands. ([#110](https://github.com/scour-project/scour/issues/110))
 
 
 ## Version 0.34 (2016-07-25)
