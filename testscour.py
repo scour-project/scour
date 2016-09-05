@@ -675,9 +675,13 @@ class ChangeLineToVerticalLineSegmentInPath(unittest.TestCase):
 
 class ChangeBezierToShorthandInPath(unittest.TestCase):
 	def runTest(self):
-		path = scour.scourXmlFile('unittests/path-bez-optimize.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-		self.assertEqual(path.getAttribute('d'), 'm10 100c50-50 50 50 100 0s50 50 100 0',
+		doc = scour.scourXmlFile('unittests/path-bez-optimize.svg')
+		self.assertEqual(doc.getElementById('path1').getAttribute('d'), 'm10 100c50-50 50 50 100 0s50 50 100 0',
 			'Did not change bezier curves into shorthand curve segments in path')
+		self.assertEqual(doc.getElementById('path2a').getAttribute('d'), 'm200 200s200 100 200 0',
+			'Did not change bezier curve into shorthand curve segment when first control point is the current point and previous command was not a bezier curve')
+		self.assertEqual(doc.getElementById('path2b').getAttribute('d'), 'm0 300s200-100 200 0c0 0 200 100 200 0',
+			'Did change bezier curve into shorthand curve segment when first control point is the current point but previous command was a bezier curve with a different control point')
 
 class ChangeQuadToShorthandInPath(unittest.TestCase):
 	def runTest(self):

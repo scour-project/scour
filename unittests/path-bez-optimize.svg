@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg version="1.1" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-  <path d="m10,100c50-50,50,50,100,0,50-50,50,50,100,0" fill="none" stroke="blue" stroke-width="5"/>
+  <path id="path1" d="m10,100c50-50,50,50,100,0,50-50,50,50,100,0" fill="none" stroke="blue" stroke-width="5"/>
+  <path id="path2a" d="m200,200c0,0 200,100 200,0" fill="none" stroke="red" stroke-width="5"/>
+  <path id="path2b" d="m0,300s200-100 200,0c0,0 200,100 200,0" fill="none" stroke="green" stroke-width="5"/>
 </svg>

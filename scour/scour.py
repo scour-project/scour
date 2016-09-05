@@ -2193,7 +2193,13 @@ def cleanPath(element, options) :
             newPath.append( (cmd, lineTuples) )
       # convert Bézier curve segments into s where possible
       elif cmd == 'c':
-         bez_ctl_pt = (0,0)
+         # set up the assumed bezier control point as the current point, i.e. (0,0) since we're using relative coords
+         bez_ctl_pt = (0, 0)
+         # however if the previous command was 's' the assumed control point is a reflection of the previous control point at the current point
+         if len(newPath):
+            (prevCmd, prevData) = newPath[-1]
+            if prevCmd == 's':
+               bez_ctl_pt = (prevData[-2]-prevData[-4], prevData[-1]-prevData[-3])
          i = 0
          curveTuples = []
          while i < len(data):
