@@ -20,4 +20,5 @@
 	<rect id="r3" stroke="url(#g3)" width="100" height="100"/>
 	<rect id="r4" fill='url("#g4")' width="100" height="100"/>
 	<rect id="r5" fill="url(#g5)" width="100" height="100"/>
+	<rect id="r6" fill="url(#g5) #fff" width="100" height="100"/>
 </svg>

@@ -12,4 +12,5 @@
 </defs>
 <rect style="fill: url(#duplicate-one)" width="200" height="200"/>
 <rect style="fill: url(#duplicate-two)" width="200" height="200" y="200"/>
+<rect style="fill: url(#duplicate-two) #fff" width="200" height="200" y="200"/>
 </svg>
