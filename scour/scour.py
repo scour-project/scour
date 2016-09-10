@@ -498,9 +498,9 @@ class SVGLength(object):
          if int(self.value) == self.value:
             self.value = int(self.value)
 
-         if unitBegin != 0 :
+         if unitBegin != 0:
             unitMatch = unit.search(str, unitBegin)
-            if unitMatch != None :
+            if unitMatch != None:
                self.units = Unit.get(unitMatch.group(0))
 
          # invalid
@@ -516,13 +516,13 @@ def findElementsWithId(node, elems=None):
    if elems is None:
       elems = {}
    id = node.getAttribute('id')
-   if id != '' :
+   if id != '':
       elems[id] = node
-   if node.hasChildNodes() :
+   if node.hasChildNodes():
       for child in node.childNodes:
          # from http://www.w3.org/TR/DOM-Level-2-Core/idl-definitions.html
          # we are only really interested in nodes of type Element (1)
-         if child.nodeType == 1 :
+         if child.nodeType == 1:
             findElementsWithId(child, elems)
    return elems
 
@@ -578,38 +578,38 @@ def findReferencedElements(node, ids=None):
 
    for style in styles:
       propval = style.split(':')
-      if len(propval) == 2 :
+      if len(propval) == 2:
          prop = propval[0].strip()
          val = propval[1].strip()
          findReferencingProperty(node, prop, val, ids)
 
-   if node.hasChildNodes() :
+   if node.hasChildNodes():
       for child in node.childNodes:
-         if child.nodeType == 1 :
+         if child.nodeType == 1:
             findReferencedElements(child, ids)
    return ids
 
 def findReferencingProperty(node, prop, val, ids):
    global referencingProps
-   if prop in referencingProps and val != '' :
-      if len(val) >= 7 and val[0:5] == 'url(#' :
+   if prop in referencingProps and val != '':
+      if len(val) >= 7 and val[0:5] == 'url(#':
          id = val[5:val.find(')')]
-         if id in ids :
+         if id in ids:
             ids[id][0] += 1
             ids[id][1].append(node)
          else:
             ids[id] = [1,[node]]
       # if the url has a quote in it, we need to compensate
-      elif len(val) >= 8 :
+      elif len(val) >= 8:
          id = None
          # double-quote
-         if val[0:6] == 'url("#' :
+         if val[0:6] == 'url("#':
             id = val[6:val.find('")')]
          # single-quote
-         elif val[0:6] == "url('#" :
+         elif val[0:6] == "url('#":
             id = val[6:val.find("')")]
          if id != None:
-            if id in ids :
+            if id in ids:
                ids[id][0] += 1
                ids[id][1].append(node)
             else:
@@ -867,7 +867,7 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 def removeNamespacedAttributes(node, namespaces):
    global numAttrsRemoved
    num = 0
-   if node.nodeType == 1 :
+   if node.nodeType == 1:
       # remove all namespace'd attributes from this element
       attrList = node.attributes
       attrsToRemove = []
@@ -875,7 +875,7 @@ def removeNamespacedAttributes(node, namespaces):
          attr = attrList.item(attrNum)
          if attr != None and attr.namespaceURI in namespaces:
             attrsToRemove.append(attr.nodeName)
-      for attrName in attrsToRemove :
+      for attrName in attrsToRemove:
          num += 1
          numAttrsRemoved += 1
          node.removeAttribute(attrName)
@@ -888,14 +888,14 @@ def removeNamespacedAttributes(node, namespaces):
 def removeNamespacedElements(node, namespaces):
    global numElemsRemoved
    num = 0
-   if node.nodeType == 1 :
+   if node.nodeType == 1:
       # remove all namespace'd child nodes from this element
       childList = node.childNodes
       childrenToRemove = []
       for child in childList:
          if child != None and child.namespaceURI in namespaces:
             childrenToRemove.append(child)
-      for child in childrenToRemove :
+      for child in childrenToRemove:
          num += 1
          numElemsRemoved += 1
          node.removeChild(child)
@@ -1247,7 +1247,7 @@ def removeDuplicateGradientStops(doc):
             color = stop.getAttribute('stop-color')
             opacity = stop.getAttribute('stop-opacity')
             style = stop.getAttribute('style')
-            if offset in stops :
+            if offset in stops:
                oldStop = stops[offset]
                if oldStop[0] == color and oldStop[1] == opacity and oldStop[2] == style:
                   stopsToRemove.append(stop)
@@ -1413,12 +1413,12 @@ def removeDuplicateGradients(doc):
 
 def _getStyle(node):
    u"""Returns the style attribute of a node as a dictionary."""
-   if node.nodeType == 1 and len(node.getAttribute('style')) > 0 :
+   if node.nodeType == 1 and len(node.getAttribute('style')) > 0:
       styleMap = { }
       rawStyles = node.getAttribute('style').split(';')
       for style in rawStyles:
          propval = style.split(':')
-         if len(propval) == 2 :
+         if len(propval) == 2:
             styleMap[propval[0].strip()] = propval[1].strip()
       return styleMap
    else:
@@ -1427,7 +1427,7 @@ def _getStyle(node):
 def _setStyle(node, styleMap):
    u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
    fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in list(styleMap.keys())])
-   if fixedStyle != '' :
+   if fixedStyle != '':
       node.setAttribute('style', fixedStyle)
    elif node.getAttribute('style'):
       node.removeAttribute('style')
@@ -1440,31 +1440,31 @@ def repairStyle(node, options):
 
       # I've seen this enough to know that I need to correct it:
       # fill: url(#linearGradient4918) rgb(0, 0, 0);
-      for prop in ['fill', 'stroke'] :
-         if prop in styleMap :
+      for prop in ['fill', 'stroke']:
+         if prop in styleMap:
             chunk = styleMap[prop].split(') ')
-            if len(chunk) == 2 and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#") and chunk[1] == 'rgb(0, 0, 0)' :
+            if len(chunk) == 2 and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#") and chunk[1] == 'rgb(0, 0, 0)':
                styleMap[prop] = chunk[0] + ')'
                num += 1
 
       # Here is where we can weed out unnecessary styles like:
       #  opacity:1
-      if 'opacity' in styleMap :
+      if 'opacity' in styleMap:
          opacity = float(styleMap['opacity'])
          # if opacity='0' then all fill and stroke properties are useless, remove them
-         if opacity == 0.0 :
+         if opacity == 0.0:
             for uselessStyle in ['fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-linejoin',
                'stroke-opacity', 'stroke-miterlimit', 'stroke-linecap', 'stroke-dasharray',
-               'stroke-dashoffset', 'stroke-opacity'] :
+               'stroke-dashoffset', 'stroke-opacity']:
                if uselessStyle in styleMap and not styleInheritedByChild(node, uselessStyle):
                   del styleMap[uselessStyle]
                   num += 1
 
       #  if stroke:none, then remove all stroke-related properties (stroke-width, etc)
       #  TODO: should also detect if the computed value of this element is stroke="none"
-      if 'stroke' in styleMap and styleMap['stroke'] == 'none' :
+      if 'stroke' in styleMap and styleMap['stroke'] == 'none':
          for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit',
-               'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
+               'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity']:
             if strokestyle in styleMap and not styleInheritedByChild(node, strokestyle):
                del styleMap[strokestyle]
                num += 1
@@ -1475,37 +1475,37 @@ def repairStyle(node, options):
                num += 1
 
       #  if fill:none, then remove all fill-related properties (fill-rule, etc)
-      if 'fill' in styleMap and styleMap['fill'] == 'none' :
-         for fillstyle in [ 'fill-rule', 'fill-opacity' ] :
+      if 'fill' in styleMap and styleMap['fill'] == 'none':
+         for fillstyle in [ 'fill-rule', 'fill-opacity' ]:
             if fillstyle in styleMap and not styleInheritedByChild(node, fillstyle):
                del styleMap[fillstyle]
                num += 1
 
       #  fill-opacity: 0
-      if 'fill-opacity' in styleMap :
+      if 'fill-opacity' in styleMap:
          fillOpacity = float(styleMap['fill-opacity'])
-         if fillOpacity == 0.0 :
-            for uselessFillStyle in [ 'fill', 'fill-rule' ] :
+         if fillOpacity == 0.0:
+            for uselessFillStyle in [ 'fill', 'fill-rule' ]:
                if uselessFillStyle in styleMap and not styleInheritedByChild(node, uselessFillStyle):
                   del styleMap[uselessFillStyle]
                   num += 1
 
       #  stroke-opacity: 0
-      if 'stroke-opacity' in styleMap :
+      if 'stroke-opacity' in styleMap:
          strokeOpacity = float(styleMap['stroke-opacity'])
-         if strokeOpacity == 0.0 :
+         if strokeOpacity == 0.0:
             for uselessStrokeStyle in [ 'stroke', 'stroke-width', 'stroke-linejoin', 'stroke-linecap',
-                     'stroke-dasharray', 'stroke-dashoffset' ] :
+                     'stroke-dasharray', 'stroke-dashoffset' ]:
                if uselessStrokeStyle in styleMap and not styleInheritedByChild(node, uselessStrokeStyle):
                   del styleMap[uselessStrokeStyle]
                   num += 1
 
       # stroke-width: 0
-      if 'stroke-width' in styleMap :
+      if 'stroke-width' in styleMap:
          strokeWidth = SVGLength(styleMap['stroke-width'])
-         if strokeWidth.value == 0.0 :
+         if strokeWidth.value == 0.0:
             for uselessStrokeStyle in [ 'stroke', 'stroke-linejoin', 'stroke-linecap',
-                     'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ] :
+                     'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity' ]:
                if uselessStrokeStyle in styleMap and not styleInheritedByChild(node, uselessStrokeStyle):
                   del styleMap[uselessStrokeStyle]
                   num += 1
@@ -1518,8 +1518,8 @@ def repairStyle(node, options):
                         'letter-spacing', 'line-height', 'kerning',
                         'text-align', 'text-anchor', 'text-decoration',
                         'text-rendering', 'unicode-bidi',
-                        'word-spacing', 'writing-mode'] :
-            if fontstyle in styleMap :
+                        'word-spacing', 'writing-mode']:
+            if fontstyle in styleMap:
                del styleMap[fontstyle]
                num += 1
 
@@ -1530,7 +1530,7 @@ def repairStyle(node, options):
             del styleMap[inkscapeStyle]
             num += 1
 
-      if 'overflow' in styleMap :
+      if 'overflow' in styleMap:
          # remove overflow from elements to which it does not apply,
          # see https://www.w3.org/TR/SVG/masking.html#OverflowProperty
          if not node.nodeName in ['svg','symbol','image','foreignObject','marker','pattern']:
@@ -1551,15 +1551,15 @@ def repairStyle(node, options):
       # now if any of the properties match known SVG attributes we prefer attributes
       # over style so emit them and remove them from the style map
       if options.style_to_xml:
-         for propName in list(styleMap.keys()) :
-            if propName in svgAttributes :
+         for propName in list(styleMap.keys()):
+            if propName in svgAttributes:
                node.setAttribute(propName, styleMap[propName])
                del styleMap[propName]
 
       _setStyle(node, styleMap)
 
    # recurse for our child elements
-   for child in node.childNodes :
+   for child in node.childNodes:
       num += repairStyle(child,options)
 
    return num
@@ -1567,7 +1567,7 @@ def repairStyle(node, options):
 def styleInheritedFromParent(node, style):
    """
    Returns the value of 'style' that is inherited from the parents of the passed-in node
-   
+
    Warning: This method only considers presentation attributes and inline styles,
             any style sheets are ignored!
    """
@@ -1583,7 +1583,7 @@ def styleInheritedFromParent(node, style):
       value = styles[style]
       if not value == 'inherit':
          return value
-      
+
    # check attributes
    value = parentNode.getAttribute(style)
    if value not in ['', 'inherit']:
@@ -1601,7 +1601,7 @@ def styleInheritedByChild(node, style, nodeIsChild=False):
 
    If True is returned, the passed-in node should not have its text-based
    attributes removed.
-   
+
    Warning: This method only considers presentation attributes and inline styles,
             any style sheets are ignored!
    """
@@ -1609,7 +1609,7 @@ def styleInheritedByChild(node, style, nodeIsChild=False):
    if node.nodeType != 1:
       return False
 
-   
+
    if nodeIsChild:
       # if the current child node sets a new value for 'style'
       # we can stop the search in the current branch of the DOM tree
@@ -1885,7 +1885,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
    _setStyle(node, styles)
 
    # recurse for our child elements
-   for child in node.childNodes :
+   for child in node.childNodes:
       num += removeDefaultAttributeValues(child, options, tainted.copy())
 
    return num
@@ -1902,14 +1902,14 @@ def convertColor(value):
       s = colors[s]
 
    rgbpMatch = rgbp.match(s)
-   if rgbpMatch != None :
+   if rgbpMatch != None:
       r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
       g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
       b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
       s  = '#%02x%02x%02x' % (r, g, b)
    else:
       rgbMatch = rgb.match(s)
-      if rgbMatch != None :
+      if rgbMatch != None:
          r = int( rgbMatch.group(1) )
          g = int( rgbMatch.group(2) )
          b = int( rgbMatch.group(3) )
@@ -1922,7 +1922,7 @@ def convertColor(value):
 
    return s
 
-def convertColors(element) :
+def convertColors(element):
    """
       Recursively converts all color properties into #RRGGBB format if shorter
    """
@@ -1963,7 +1963,7 @@ def convertColors(element) :
    _setStyle(element, styles)
 
    # now recurse for our child elements
-   for child in element.childNodes :
+   for child in element.childNodes:
       numBytes += convertColors(child)
 
    return numBytes
@@ -1971,7 +1971,7 @@ def convertColors(element) :
 # TODO: go over what this method does and see if there is a way to optimize it
 # TODO: go over the performance of this method and see if I can save memory/speed by
 #       reusing data structures, etc
-def cleanPath(element, options) :
+def cleanPath(element, options):
    """
       Cleans the path string (d attribute) of the element
    """
@@ -2589,7 +2589,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
 
    # Gather the scientific notation version of the coordinate which
    # can only be shorter if the length of the number is at least 4 characters (e.g. 1000 = 1e3).
-   if len(nonsci) > 3: 
+   if len(nonsci) > 3:
       # We have to implement this ourselves since both 'normalize()' and 'to_sci_string()'
       # don't handle negative exponents in a reasonable way (e.g. 0.000001 remains unchanged)
       exponent = length.adjusted() # how far do we have to shift the dot?
@@ -2606,7 +2606,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False): # length is of a
 
 
 
-def reducePrecision(element) :
+def reducePrecision(element):
    """
    Because opacities, letter spacings, stroke widths and all that don't need
    to be preserved in SVG files with 9 digits of precision.
@@ -2837,7 +2837,7 @@ def optimizeTransform(transform):
 
 
 
-def optimizeTransforms(element, options) :
+def optimizeTransforms(element, options):
    """
    Attempts to optimise transform specifications on the given node and its children.
 
@@ -2869,7 +2869,7 @@ def optimizeTransforms(element, options) :
 
 
 
-def removeComments(element) :
+def removeComments(element):
    """
       Removes comments from the element and its children.
    """
@@ -2884,7 +2884,7 @@ def removeComments(element) :
 
 
 
-def embedRasters(element, options) :
+def embedRasters(element, options):
    import base64
    import urllib
    """
@@ -2926,7 +2926,7 @@ def embedRasters(element, options) :
             webFile.close()
 
          # ... should we remove all images which don't resolve?
-         if rasterdata != '' :
+         if rasterdata != '':
             # base64-encode raster
             b64eRaster = base64.b64encode( rasterdata )
 
@@ -3017,7 +3017,7 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
       node = newNode
 
    # now do all child nodes
-   for child in node.childNodes :
+   for child in node.childNodes:
       remapNamespacePrefix(child, oldprefix, newprefix)
 
 
@@ -3094,7 +3094,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
          attrIndices.append(attrName2Index[name])
          del attrName2Index[name]
    attrIndices += [attrName2Index[name] for name in sorted(attrName2Index.keys())]
-   for index in attrIndices :
+   for index in attrIndices:
       attr = attrList.item(index)
       if attr.nodeName == 'id' or attr.nodeName == 'xml:id': continue
       # if the attribute value contains a double-quote, use single-quotes
@@ -3206,19 +3206,19 @@ def scourString(in_string, options=None):
    # on the first pass, so we do it multiple times
    # does it have to do with removal of children affecting the childlist?
    if options.keep_editor_data == False:
-      while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0 :
+      while removeNamespacedElements( doc.documentElement, unwanted_ns ) > 0:
          pass
-      while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0 :
+      while removeNamespacedAttributes( doc.documentElement, unwanted_ns ) > 0:
          pass
 
       # remove the xmlns: declarations now
       xmlnsDeclsToRemove = []
       attrList = doc.documentElement.attributes
-      for index in range(attrList.length) :
-         if attrList.item(index).nodeValue in unwanted_ns :
+      for index in range(attrList.length):
+         if attrList.item(index).nodeValue in unwanted_ns:
             xmlnsDeclsToRemove.append(attrList.item(index).nodeName)
 
-      for attr in xmlnsDeclsToRemove :
+      for attr in xmlnsDeclsToRemove:
          doc.documentElement.removeAttribute(attr)
          numAttrsRemoved += 1
 
@@ -3281,18 +3281,18 @@ def scourString(in_string, options=None):
 
    # remove empty defs, metadata, g
    # NOTE: these elements will be removed if they just have whitespace-only text nodes
-   for tag in ['defs', 'title', 'desc', 'metadata', 'g'] :
-      for elem in doc.documentElement.getElementsByTagName(tag) :
+   for tag in ['defs', 'title', 'desc', 'metadata', 'g']:
+      for elem in doc.documentElement.getElementsByTagName(tag):
          removeElem = not elem.hasChildNodes()
-         if removeElem == False :
-            for child in elem.childNodes :
+         if removeElem == False:
+            for child in elem.childNodes:
                if child.nodeType in [1, 4, 8]:
                   break
                elif child.nodeType == 3 and not child.nodeValue.isspace():
                   break
             else:
                removeElem = True
-         if removeElem :
+         if removeElem:
             elem.parentNode.removeChild(elem)
             numElemsRemoved += 1
 
@@ -3338,15 +3338,15 @@ def scourString(in_string, options=None):
          pass
 
    # remove unnecessary closing point of polygons and scour points
-   for polygon in doc.documentElement.getElementsByTagName('polygon') :
+   for polygon in doc.documentElement.getElementsByTagName('polygon'):
       cleanPolygon(polygon, options)
 
    # scour points of polyline
-   for polyline in doc.documentElement.getElementsByTagName('polyline') :
+   for polyline in doc.documentElement.getElementsByTagName('polyline'):
       cleanPolyline(polyline, options)
 
    # clean path data
-   for elem in doc.documentElement.getElementsByTagName('path') :
+   for elem in doc.documentElement.getElementsByTagName('path'):
       if elem.getAttribute('d') == '':
          elem.parentNode.removeChild(elem)
       else:
@@ -3375,7 +3375,7 @@ def scourString(in_string, options=None):
 
    # convert rasters references to base64-encoded strings
    if options.embed_rasters:
-      for elem in doc.documentElement.getElementsByTagName('image') :
+      for elem in doc.documentElement.getElementsByTagName('image'):
          embedRasters(elem, options)
 
    # properly size the SVG document (ideally width/height should be 100% with a viewBox)
