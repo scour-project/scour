@@ -1468,11 +1468,11 @@ def repairStyle(node, options):
             if strokestyle in styleMap and not styleInheritedByChild(node, strokestyle):
                del styleMap[strokestyle]
                num += 1
-         # TODO: This is actually a problem if a parent element has a specified stroke
          # we need to properly calculate computed values
          if not styleInheritedByChild(node, 'stroke'):
-            del styleMap['stroke']
-            num += 1
+            if styleInheritedFromParent(node, 'stroke') in [None, 'none']:
+               del styleMap['stroke']
+               num += 1
 
       #  if fill:none, then remove all fill-related properties (fill-rule, etc)
       if 'fill' in styleMap and styleMap['fill'] == 'none' :
@@ -1563,6 +1563,34 @@ def repairStyle(node, options):
       num += repairStyle(child,options)
 
    return num
+
+def styleInheritedFromParent(node, style):
+   """
+   Returns the value of 'style' that is inherited from the parents of the passed-in node
+   
+   Warning: This method only considers presentation attributes and inline styles,
+            any style sheets are ignored!
+   """
+   parentNode = node.parentNode;
+
+   # return None if we reached the Document element
+   if parentNode.nodeType == 9:
+      return None
+
+   # check styles first (they take precedence over presentation attributes)
+   styles = _getStyle(parentNode)
+   if style in styles.keys():
+      value = styles[style]
+      if not value == 'inherit':
+         return value
+      
+   # check attributes
+   value = parentNode.getAttribute(style)
+   if value not in ['', 'inherit']:
+      return parentNode.getAttribute(style)
+
+   # check the next parent recursively if we did not find a value yet
+   return styleInheritedFromParent(parentNode, style)
 
 def styleInheritedByChild(node, style, nodeIsChild=False):
    """
