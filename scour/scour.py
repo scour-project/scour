@@ -1465,12 +1465,14 @@ def repairStyle(node, options):
       if 'stroke' in styleMap and styleMap['stroke'] == 'none' :
          for strokestyle in [ 'stroke-width', 'stroke-linejoin', 'stroke-miterlimit',
                'stroke-linecap', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-opacity'] :
-            if strokestyle in styleMap :
+            if strokestyle in styleMap and not styleInheritedByChild(node, strokestyle):
                del styleMap[strokestyle]
                num += 1
          # TODO: This is actually a problem if a parent element has a specified stroke
          # we need to properly calculate computed values
-         del styleMap['stroke']
+         if not styleInheritedByChild(node, 'stroke'):
+            del styleMap['stroke']
+            num += 1
 
       #  if fill:none, then remove all fill-related properties (fill-rule, etc)
       if 'fill' in styleMap and styleMap['fill'] == 'none' :
@@ -1561,6 +1563,55 @@ def repairStyle(node, options):
       num += repairStyle(child,options)
 
    return num
+
+def styleInheritedByChild(node, style, nodeIsChild=False):
+   """
+   Returns whether 'style' is inherited by any children of the passed-in node
+
+   If False is returned, it is guaranteed that 'style' can safely be removed
+   from the passed-in node without influencing visual output of it's children
+
+   If True is returned, the passed-in node should not have its text-based
+   attributes removed.
+   
+   Warning: This method only considers presentation attributes and inline styles,
+            any style sheets are ignored!
+   """
+   # Comment, text and CDATA nodes don't have attributes and aren't containers so they can't inherit attributes
+   if node.nodeType != 1:
+      return False
+
+   
+   if nodeIsChild:
+      # if the current child node sets a new value for 'style'
+      # we can stop the search in the current branch of the DOM tree
+
+      # check attributes
+      if node.getAttribute(style) not in ['', 'inherit']:
+         return False
+      # check styles
+      styles = _getStyle(node)
+      if (style in styles.keys()) and not (styles[style] == 'inherit'):
+         return False
+   else:
+      # if the passed-in node does not have any children 'style' can obviously not be inherited
+      if not node.childNodes:
+         return False
+
+   # If we have child nodes recursively check those
+   if node.childNodes:
+      for child in node.childNodes:
+         if styleInheritedByChild(child, style, True):
+            return True
+
+   # If the current element is a container element the inherited style is meaningless
+   # (since we made sure it's not inherited by any of its children)
+   if node.nodeName in ['a', 'defs', 'glyph', 'g', 'marker', 'mask', 'missing-glyph', 'pattern', 'svg', 'switch', 'symbol']:
+      return False
+
+   # in all other cases we have to assume the inherited value of 'style' is meaningfull and has to be kept
+   # (e.g nodes without children at the end of the DOM tree, text nodes, ...)
+   return True
 
 def mayContainTextNodes(node):
    """
