@@ -495,11 +495,29 @@ class RemoveStrokeWhenStrokeNone(unittest.TestCase):
 		self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke'), '',
 			'stroke attribute not emptied when no stroke' )
 
+class KeepStrokeWhenInheritedFromParent(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEqual(doc.getElementById('p1').getAttribute('stroke'), 'none',
+			'stroke attribute removed despite a different value being inherited from a parent' )
+
+class KeepStrokeWhenInheritedByChild(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEqual(doc.getElementById('g2').getAttribute('stroke'), 'none',
+			'stroke attribute removed despite it being inherited by a child' )
+
 class RemoveStrokeWidthWhenStrokeNone(unittest.TestCase):
 	def runTest(self):
 		doc = scour.scourXmlFile('unittests/stroke-none.svg')
 		self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('stroke-width'), '',
 			'stroke-width attribute not emptied when no stroke' )
+
+class KeepStrokeWidthWhenInheritedByChild(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/stroke-none.svg')
+		self.assertEqual(doc.getElementById('g3').getAttribute('stroke-width'), '1px',
+			'stroke-width attribute removed despite it being inherited by a child' )
 
 class RemoveStrokeOpacityWhenStrokeNone(unittest.TestCase):
 	def runTest(self):
