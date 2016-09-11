@@ -21,6 +21,7 @@
 * Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all caculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
 * Fix replacement of removed duplicate gradients if the `fill`/`stroke` properties contained a fallback. ([#109](https://github.com/scour-project/scour/issues/109))
 * Fix conversion of cubic Bézier "curveto" commands into "shorthand/smooth curveto" commands. ([#110](https://github.com/scour-project/scour/issues/110))
+* Fix some issues due to removal of properties without considering inheritance rules. ([#111](https://github.com/scour-project/scour/issues/111))
 
 
 ## Version 0.34 (2016-07-25)
