@@ -3105,7 +3105,7 @@ def serializeXML(element, options, ind = 0, preserveWhitespace = False):
       attrValue = makeWellFormed( attr.nodeValue )
       if attr.nodeName == 'style':
           # sort declarations
-          attrValue = '; '.join([p for p in sorted(attrValue.split(';'))])
+          attrValue = ';'.join([p for p in sorted(attrValue.split(';'))])
 
       outParts.append(' ')
       # preserve xmlns: if it is a namespace prefix declaration

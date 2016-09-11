@@ -1589,6 +1589,13 @@ class DocWithNoFlowtext(unittest.TestCase):
         except Exception as e:
             self.fail("exception '{}' was raised, and we didn't expect that!".format(e))
 
+
+class ParseStyleAttribute(unittest.TestCase):
+	def runTest(self):
+		doc = scour.scourXmlFile('unittests/style.svg')
+		self.assertEqual(doc.documentElement.getAttribute('style'), 'property1:value1;property2:value2;property3:value3',
+			'Style attribute not properly parsed and/or serialized')
+
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
 # TODO: write a test for --disable-embed-rasters
