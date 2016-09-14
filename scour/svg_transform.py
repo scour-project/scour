@@ -66,6 +66,7 @@ from functools import partial
 
 # Sentinel.
 class _EOF(object):
+
     def __repr__(self):
         return 'EOF'
 EOF = _EOF()
@@ -89,6 +90,7 @@ class Lexer(object):
 
         http://www.gooli.org/blog/a-simple-lexer-in-python/
     """
+
     def __init__(self, lexicon):
         self.lexicon = lexicon
         parts = []
@@ -154,8 +156,8 @@ class SVGTransformationParser(object):
         commands = []
         token = next_val_fn()
         while token[0] is not EOF:
-         command, token = self.rule_svg_transform(next_val_fn, token)
-         commands.append(command)
+            command, token = self.rule_svg_transform(next_val_fn, token)
+            commands.append(command)
         return commands
 
     def rule_svg_transform(self, next_val_fn, token):

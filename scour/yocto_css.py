@@ -48,25 +48,29 @@
 #               | DASHMATCH | FUNCTION S* any* ')'
 #               | '(' S* any* ')' | '[' S* any* ']' ] S*;
 
+
 def parseCssString(str):
-   rules = []
-   # first, split on } to get the rule chunks
-   chunks = str.split('}')
-   for chunk in chunks:
-      # second, split on { to get the selector and the list of properties
-      bits = chunk.split('{')
-      if len(bits) != 2: continue
-      rule = {}
-      rule['selector'] = bits[0].strip()
-      # third, split on ; to get the property declarations
-      bites = bits[1].strip().split(';')
-      if len(bites) < 1: continue
-      props = {}
-      for bite in bites:
-         # fourth, split on : to get the property name and value
-         nibbles = bite.strip().split(':')
-         if len(nibbles) != 2: continue
-         props[nibbles[0].strip()] = nibbles[1].strip()
-      rule['properties'] = props
-      rules.append(rule)
-   return rules
+    rules = []
+    # first, split on } to get the rule chunks
+    chunks = str.split('}')
+    for chunk in chunks:
+        # second, split on { to get the selector and the list of properties
+        bits = chunk.split('{')
+        if len(bits) != 2:
+            continue
+        rule = {}
+        rule['selector'] = bits[0].strip()
+        # third, split on ; to get the property declarations
+        bites = bits[1].strip().split(';')
+        if len(bites) < 1:
+            continue
+        props = {}
+        for bite in bites:
+            # fourth, split on : to get the property name and value
+            nibbles = bite.strip().split(':')
+            if len(nibbles) != 2:
+                continue
+            props[nibbles[0].strip()] = nibbles[1].strip()
+        rule['properties'] = props
+        rules.append(rule)
+    return rules
