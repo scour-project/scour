@@ -32,8 +32,8 @@
 #  * Collapse all group based transformations
 
 # Even more ideas here: http://esw.w3.org/topic/SvgTidy
-#  * analysis of path elements to see if rect can be used instead? (must also need to look
-#    at rounded corners)
+#  * analysis of path elements to see if rect can be used instead?
+#    (must also need to look at rounded corners)
 
 # Next Up:
 # - why are marker-start, -end not removed from the style attribute?
@@ -104,9 +104,9 @@ unwanted_ns = [NS['SODIPODI'], NS['INKSCAPE'], NS['ADOBE_ILLUSTRATOR'],
 # A list of all SVG presentation properties
 #
 # Sources for this list:
-#    https://www.w3.org/TR/SVG/propidx.html              (implemented)
-#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
-#    https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
+#     https://www.w3.org/TR/SVG/propidx.html              (implemented)
+#     https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
+#     https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
 #
 svgAttributes = [
     # SVG 1.1
@@ -337,9 +337,9 @@ colors = {
 # A list of default poperties that are safe to remove
 #
 # Sources for this list:
-#    https://www.w3.org/TR/SVG/propidx.html              (implemented)
-#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
-#    https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
+#     https://www.w3.org/TR/SVG/propidx.html              (implemented)
+#     https://www.w3.org/TR/SVGTiny12/attributeTable.html (implemented)
+#     https://www.w3.org/TR/SVG2/propidx.html             (not yet implemented)
 #
 default_properties = {  # excluded all properties with 'auto' as default
     # SVG 1.1 presentation attributes
@@ -1370,7 +1370,8 @@ def removeDuplicateGradients(doc):
                 # compare grad to ograd (all properties, then all stops)
                 # if attributes do not match, go to next gradient
                 someGradAttrsDoNotMatch = False
-                for attr in ['gradientUnits', 'spreadMethod', 'gradientTransform', 'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'fx', 'fy', 'r']:
+                for attr in ['gradientUnits', 'spreadMethod', 'gradientTransform',
+                             'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'fx', 'fy', 'r']:
                     if grad.getAttribute(attr) != ograd.getAttribute(attr):
                         someGradAttrsDoNotMatch = True
                         break
@@ -1484,7 +1485,9 @@ def repairStyle(node, options):
         for prop in ['fill', 'stroke']:
             if prop in styleMap:
                 chunk = styleMap[prop].split(') ')
-                if len(chunk) == 2 and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#") and chunk[1] == 'rgb(0, 0, 0)':
+                if (len(chunk) == 2
+                        and (chunk[0][:5] == 'url(#' or chunk[0][:6] == 'url("#' or chunk[0][:6] == "url('#")
+                        and chunk[1] == 'rgb(0, 0, 0)'):
                     styleMap[prop] = chunk[0] + ')'
                     num += 1
 
@@ -1676,7 +1679,8 @@ def styleInheritedByChild(node, style, nodeIsChild=False):
 
     # If the current element is a container element the inherited style is meaningless
     # (since we made sure it's not inherited by any of its children)
-    if node.nodeName in ['a', 'defs', 'glyph', 'g', 'marker', 'mask', 'missing-glyph', 'pattern', 'svg', 'switch', 'symbol']:
+    if node.nodeName in ['a', 'defs', 'glyph', 'g', 'marker', 'mask',
+                         'missing-glyph', 'pattern', 'svg', 'switch', 'symbol']:
         return False
 
     # in all other cases we have to assume the inherited value of 'style' is meaningfull and has to be kept
@@ -1730,18 +1734,19 @@ def mayContainTextNodes(node):
 # A list of default attributes that are safe to remove if all conditions are fulfilled
 #
 # Each default attribute is an object of type 'DefaultAttribute' with the following fields:
-#    name       - name of the attribute to be matched
-#    value      - default value of the attribute
-#    units      - the unit(s) for which 'value' is valid (see 'Unit' class for possible specifications)
-#    elements   - name(s) of SVG element(s) for which the attribute specification is valid
-#    conditions - additional conditions that have to be fulfilled for removal of the specified default attribute
-#                 implemented as lambda functions with one argument (a xml.dom.minidom node) evaluating to True or False
+#     name       - name of the attribute to be matched
+#     value      - default value of the attribute
+#     units      - the unit(s) for which 'value' is valid (see 'Unit' class for possible specifications)
+#     elements   - name(s) of SVG element(s) for which the attribute specification is valid
+#     conditions - additional conditions that have to be fulfilled for removal of the specified default attribute
+#                  implemented as lambda functions with one argument (an xml.dom.minidom node)
+#                  evaluating to either True or False
 # When not specifying a field value, it will be ignored (i.e. always matches)
 #
 # Sources for this list:
-#    https://www.w3.org/TR/SVG/attindex.html             (mostly implemented)
-#    https://www.w3.org/TR/SVGTiny12/attributeTable.html (not yet implemented)
-#    https://www.w3.org/TR/SVG2/attindex.html            (not yet implemented)
+#     https://www.w3.org/TR/SVG/attindex.html             (mostly implemented)
+#     https://www.w3.org/TR/SVGTiny12/attributeTable.html (not yet implemented)
+#     https://www.w3.org/TR/SVG2/attindex.html            (not yet implemented)
 #
 DefaultAttribute = namedtuple('DefaultAttribute', ['name', 'value', 'units', 'elements', 'conditions'])
 DefaultAttribute.__new__.__defaults__ = (None,) * len(DefaultAttribute._fields)
@@ -1756,21 +1761,26 @@ default_attributes = [
     DefaultAttribute('patternContentUnits', 'userSpaceOnUse', elements='pattern'),
     DefaultAttribute('primitiveUnits', 'userSpaceOnUse', elements='filter'),
 
-    DefaultAttribute('externalResourcesRequired', 'false', elements=['a', 'altGlyph', 'animate', 'animateColor',
-                                                                     'animateMotion', 'animateTransform', 'circle', 'clipPath', 'cursor', 'defs', 'ellipse', 'feImage', 'filter',
-                                                                     'font', 'foreignObject', 'g', 'image', 'line', 'linearGradient', 'marker', 'mask', 'mpath', 'path', 'pattern',
-                                                                     'polygon', 'polyline', 'radialGradient', 'rect', 'script', 'set', 'svg', 'switch', 'symbol', 'text', 'textPath',
-                                                                     'tref', 'tspan', 'use', 'view']),
+    DefaultAttribute('externalResourcesRequired', 'false',
+                     elements=['a', 'altGlyph', 'animate', 'animateColor',
+                               'animateMotion', 'animateTransform', 'circle', 'clipPath', 'cursor', 'defs', 'ellipse',
+                               'feImage', 'filter', 'font', 'foreignObject', 'g', 'image', 'line', 'linearGradient',
+                               'marker', 'mask', 'mpath', 'path', 'pattern', 'polygon', 'polyline', 'radialGradient',
+                               'rect', 'script', 'set', 'svg', 'switch', 'symbol', 'text', 'textPath', 'tref', 'tspan',
+                               'use', 'view']),
 
     # svg elements
     DefaultAttribute('width', 100, Unit.PCT, elements='svg'),
     DefaultAttribute('height', 100, Unit.PCT, elements='svg'),
     DefaultAttribute('baseProfile', 'none', elements='svg'),
-    DefaultAttribute('preserveAspectRatio', 'xMidYMid meet', elements=['feImage', 'image', 'marker', 'pattern', 'svg', 'symbol', 'view']),
+    DefaultAttribute('preserveAspectRatio', 'xMidYMid meet',
+                     elements=['feImage', 'image', 'marker', 'pattern', 'svg', 'symbol', 'view']),
 
     # common attributes / basic types
-    DefaultAttribute('x',  0, elements=['cursor', 'fePointLight', 'feSpotLight', 'foreignObject', 'image', 'pattern', 'rect', 'svg', 'text', 'use']),
-    DefaultAttribute('y',  0, elements=['cursor', 'fePointLight', 'feSpotLight', 'foreignObject', 'image', 'pattern', 'rect', 'svg', 'text', 'use']),
+    DefaultAttribute('x',  0, elements=['cursor', 'fePointLight', 'feSpotLight', 'foreignObject',
+                                        'image', 'pattern', 'rect', 'svg', 'text', 'use']),
+    DefaultAttribute('y',  0, elements=['cursor', 'fePointLight', 'feSpotLight', 'foreignObject',
+                                        'image', 'pattern', 'rect', 'svg', 'text', 'use']),
     DefaultAttribute('z',  0, elements=['fePointLight', 'feSpotLight']),
     DefaultAttribute('x1', 0, elements='line'),
     DefaultAttribute('y1', 0, elements='line'),
@@ -1795,29 +1805,39 @@ default_attributes = [
 
     # filters and masks
     DefaultAttribute('x', -10, Unit.PCT, ['filter', 'mask']),
-    DefaultAttribute('x', -0.1, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('x', -0.1, Unit.NONE, ['filter', 'mask'],
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('y', -10, Unit.PCT, ['filter', 'mask']),
-    DefaultAttribute('y', -0.1, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('y', -0.1, Unit.NONE, ['filter', 'mask'],
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('width', 120, Unit.PCT, ['filter', 'mask']),
-    DefaultAttribute('width', 1.2, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('width', 1.2, Unit.NONE, ['filter', 'mask'],
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('height', 120, Unit.PCT, ['filter', 'mask']),
-    DefaultAttribute('height', 1.2, Unit.NONE, ['filter', 'mask'], lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('height', 1.2, Unit.NONE, ['filter', 'mask'],
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
 
     # gradients
     DefaultAttribute('x1', 0, elements='linearGradient'),
     DefaultAttribute('y1', 0, elements='linearGradient'),
     DefaultAttribute('y2', 0, elements='linearGradient'),
     DefaultAttribute('x2', 100, Unit.PCT, 'linearGradient'),
-    DefaultAttribute('x2', 1, Unit.NONE, 'linearGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('x2', 1, Unit.NONE, 'linearGradient',
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     # remove fx/fy before cx/cy to catch the case where fx = cx = 50% or fy = cy = 50% respectively
-    DefaultAttribute('fx', elements='radialGradient', conditions=lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
-    DefaultAttribute('fy', elements='radialGradient', conditions=lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
+    DefaultAttribute('fx', elements='radialGradient',
+                     conditions=lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
+    DefaultAttribute('fy', elements='radialGradient',
+                     conditions=lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
     DefaultAttribute('r',  50, Unit.PCT, 'radialGradient'),
-    DefaultAttribute('r',  0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('r',  0.5, Unit.NONE, 'radialGradient',
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('cx', 50, Unit.PCT, 'radialGradient'),
-    DefaultAttribute('cx', 0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('cx', 0.5, Unit.NONE, 'radialGradient',
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('cy', 50, Unit.PCT, 'radialGradient'),
-    DefaultAttribute('cy', 0.5, Unit.NONE, 'radialGradient', lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+    DefaultAttribute('cy', 0.5, Unit.NONE, 'radialGradient',
+                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
     DefaultAttribute('spreadMethod', 'pad'),
 
     # filter effects
@@ -1888,8 +1908,11 @@ def removeDefaultAttributeValue(node, attribute):
                 return 1
     else:
         nodeValue = SVGLength(node.getAttribute(attribute.name))
-        if (attribute.value is None) or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID)):
-            if (attribute.units is None) or (nodeValue.units == attribute.units) or (isinstance(attribute.units, list) and nodeValue.units in attribute.units):
+        if ((attribute.value is None)
+                or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID))):
+            if ((attribute.units is None)
+                    or (nodeValue.units == attribute.units)
+                    or (isinstance(attribute.units, list) and nodeValue.units in attribute.units)):
                 if (attribute.conditions is None) or attribute.conditions(node):
                     node.removeAttribute(attribute.name)
                     return 1
@@ -2325,9 +2348,11 @@ def cleanPath(element, options):
                 newPath.append((cmd, lineTuples))
         # convert Bézier curve segments into s where possible
         elif cmd == 'c':
-            # set up the assumed bezier control point as the current point, i.e. (0,0) since we're using relative coords
+            # set up the assumed bezier control point as the current point,
+            # i.e. (0,0) since we're using relative coords
             bez_ctl_pt = (0, 0)
-            # however if the previous command was 's' the assumed control point is a reflection of the previous control point at the current point
+            # however if the previous command was 's'
+            # the assumed control point is a reflection of the previous control point at the current point
             if len(newPath):
                 (prevCmd, prevData) = newPath[-1]
                 if prevCmd == 's':
@@ -2732,9 +2757,9 @@ def optimizeTransform(transform):
     """
     # FIXME: reordering these would optimize even more cases:
     #   first: Fold consecutive runs of the same transformation
-    #   extra:  Attempt to cast between types to create sameness:
-    #     "matrix(0 1 -1 0 0 0) rotate(180) scale(-1)" all
-    #     are rotations (90, 180, 180) -- thus "rotate(90)"
+    #   extra: Attempt to cast between types to create sameness:
+    #          "matrix(0 1 -1 0 0 0) rotate(180) scale(-1)" all
+    #          are rotations (90, 180, 180) -- thus "rotate(90)"
     #  second: Simplify transforms where numbers are optional.
     #   third: Attempt to simplify any single remaining matrix()
     #
@@ -3068,15 +3093,15 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 def makeWellFormed(str):
     # Don't escape quotation marks for now as they are fine in text nodes
     # as well as in attributes if used reciprocally
-    #    xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
+    #     xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
     xml_ents = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
 
 #  starr = []
 #  for c in str:
-#     if c in xml_ents:
-#        starr.append(xml_ents[c])
-#     else:
-#        starr.append(c)
+#      if c in xml_ents:
+#          starr.append(xml_ents[c])
+#      else:
+#          starr.append(c)
 
     # this list comprehension is short-form for the above for-loop:
     return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
@@ -3222,7 +3247,8 @@ def scourString(in_string, options=None):
     options = sanitizeOptions(options)
 
     # create decimal context with reduced precision for scouring numbers
-    # calculations should be done in the default context (precision defaults to 28 significant digits) to minimize errors
+    # calculations should be done in the default context (precision defaults to 28 significant digits)
+    # to minimize errors
     global scouringContext
     scouringContext = Context(prec=options.digits)
 
@@ -3240,7 +3266,8 @@ def scourString(in_string, options=None):
     # flowRoot elements don't render at all on current browsers (04/2016)
     cnt_flowText_el = len(doc.getElementsByTagName('flowRoot'))
     if cnt_flowText_el:
-        errmsg = "SVG input document uses {} flow text elements, which won't render on browsers!".format(cnt_flowText_el)
+        errmsg = "SVG input document uses {} flow text elements, " \
+                 "which won't render on browsers!".format(cnt_flowText_el)
         if options.error_on_flowtext:
             raise Exception(errmsg)
         else:
@@ -3404,7 +3431,8 @@ def scourString(in_string, options=None):
         numBytesSavedInIDs += shortenIDs(doc, options.shorten_ids_prefix, unprotected_ids(doc, options))
 
     # scour lengths (including coordinates)
-    for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line', 'linearGradient', 'radialGradient', 'stop', 'filter']:
+    for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line',
+                 'linearGradient', 'radialGradient', 'stop', 'filter']:
         for elem in doc.getElementsByTagName(type):
             for attr in ['x', 'y', 'width', 'height', 'cx', 'cy', 'r', 'rx', 'ry',
                          'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
@@ -3537,7 +3565,8 @@ _option_group_optimization.add_option("--create-groups",
                                       help="create <g> elements for runs of elements with identical attributes")
 _option_group_optimization.add_option("--keep-editor-data",
                                       action="store_true", dest="keep_editor_data", default=False,
-                                      help="won't remove Inkscape, Sodipodi, Adobe Illustrator or Sketch elements and attributes")
+                                      help="won't remove Inkscape, Sodipodi, Adobe Illustrator "
+                                           "or Sketch elements and attributes")
 _option_group_optimization.add_option("--keep-unreferenced-defs",
                                       action="store_true", dest="keep_defs", default=False,
                                       help="won't remove elements within the defs container that are unreferenced")
@@ -3561,7 +3590,8 @@ _option_group_document.add_option("--remove-descriptions",
                                   help="remove <desc> elements")
 _option_group_document.add_option("--remove-metadata",
                                   action="store_true", dest="remove_metadata", default=False,
-                                  help="remove <metadata> elements (which may contain license/author information etc.)")
+                                  help="remove <metadata> elements "
+                                       "(which may contain license/author information etc.)")
 _option_group_document.add_option("--remove-descriptive-elements",
                                   action="store_true", dest="remove_descriptive_elements", default=False,
                                   help="remove <title>, <desc> and <metadata> elements")
@@ -3616,7 +3646,8 @@ _options_parser.add_option_group(_option_group_ids)
 _option_group_compatibility = optparse.OptionGroup(_options_parser, "SVG compatibility checks")
 _option_group_compatibility.add_option("--error-on-flowtext",
                                        action="store_true", dest="error_on_flowtext", default=False,
-                                       help="In case the input SVG uses flow text, bail out with error. Otherwise only warn. (default: False)")
+                                       help="If the input SVG uses non-standard flowing text exit with error. "
+                                            "Otherwise only warn.")
 _options_parser.add_option_group(_option_group_compatibility)
 
 
