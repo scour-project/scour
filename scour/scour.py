@@ -66,17 +66,20 @@ import six
 from six.moves import range
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
-# select the most precise walltime measurement function available on the platform
-if sys.platform.startswith('win'):
-    walltime = time.clock
-else:
-    walltime = time.time
 
 from scour import __version__
 
 APP = u'scour'
 VER = __version__
 COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
+
+
+# select the most precise walltime measurement function available on the platform
+if sys.platform.startswith('win'):
+    walltime = time.clock
+else:
+    walltime = time.time
+
 
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
@@ -486,7 +489,7 @@ class SVGLength(object):
             self.value = 0
             unitBegin = 0
             scinum = scinumber.match(str)
-            if scinum != None:
+            if scinum is not None:
                 # this will always match, no need to check it
                 numMatch = number.match(str)
                 expMatch = sciExponent.search(str, numMatch.start(0))
@@ -496,7 +499,7 @@ class SVGLength(object):
             else:
                 # unit or invalid
                 numMatch = number.match(str)
-                if numMatch != None:
+                if numMatch is not None:
                     self.value = float(numMatch.group(0))
                     unitBegin = numMatch.end(0)
 
@@ -505,7 +508,7 @@ class SVGLength(object):
 
             if unitBegin != 0:
                 unitMatch = unit.search(str, unitBegin)
-                if unitMatch != None:
+                if unitMatch is not None:
                     self.units = Unit.get(unitMatch.group(0))
 
             # invalid
@@ -616,7 +619,7 @@ def findReferencingProperty(node, prop, val, ids):
             # single-quote
             elif val[0:6] == "url('#":
                 id = val[6:val.find("')")]
-            if id != None:
+            if id is not None:
                 if id in ids:
                     ids[id][0] += 1
                     ids[id][1].append(node)
@@ -649,14 +652,13 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
     for elem in defElem.childNodes:
         # only look at it if an element and not referenced anywhere else
         if elem.nodeType == 1 and (elem.getAttribute('id') == '' or
-                                   (not elem.getAttribute('id') in referencedIDs)):
-
+                                   elem.getAttribute('id') not in referencedIDs):
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
                 elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
             # we only remove if it is not one of our tags we always keep (see above)
-            elif not elem.nodeName in keepTags:
+            elif elem.nodeName not in keepTags:
                 elemsToRemove.append(elem)
     return elemsToRemove
 
@@ -677,10 +679,10 @@ def removeUnreferencedElements(doc, keepDefs):
     referencedIDs = findReferencedElements(doc.documentElement)
 
     for id in identifiedElements:
-        if not id in referencedIDs:
+        if id not in referencedIDs:
             goner = identifiedElements[id]
-            if (goner != None and goner.nodeName in removeTags
-                and goner.parentNode != None
+            if (goner is not None and goner.nodeName in removeTags
+                and goner.parentNode is not None
                     and goner.parentNode.tagName != 'defs'):
                 goner.parentNode.removeChild(goner)
                 num += 1
@@ -723,7 +725,7 @@ def shortenIDs(doc, prefix, unprotectedElements=None):
     idList = [rid for count, rid in idList]
 
     # Add unreferenced IDs to end of idList in arbitrary order
-    idList.extend([rid for rid in unprotectedElements if not rid in idList])
+    idList.extend([rid for rid in unprotectedElements if rid not in idList])
 
     curIdNum = 1
 
@@ -790,7 +792,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
             # if this node is a style element, parse its text into CSS
             if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
                 # node.firstChild will be either a CDATA or a Text node now
-                if node.firstChild != None:
+                if node.firstChild is not None:
                     # concatenate the value of all children, in case
                     # there's a CDATASection node surrounded by whitespace
                     # nodes
@@ -873,7 +875,7 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
     num = 0
     for id in list(identifiedElements.keys()):
         node = identifiedElements[id]
-        if (id in referencedIDs) == False and not node.nodeName in keepTags:
+        if id not in referencedIDs and node.nodeName not in keepTags:
             node.removeAttribute('id')
             numIDsRemoved += 1
             num += 1
@@ -889,7 +891,7 @@ def removeNamespacedAttributes(node, namespaces):
         attrsToRemove = []
         for attrNum in range(attrList.length):
             attr = attrList.item(attrNum)
-            if attr != None and attr.namespaceURI in namespaces:
+            if attr is not None and attr.namespaceURI in namespaces:
                 attrsToRemove.append(attr.nodeName)
         for attrName in attrsToRemove:
             num += 1
@@ -910,7 +912,7 @@ def removeNamespacedElements(node, namespaces):
         childList = node.childNodes
         childrenToRemove = []
         for child in childList:
-            if child != None and child.namespaceURI in namespaces:
+            if child is not None and child.namespaceURI in namespaces:
                 childrenToRemove.append(child)
         for child in childrenToRemove:
             num += 1
@@ -1239,7 +1241,7 @@ def removeUnusedAttributesOnParent(elem):
         inheritedAttrs = []
         for name in list(unusedAttrs.keys()):
             val = child.getAttribute(name)
-            if val == '' or val == None or val == 'inherit':
+            if val == '' or val is None or val == 'inherit':
                 inheritedAttrs.append(name)
         for a in inheritedAttrs:
             del unusedAttrs[a]
@@ -1307,7 +1309,7 @@ def collapseSinglyReferencedGradients(doc):
         # (Cyn: I've seen documents with #id references but no element with that ID!)
         if count == 1 and rid in identifiedElements:
             elem = identifiedElements[rid]
-            if elem != None and elem.nodeType == 1 and elem.nodeName in ['linearGradient', 'radialGradient'] \
+            if elem is not None and elem.nodeType == 1 and elem.nodeName in ['linearGradient', 'radialGradient'] \
                     and elem.namespaceURI == NS['SVG']:
                 # found a gradient that is referenced by only 1 other element
                 refElem = nodes[0]
@@ -1577,7 +1579,7 @@ def repairStyle(node, options):
         if 'overflow' in styleMap:
             # remove overflow from elements to which it does not apply,
             # see https://www.w3.org/TR/SVG/masking.html#OverflowProperty
-            if not node.nodeName in ['svg', 'symbol', 'image', 'foreignObject', 'marker', 'pattern']:
+            if node.nodeName not in ['svg', 'symbol', 'image', 'foreignObject', 'marker', 'pattern']:
                 del styleMap['overflow']
                 num += 1
             # if the node is not the root <svg> element the SVG's user agent style sheet
@@ -1974,14 +1976,14 @@ def convertColor(value):
         s = colors[s]
 
     rgbpMatch = rgbp.match(s)
-    if rgbpMatch != None:
+    if rgbpMatch is not None:
         r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
         g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
         b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
         s = '#%02x%02x%02x' % (r, g, b)
     else:
         rgbMatch = rgb.match(s)
-        if rgbMatch != None:
+        if rgbMatch is not None:
             r = int(rgbMatch.group(1))
             g = int(rgbMatch.group(2))
             b = int(rgbMatch.group(3))
@@ -2576,7 +2578,7 @@ def scourCoordinates(data, options, forceCommaWsp=False):
           - removes extraneous whitespace
           - adds spaces between values in a subcommand if required (or if forceCommaWsp is True)
     """
-    if data != None:
+    if data is not None:
         newData = []
         c = 0
         previousCoord = ''
@@ -3054,7 +3056,7 @@ def properlySizeDoc(docElement, options):
 
 
 def remapNamespacePrefix(node, oldprefix, newprefix):
-    if node == None or node.nodeType != 1:
+    if node is None or node.nodeType != 1:
         return
 
     if node.prefix == oldprefix:
@@ -3179,9 +3181,9 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
 
         outParts.append(' ')
         # preserve xmlns: if it is a namespace prefix declaration
-        if attr.prefix != None:
+        if attr.prefix is not None:
             outParts.extend([attr.prefix, ':'])
-        elif attr.namespaceURI != None:
+        elif attr.namespaceURI is not None:
             if attr.namespaceURI == 'http://www.w3.org/2000/xmlns/' and attr.nodeName.find('xmlns') == -1:
                 outParts.append('xmlns:')
             elif attr.namespaceURI == 'http://www.w3.org/1999/xlink':
@@ -3279,7 +3281,7 @@ def scourString(in_string, options=None):
     # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
     # on the first pass, so we do it multiple times
     # does it have to do with removal of children affecting the childlist?
-    if options.keep_editor_data == False:
+    if options.keep_editor_data is False:
         while removeNamespacedElements(doc.documentElement, unwanted_ns) > 0:
             pass
         while removeNamespacedAttributes(doc.documentElement, unwanted_ns) > 0:
@@ -3358,7 +3360,7 @@ def scourString(in_string, options=None):
     for tag in ['defs', 'title', 'desc', 'metadata', 'g']:
         for elem in doc.documentElement.getElementsByTagName(tag):
             removeElem = not elem.hasChildNodes()
-            if removeElem == False:
+            if removeElem is False:
                 for child in elem.childNodes:
                     if child.nodeType in [1, 4, 8]:
                         break
@@ -3472,7 +3474,7 @@ def scourString(in_string, options=None):
             lines.append(line)
 
     # return the string with its XML prolog and surrounding comments
-    if options.strip_xml_prolog == False:
+    if options.strip_xml_prolog is False:
         total_output = '<?xml version="1.0" encoding="UTF-8"'
         if doc.standalone:
             total_output += ' standalone="yes"'
@@ -3663,7 +3665,7 @@ def parse_args(args=None, ignore_additional_args=False):
             _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
     if options.digits < 0:
         _options_parser.error("Can't have negative significant digits, see --help")
-    if not options.indent_type in ["tab", "space", "none"]:
+    if options.indent_type not in ['tab', 'space', 'none']:
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
         _options_parser.error("Value for --nindent should be positive (or zero), see --help")

@@ -42,10 +42,10 @@ SVGNS = 'http://www.w3.org/2000/svg'
 
 
 def walkTree(elem, func):
-    if func(elem) == False:
+    if func(elem) is False:
         return False
     for child in elem.childNodes:
-        if walkTree(child, func) == False:
+        if walkTree(child, func) is False:
             return False
     return True
 
@@ -472,7 +472,7 @@ class NoSodipodiAttributes(unittest.TestCase):
     def runTest(self):
         def findSodipodiAttr(elem):
             attrs = elem.attributes
-            if attrs == None:
+            if attrs is None:
                 return True
             for i in range(len(attrs)):
                 if attrs.item(i).namespaceURI == 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd':
@@ -488,7 +488,7 @@ class NoInkscapeAttributes(unittest.TestCase):
     def runTest(self):
         def findInkscapeAttr(elem):
             attrs = elem.attributes
-            if attrs == None:
+            if attrs is None:
                 return True
             for i in range(len(attrs)):
                 if attrs.item(i).namespaceURI == 'http://www.inkscape.org/namespaces/inkscape':
