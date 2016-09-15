@@ -60,8 +60,9 @@ from __future__ import absolute_import
 
 import re
 from decimal import Decimal
-from six.moves import range
 from functools import partial
+
+from six.moves import range
 
 
 # Sentinel.

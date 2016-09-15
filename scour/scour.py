@@ -44,30 +44,29 @@
 # - parse transform attribute
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 
-# necessary to get true division
-from __future__ import division
 
-# Needed for Python 2/3 compatible print function.
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import division         # use "true" division instead of integer division in Python 2 (see PEP 238)
+from __future__ import print_function   # use print() as a function in Python 2 (see PEP 3105)
+from __future__ import absolute_import  # use absolute imports by default in Python 2 (see PEP 328)
 
-import os
-import sys
-import xml.dom.minidom
-import re
 import math
-import time
-from collections import namedtuple
-from scour.svg_regex import svg_parser
-from scour.svg_transform import svg_transform_parser
 import optparse
-from scour.yocto_css import parseCssString
-import six
-from six.moves import range
+import os
+import re
+import sys
+import time
+import xml.dom.minidom
+from collections import namedtuple
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
+import six
+from six.moves import range
 
+from scour.svg_regex import svg_parser
+from scour.svg_transform import svg_transform_parser
+from scour.yocto_css import parseCssString
 from scour import __version__
+
 
 APP = u'scour'
 VER = __version__

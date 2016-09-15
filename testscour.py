@@ -22,24 +22,23 @@
 
 from __future__ import absolute_import
 
+import unittest
+
 import six
 from six.moves import map, range
 
-import unittest
-
+from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile
 from scour.svg_regex import svg_parser
-from scour.scour import scourXmlFile, scourString, parse_args, makeWellFormed
 
 
 SVGNS = 'http://www.w3.org/2000/svg'
+
 
 # I couldn't figure out how to get ElementTree to work with the following XPath
 # "//*[namespace-uri()='http://example.com']"
 # so I decided to use minidom and this helper function that performs a test on a given node
 # and all its children
 # func must return either True (if pass) or False (if fail)
-
-
 def walkTree(elem, func):
     if func(elem) is False:
         return False

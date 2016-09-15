@@ -18,7 +18,8 @@
 
 import os
 import re
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 LONGDESC = """
 Scour is a SVG optimizer/sanitizer that can be used to produce SVGs for Web deployment.
