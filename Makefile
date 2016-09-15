@@ -23,3 +23,6 @@ test_error_on_flowtext:
 	PYTHONPATH=. scour --error-on-flowtext unittests/flowtext-less.svg /dev/null
 	# .. and this should bail out!
 	PYTHONPATH=. scour --error-on-flowtext unittests/flowtext.svg /dev/null
+
+flake8:
+	flake8 --max-line-length=119

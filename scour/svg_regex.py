@@ -44,11 +44,15 @@ Out[5]: [('M', [(100.0, -200.0)])]
 from __future__ import absolute_import
 
 import re
-from decimal import *
+from decimal import Decimal, getcontext
 from functools import partial
 
+
 # Sentinel.
+
+
 class _EOF(object):
+
     def __repr__(self):
         return 'EOF'
 EOF = _EOF()
@@ -70,6 +74,7 @@ class Lexer(object):
 
         http://www.gooli.org/blog/a-simple-lexer-in-python/
     """
+
     def __init__(self, lexicon):
         self.lexicon = lexicon
         parts = []
@@ -269,7 +274,6 @@ class SVGPathParser(object):
         x = getcontext().create_decimal(token[1])
         token = next_val_fn()
         return x, token
-
 
     def rule_coordinate_pair(self, next_val_fn, token):
         # Inline these since this rule is so common.
