@@ -645,7 +645,6 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
     if elemsToRemove is None:
         elemsToRemove = []
 
-    identifiedElements = findElementsWithId(doc.documentElement)
     referencedIDs = findReferencedElements(doc.documentElement)
 
     keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
@@ -2072,6 +2071,7 @@ def cleanPath(element, options):
     # convert absolute coordinates into relative ones.
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists since we're not adding or removing any.
+    x = y = 0
     for pathIndex in range(0, len(path)):
         cmd, data = path[pathIndex]  # Changes to cmd don't get through to the data structure
         i = 0

@@ -59,7 +59,7 @@ Out[12]: [('translate', [30.0, -30.0]), ('rotate', [36.0])]
 from __future__ import absolute_import
 
 import re
-from decimal import *
+from decimal import Decimal
 from six.moves import range
 from functools import partial
 
