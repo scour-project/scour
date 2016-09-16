@@ -4,12 +4,12 @@ install:
   - pip install tox
 
 env:
-# - TOX_ENV=py26
+  - TOX_ENV=pypy
   - TOX_ENV=py27
   - TOX_ENV=py33
   - TOX_ENV=py34
 # - TOX_ENV=py35
-  - TOX_ENV=pypy
+# - TOX_ENV=flake8
 
 script:
   - tox -e $TOX_ENV
@@ -22,3 +22,7 @@ matrix:
     - python: 3.5
       env:
       - TOX_ENV=py35
+
+    - python: 3.5
+      env:
+      - TOX_ENV=flake8
