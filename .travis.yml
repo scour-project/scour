@@ -1,7 +1,7 @@
 language: python
 
 install:
-  - pip install tox
+  - pip install tox codecov
 
 env:
   - TOX_ENV=pypy
@@ -26,3 +26,6 @@ matrix:
     - python: 3.5
       env:
       - TOX_ENV=flake8
+
+after_success:
+  - coverage combine && codecov
