@@ -1,6 +1,9 @@
 # Scour
 
-**Build status:** [![Build Status](https://travis-ci.org/scour-project/scour.svg?branch=master)](https://travis-ci.org/scour-project/scour)
+[![PyPI](https://img.shields.io/pypi/v/scour.svg)](https://pypi.python.org/pypi/scour "Package listing on PyPI")
+ 
+[![Build status](https://img.shields.io/travis/scour-project/scour.svg)](https://travis-ci.org/scour-project/scour "Build status (via TravisCI)")
+[![Codecov](https://img.shields.io/codecov/c/github/scour-project/scour.svg)](https://codecov.io/gh/scour-project/scour "Code coverage (via Codecov)")
 
 ---
 
