@@ -20,15 +20,19 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import absolute_import
+from __future__ import print_function   # use print() as a function in Python 2 (see PEP 3105)
+from __future__ import absolute_import  # use absolute imports by default in Python 2 (see PEP 328)
 
+import os
+import sys
 import unittest
 
 import six
 from six.moves import map, range
 
-from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile
+from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile, run
 from scour.svg_regex import svg_parser
+from scour import __version__
 
 
 SVGNS = 'http://www.w3.org/2000/svg'
@@ -2112,7 +2116,7 @@ class StripXmlSpaceAttribute(unittest.TestCase):
                          "'xml:space' attribute not removed from root SVG element"
                          "when '--strip-xml-space' was specified")
         self.assertNotEqual(doc.getElementById('text1').getAttribute('xml:space'), '',
-                            "'xml:space' attribute removed from a child element"
+                            "'xml:space' attribute removed from a child element "
                             "when '--strip-xml-space' was specified (should only operate on root SVG element)")
 
 
@@ -2124,8 +2128,158 @@ class DoNotStripXmlSpaceAttribute(unittest.TestCase):
                             "'xml:space' attribute removed from root SVG element"
                             "when '--strip-xml-space' was NOT specified")
         self.assertNotEqual(doc.getElementById('text1').getAttribute('xml:space'), '',
-                            "'xml:space' attribute removed from a child element"
+                            "'xml:space' attribute removed from a child element "
                             "when '--strip-xml-space' was NOT specified (should never be removed!)")
+
+
+class CommandLineUsage(unittest.TestCase):
+
+    USAGE_STRING = "Usage: scour [INPUT.SVG [OUTPUT.SVG]] [OPTIONS]"
+    MINIMAL_SVG = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+                  '<svg xmlns="http://www.w3.org/2000/svg"/>\n'
+    TEMP_SVG_FILE = 'testscour_temp.svg'
+
+    # wrapper function for scour.run() to emulate command line usage
+    #
+    # returns an object with the following attributes:
+    #     status: the exit status
+    #     stdout: a string representing the combined output to 'stdout'
+    #     stderr: a string representing the combined output to 'stderr'
+    def _run_scour(self):
+        class Result(object):
+            pass
+
+        result = Result()
+        try:
+            run()
+            result.status = 0
+        except SystemExit as exception:  # catch any calls to sys.exit()
+            result.status = exception.code
+        result.stdout = self.temp_stdout.getvalue()
+        result.stderr = self.temp_stderr.getvalue()
+
+        return result
+
+    def setUp(self):
+        # store current values of 'argv', 'stdin', 'stdout' and 'stderr'
+        self.argv = sys.argv
+        self.stdin = sys.stdin
+        self.stdout = sys.stdout
+        self.stderr = sys.stderr
+
+        # start with a fresh 'argv'
+        sys.argv = ['scour']  # TODO: Do we need a (more) valid 'argv[0]' for anything?
+
+        # create 'stdin', 'stdout' and 'stderr' with behavior close to the original
+        # TODO: can we create file objects that behave *exactly* like the original?
+        #       this is a mess since we have to ensure compatibility across Python 2 and 3 and it seems impossible
+        #       to replicate all the details of 'stdin', 'stdout' and 'stderr'
+        class InOutBuffer(six.StringIO, object):
+            def write(self, string):
+                try:
+                    return super(InOutBuffer, self).write(string)
+                except TypeError:
+                    return super(InOutBuffer, self).write(string.decode())
+
+        sys.stdin = self.temp_stdin = InOutBuffer()
+        sys.stdout = self.temp_stdout = InOutBuffer()
+        sys.stderr = self.temp_stderr = InOutBuffer()
+
+        self.temp_stdin.name = '<stdin>'  # Scour wants to print the name of the input file...
+
+    def tearDown(self):
+        # restore previous values of 'argv', 'stdin', 'stdout' and 'stderr'
+        sys.argv = self.argv
+        sys.stdin = self.stdin
+        sys.stdout = self.stdout
+        sys.stderr = self.stderr
+
+        # clean up
+        self.temp_stdin.close()
+        self.temp_stdout.close()
+        self.temp_stderr.close()
+
+    def test_no_arguments(self):
+        # we have to pretend that our input stream is a TTY, otherwise Scour waits for input from stdin
+        self.temp_stdin.isatty = lambda: True
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 2, "Execution of 'scour' without any arguments should exit with status '2'")
+        self.assertTrue(self.USAGE_STRING in result.stderr,
+                        "Usage information not displayed when calling 'scour' without any arguments")
+
+    def test_version(self):
+        sys.argv.append('--version')
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 0, "Execution of 'scour --version' erorred'")
+        self.assertEqual(__version__ + "\n", result.stdout,  "Unexpected output of 'scour --version'")
+
+    def test_help(self):
+        sys.argv.append('--help')
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 0, "Execution of 'scour --help' erorred'")
+        self.assertTrue(self.USAGE_STRING in result.stdout and 'Options:' in result.stdout,
+                        "Unexpected output of 'scour --help'")
+
+    def test_stdin_stdout(self):
+        sys.stdin.write(self.MINIMAL_SVG)
+        sys.stdin.seek(0)
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 0, "Usage of Scour via 'stdin' / 'stdout' erorred'")
+        self.assertEqual(result.stdout, self.MINIMAL_SVG, "Unexpected SVG output via 'stdout'")
+
+    def test_filein_fileout_named(self):
+        sys.argv.extend(['-i', 'unittests/minimal.svg', '-o', self.TEMP_SVG_FILE])
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 0, "Usage of Scour with filenames specified as named parameters errored'")
+        with open(self.TEMP_SVG_FILE) as file:
+            file_content = file.read()
+            self.assertEqual(file_content, self.MINIMAL_SVG, "Unexpected SVG output in generated file")
+        os.remove(self.TEMP_SVG_FILE)
+
+    def test_filein_fileout_positional(self):
+        sys.argv.extend(['unittests/minimal.svg', self.TEMP_SVG_FILE])
+
+        result = self._run_scour()
+
+        self.assertEqual(result.status, 0, "Usage of Scour with filenames specified as positional parameters errored'")
+        with open(self.TEMP_SVG_FILE) as file:
+            file_content = file.read()
+            self.assertEqual(file_content, self.MINIMAL_SVG, "Unexpected SVG output in generated file")
+        os.remove(self.TEMP_SVG_FILE)
+
+    def test_quiet(self):
+        sys.argv.append('-q')
+        sys.argv.extend(['-i', 'unittests/minimal.svg', '-o', self.TEMP_SVG_FILE])
+
+        result = self._run_scour()
+        os.remove(self.TEMP_SVG_FILE)
+
+        self.assertEqual(result.status, 0, "Execution of 'scour -q ...' erorred'")
+        self.assertEqual(result.stdout, '', "Output writtent to 'stdout' when '--quiet' options was used")
+        self.assertEqual(result.stderr, '', "Output writtent to 'stderr' when '--quiet' options was used")
+
+    def test_verbose(self):
+        sys.argv.append('-v')
+        sys.argv.extend(['-i', 'unittests/minimal.svg', '-o', self.TEMP_SVG_FILE])
+
+        result = self._run_scour()
+        os.remove(self.TEMP_SVG_FILE)
+
+        self.assertEqual(result.status, 0, "Execution of 'scour -v ...' erorred'")
+        self.assertEqual(result.stdout.count('Number'), 14,
+                         "Statistics output not as expected when '--verbose' option was used")
+        self.assertEqual(result.stdout.count(': 0'), 14,
+                         "Statistics output not as expected when '--verbose' option was used")
 
 
 # TODO: write tests for --enable-viewboxing
