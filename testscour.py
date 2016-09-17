@@ -2100,7 +2100,33 @@ class ParseStyleAttribute(unittest.TestCase):
         doc = scourXmlFile('unittests/style.svg')
         self.assertEqual(doc.documentElement.getAttribute('style'),
                          'property1:value1;property2:value2;property3:value3',
-                         'Style attribute not properly parsed and/or serialized')
+                         "Style attribute not properly parsed and/or serialized")
+
+
+class StripXmlSpaceAttribute(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/xml-space.svg',
+                           parse_args(['--strip-xml-space']))
+        self.assertEqual(doc.documentElement.getAttribute('xml:space'), '',
+                         "'xml:space' attribute not removed from root SVG element"
+                         "when '--strip-xml-space' was specified")
+        self.assertNotEqual(doc.getElementById('text1').getAttribute('xml:space'), '',
+                            "'xml:space' attribute removed from a child element"
+                            "when '--strip-xml-space' was specified (should only operate on root SVG element)")
+
+
+class DoNotStripXmlSpaceAttribute(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/xml-space.svg')
+        self.assertNotEqual(doc.documentElement.getAttribute('xml:space'), '',
+                            "'xml:space' attribute removed from root SVG element"
+                            "when '--strip-xml-space' was NOT specified")
+        self.assertNotEqual(doc.getElementById('text1').getAttribute('xml:space'), '',
+                            "'xml:space' attribute removed from a child element"
+                            "when '--strip-xml-space' was NOT specified (should never be removed!)")
+
 
 # TODO: write tests for --enable-viewboxing
 # TODO; write a test for embedding rasters
