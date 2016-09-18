@@ -389,6 +389,65 @@ class RemoveUnreferencedIDsWhenEnabled(unittest.TestCase):
                          '<svg> ID not stripped')
 
 
+class ProtectIDs(unittest.TestCase):
+
+    def test_protect_none(self):
+        doc = scourXmlFile('unittests/ids-protect.svg',
+                           parse_args(['--enable-id-stripping']))
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[0].getAttribute('id'), '',
+                         "ID 'text1' not stripped when none of the '--protect-ids-_' options was specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[1].getAttribute('id'), '',
+                         "ID 'text2' not stripped when none of the '--protect-ids-_' options was specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[2].getAttribute('id'), '',
+                         "ID 'text3' not stripped when none of the '--protect-ids-_' options was specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[3].getAttribute('id'), '',
+                         "ID 'text_custom' not stripped when none of the '--protect-ids-_' options was specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[4].getAttribute('id'), '',
+                         "ID 'my_text1' not stripped when none of the '--protect-ids-_' options was specified")
+
+    def test_protect_ids_noninkscape(self):
+        doc = scourXmlFile('unittests/ids-protect.svg',
+                           parse_args(['--enable-id-stripping', '--protect-ids-noninkscape']))
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[0].getAttribute('id'), '',
+                         "ID 'text1' should have been stripped despite '--protect-ids-noninkscape' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[1].getAttribute('id'), '',
+                         "ID 'text2' should have been stripped despite '--protect-ids-noninkscape' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[2].getAttribute('id'), '',
+                         "ID 'text3' should have been stripped despite '--protect-ids-noninkscape' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[3].getAttribute('id'), 'text_custom',
+                         "ID 'text_custom' should NOT have been stripped because of '--protect-ids-noninkscape'")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[4].getAttribute('id'), '',
+                         "ID 'my_text1' should have been stripped despite '--protect-ids-noninkscape' being specified")
+
+    def test_protect_ids_list(self):
+        doc = scourXmlFile('unittests/ids-protect.svg',
+                           parse_args(['--enable-id-stripping', '--protect-ids-list=text2,text3']))
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[0].getAttribute('id'), '',
+                         "ID 'text1' should have been stripped despite '--protect-ids-list' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[1].getAttribute('id'), 'text2',
+                         "ID 'text2' should NOT have been stripped because of '--protect-ids-list'")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[2].getAttribute('id'), 'text3',
+                         "ID 'text3' should NOT have been stripped because of '--protect-ids-list'")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[3].getAttribute('id'), '',
+                         "ID 'text_custom' should have been stripped despite '--protect-ids-list' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[4].getAttribute('id'), '',
+                         "ID 'my_text1' should have been stripped despite '--protect-ids-list' being specified")
+
+    def test_protect_ids_prefix(self):
+        doc = scourXmlFile('unittests/ids-protect.svg',
+                           parse_args(['--enable-id-stripping', '--protect-ids-prefix=my']))
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[0].getAttribute('id'), '',
+                         "ID 'text1' should have been stripped despite '--protect-ids-prefix' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[1].getAttribute('id'), '',
+                         "ID 'text2' should have been stripped despite '--protect-ids-prefix' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[2].getAttribute('id'), '',
+                         "ID 'text3' should have been stripped despite '--protect-ids-prefix' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[3].getAttribute('id'), '',
+                         "ID 'text_custom' should have been stripped despite '--protect-ids-prefix' being specified")
+        self.assertEqual(doc.getElementsByTagNameNS(SVGNS, 'text')[4].getAttribute('id'), 'my_text1',
+                         "ID 'my_text1' should NOT have been stripped because of '--protect-ids-prefix'")
+
+
 class RemoveUselessNestedGroups(unittest.TestCase):
 
     def runTest(self):
