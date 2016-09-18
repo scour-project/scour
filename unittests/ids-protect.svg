@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" height="110" width="100">
+ <text id="text1" x="10" y="20">Text 1</text>
+ <text id="text2" x="10" y="40">Text 2</text>
+ <text id="text3" x="10" y="60">Text 3</text>
+ <text id="text_custom" x="10" y="80">Text custom</text>
+ <text id="my_text1" x="10" y="100">My text</text>
+</svg>
