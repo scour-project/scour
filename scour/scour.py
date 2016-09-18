@@ -1092,23 +1092,22 @@ def createGroupsForCommonAttributes(elem):
         while curChild >= 0:
             childNode = elem.childNodes.item(curChild)
 
-            if childNode.nodeType == 1 and childNode.getAttribute(curAttr) != '' and \
-                childNode.nodeName in [
+            if childNode.nodeType == 1 and childNode.getAttribute(curAttr) != '' and childNode.nodeName in [
                 # only attempt to group elements that the content model allows to be children of a <g>
 
                 # SVG 1.1 (see https://www.w3.org/TR/SVG/struct.html#GElement)
                 'animate', 'animateColor', 'animateMotion', 'animateTransform', 'set',  # animation elements
-                'desc', 'metadata', 'title',                                           # descriptive elements
-                'circle', 'ellipse', 'line', 'path', 'polygon', 'polyline', 'rect',    # shape elements
-                'defs', 'g', 'svg', 'symbol', 'use',                                   # structural elements
-                'linearGradient', 'radialGradient',                                    # gradient elements
+                'desc', 'metadata', 'title',                                            # descriptive elements
+                'circle', 'ellipse', 'line', 'path', 'polygon', 'polyline', 'rect',     # shape elements
+                'defs', 'g', 'svg', 'symbol', 'use',                                    # structural elements
+                'linearGradient', 'radialGradient',                                     # gradient elements
                 'a', 'altGlyphDef', 'clipPath', 'color-profile', 'cursor', 'filter',
-                     'font', 'font-face', 'foreignObject', 'image', 'marker', 'mask',
-                     'pattern', 'script', 'style', 'switch', 'text', 'view',
+                'font', 'font-face', 'foreignObject', 'image', 'marker', 'mask',
+                'pattern', 'script', 'style', 'switch', 'text', 'view',
 
-                     # SVG 1.2 (see https://www.w3.org/TR/SVGTiny12/elementTable.html)
-                     'animation', 'audio', 'discard', 'handler', 'listener',
-                     'prefetch', 'solidColor', 'textArea', 'video'
+                # SVG 1.2 (see https://www.w3.org/TR/SVGTiny12/elementTable.html)
+                'animation', 'audio', 'discard', 'handler', 'listener',
+                'prefetch', 'solidColor', 'textArea', 'video'
             ]:
                 # We're in a possible run! Track the value and run length.
                 value = childNode.getAttribute(curAttr)
