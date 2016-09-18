@@ -534,8 +534,8 @@ def findElementsWithId(node, elems=None):
                 findElementsWithId(child, elems)
     return elems
 
-referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start',
-                    'marker-end', 'marker-mid']
+
+referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 'marker-end', 'marker-mid']
 
 
 def findReferencedElements(node, ids=None):
@@ -624,20 +624,6 @@ def findReferencingProperty(node, prop, val, ids):
                     ids[id][1].append(node)
                 else:
                     ids[id] = [1, [node]]
-
-numIDsRemoved = 0
-numElemsRemoved = 0
-numAttrsRemoved = 0
-numRastersEmbedded = 0
-numPathSegmentsReduced = 0
-numCurvesStraightened = 0
-numBytesSavedInPathData = 0
-numBytesSavedInColors = 0
-numBytesSavedInIDs = 0
-numBytesSavedInLengths = 0
-numBytesSavedInTransforms = 0
-numPointsRemovedFromPolygon = 0
-numCommentBytes = 0
 
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None):
@@ -2053,7 +2039,6 @@ def cleanPath(element, options):
     """
     global numBytesSavedInPathData
     global numPathSegmentsReduced
-    global numCurvesStraightened
 
     # this gets the parser object from svg_regex.py
     oldPathStr = element.getAttribute('d')
@@ -2254,7 +2239,6 @@ def cleanPath(element, options):
                         newData = []
                     # now create a straight line segment
                     newPath.append(('l', [dx, dy]))
-                    numCurvesStraightened += 1
                 else:
                     newData.extend(data[i:i + 6])
 
@@ -3253,14 +3237,37 @@ def scourString(in_string, options=None):
     global scouringContext
     scouringContext = Context(prec=options.digits)
 
-    global numAttrsRemoved
-    global numStylePropsFixed
+    # globals for tracking statistics
+    # TODO: get rid of these globals...
     global numElemsRemoved
-    global numBytesSavedInColors
+    global numAttrsRemoved
+    global numIDsRemoved
     global numCommentsRemoved
+    global numStylePropsFixed
+    global numRastersEmbedded
+    global numPathSegmentsReduced
+    global numBytesSavedInPathData
+    global numBytesSavedInColors
+    global numPointsRemovedFromPolygon
+    global numCommentBytes
     global numBytesSavedInIDs
     global numBytesSavedInLengths
     global numBytesSavedInTransforms
+    numElemsRemoved = 0
+    numAttrsRemoved = 0
+    numIDsRemoved = 0
+    numCommentsRemoved = 0
+    numStylePropsFixed = 0
+    numRastersEmbedded = 0
+    numPathSegmentsReduced = 0
+    numBytesSavedInPathData = 0
+    numBytesSavedInColors = 0
+    numPointsRemovedFromPolygon = 0
+    numCommentBytes = 0
+    numBytesSavedInIDs = 0
+    numBytesSavedInLengths = 0
+    numBytesSavedInTransforms = 0
+
     doc = xml.dom.minidom.parseString(in_string)
 
     # determine number of flowRoot elements in input document
