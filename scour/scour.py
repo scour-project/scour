@@ -534,8 +534,8 @@ def findElementsWithId(node, elems=None):
                 findElementsWithId(child, elems)
     return elems
 
-referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start',
-                    'marker-end', 'marker-mid']
+
+referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 'marker-end', 'marker-mid']
 
 
 def findReferencedElements(node, ids=None):
@@ -625,20 +625,6 @@ def findReferencingProperty(node, prop, val, ids):
                 else:
                     ids[id] = [1, [node]]
 
-numIDsRemoved = 0
-numElemsRemoved = 0
-numAttrsRemoved = 0
-numRastersEmbedded = 0
-numPathSegmentsReduced = 0
-numCurvesStraightened = 0
-numBytesSavedInPathData = 0
-numBytesSavedInColors = 0
-numBytesSavedInIDs = 0
-numBytesSavedInLengths = 0
-numBytesSavedInTransforms = 0
-numPointsRemovedFromPolygon = 0
-numCommentBytes = 0
-
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None):
     if elemsToRemove is None:
@@ -668,7 +654,7 @@ def removeUnreferencedElements(doc, keepDefs):
 
     Returns the number of unreferenced elements removed from the document.
     """
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
 
     # Remove certain unreferenced elements outside of defs
@@ -684,7 +670,7 @@ def removeUnreferencedElements(doc, keepDefs):
                     and goner.parentNode.tagName != 'defs'):
                 goner.parentNode.removeChild(goner)
                 num += 1
-                numElemsRemoved += 1
+                _num_elements_removed += 1
 
     if not keepDefs:
         # Remove most unreferenced elements inside defs
@@ -693,7 +679,7 @@ def removeUnreferencedElements(doc, keepDefs):
             elemsToRemove = removeUnusedDefs(doc, aDef)
             for elem in elemsToRemove:
                 elem.parentNode.removeChild(elem)
-                numElemsRemoved += 1
+                _num_elements_removed += 1
                 num += 1
     return num
 
@@ -868,20 +854,20 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 
     Returns the number of ID attributes removed
     """
-    global numIDsRemoved
+    global _num_ids_removed
     keepTags = ['font']
     num = 0
     for id in list(identifiedElements.keys()):
         node = identifiedElements[id]
         if id not in referencedIDs and node.nodeName not in keepTags:
             node.removeAttribute('id')
-            numIDsRemoved += 1
+            _num_ids_removed += 1
             num += 1
     return num
 
 
 def removeNamespacedAttributes(node, namespaces):
-    global numAttrsRemoved
+    global _num_attributes_removed
     num = 0
     if node.nodeType == 1:
         # remove all namespace'd attributes from this element
@@ -893,7 +879,7 @@ def removeNamespacedAttributes(node, namespaces):
                 attrsToRemove.append(attr.nodeName)
         for attrName in attrsToRemove:
             num += 1
-            numAttrsRemoved += 1
+            _num_attributes_removed += 1
             node.removeAttribute(attrName)
 
         # now recurse for children
@@ -903,7 +889,7 @@ def removeNamespacedAttributes(node, namespaces):
 
 
 def removeNamespacedElements(node, namespaces):
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
     if node.nodeType == 1:
         # remove all namespace'd child nodes from this element
@@ -914,7 +900,7 @@ def removeNamespacedElements(node, namespaces):
                 childrenToRemove.append(child)
         for child in childrenToRemove:
             num += 1
-            numElemsRemoved += 1
+            _num_elements_removed += 1
             node.removeChild(child)
 
         # now recurse for children
@@ -937,7 +923,7 @@ def removeDescriptiveElements(doc, options):
     if not elementTypes:
         return
 
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
     elementsToRemove = []
     for elementType in elementTypes:
@@ -946,7 +932,7 @@ def removeDescriptiveElements(doc, options):
     for element in elementsToRemove:
         element.parentNode.removeChild(element)
         num += 1
-        numElemsRemoved += 1
+        _num_elements_removed += 1
 
     return num
 
@@ -957,7 +943,7 @@ def removeNestedGroups(node):
     which do not have any attributes or a title/desc child and
     promoting their children up one level
     """
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
 
     groupsToRemove = []
@@ -978,7 +964,7 @@ def removeNestedGroups(node):
         while g.childNodes.length > 0:
             g.parentNode.insertBefore(g.firstChild, g)
         g.parentNode.removeChild(g)
-        numElemsRemoved += 1
+        _num_elements_removed += 1
         num += 1
 
     # now recurse for children
@@ -1084,7 +1070,7 @@ def createGroupsForCommonAttributes(elem):
     This function acts recursively on the given element.
     """
     num = 0
-    global numElemsRemoved
+    global _num_elements_removed
 
     # TODO perhaps all of the Presentation attributes in http://www.w3.org/TR/SVG/struct.html#GElement
     # could be added here
@@ -1183,7 +1169,7 @@ def createGroupsForCommonAttributes(elem):
                     group.parentNode = elem
                     num += 1
                     curChild = runStart - 1
-                    numElemsRemoved -= 1
+                    _num_elements_removed -= 1
                 else:
                     curChild -= 1
             else:
@@ -1253,7 +1239,7 @@ def removeUnusedAttributesOnParent(elem):
 
 
 def removeDuplicateGradientStops(doc):
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
 
     for gradType in ['linearGradient', 'radialGradient']:
@@ -1287,14 +1273,14 @@ def removeDuplicateGradientStops(doc):
             for stop in stopsToRemove:
                 stop.parentNode.removeChild(stop)
                 num += 1
-                numElemsRemoved += 1
+                _num_elements_removed += 1
 
     # linear gradients
     return num
 
 
 def collapseSinglyReferencedGradients(doc):
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
 
     identifiedElements = findElementsWithId(doc.documentElement)
@@ -1346,13 +1332,13 @@ def collapseSinglyReferencedGradients(doc):
 
                     # now delete elem
                     elem.parentNode.removeChild(elem)
-                    numElemsRemoved += 1
+                    _num_elements_removed += 1
                     num += 1
     return num
 
 
 def removeDuplicateGradients(doc):
-    global numElemsRemoved
+    global _num_elements_removed
     num = 0
 
     gradientsToRemove = {}
@@ -1446,7 +1432,7 @@ def removeDuplicateGradients(doc):
             # now that all referencing elements have been re-mapped to the master
             # it is safe to remove this gradient from the document
             dupGrad.parentNode.removeChild(dupGrad)
-            numElemsRemoved += 1
+            _num_elements_removed += 1
             num += 1
     return num
 
@@ -2051,9 +2037,8 @@ def cleanPath(element, options):
     """
        Cleans the path string (d attribute) of the element
     """
-    global numBytesSavedInPathData
-    global numPathSegmentsReduced
-    global numCurvesStraightened
+    global _num_bytes_saved_in_path_data
+    global _num_path_segments_removed
 
     # this gets the parser object from svg_regex.py
     oldPathStr = element.getAttribute('d')
@@ -2183,40 +2168,40 @@ def cleanPath(element, options):
                         # 'm0,0 x,y' can be replaces with 'lx,y',
                         # except the first m which is a required absolute moveto
                         path[pathIndex] = ('l', data[2:])
-                        numPathSegmentsReduced += 1
+                        _num_path_segments_removed += 1
                     else:  # else skip move coordinate
                         i = 2
                 while i < len(data):
                     if data[i] == data[i + 1] == 0:
                         del data[i:i + 2]
-                        numPathSegmentsReduced += 1
+                        _num_path_segments_removed += 1
                     else:
                         i += 2
             elif cmd == 'c':
                 while i < len(data):
                     if data[i] == data[i + 1] == data[i + 2] == data[i + 3] == data[i + 4] == data[i + 5] == 0:
                         del data[i:i + 6]
-                        numPathSegmentsReduced += 1
+                        _num_path_segments_removed += 1
                     else:
                         i += 6
             elif cmd == 'a':
                 while i < len(data):
                     if data[i + 5] == data[i + 6] == 0:
                         del data[i:i + 7]
-                        numPathSegmentsReduced += 1
+                        _num_path_segments_removed += 1
                     else:
                         i += 7
             elif cmd == 'q':
                 while i < len(data):
                     if data[i] == data[i + 1] == data[i + 2] == data[i + 3] == 0:
                         del data[i:i + 4]
-                        numPathSegmentsReduced += 1
+                        _num_path_segments_removed += 1
                     else:
                         i += 4
             elif cmd in ['h', 'v']:
                 oldLen = len(data)
                 path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
-                numPathSegmentsReduced += len(path[pathIndex][1]) - oldLen
+                _num_path_segments_removed += len(path[pathIndex][1]) - oldLen
 
     # fixup: Delete subcommands having no coordinates.
     path = [elem for elem in path if len(elem[1]) > 0 or elem[0] == 'z']
@@ -2254,7 +2239,6 @@ def cleanPath(element, options):
                         newData = []
                     # now create a straight line segment
                     newPath.append(('l', [dx, dy]))
-                    numCurvesStraightened += 1
                 else:
                     newData.extend(data[i:i + 6])
 
@@ -2306,14 +2290,14 @@ def cleanPath(element, options):
                         lineTuples = []
                     # append the v and then the remaining line coords
                     newPath.append(('v', [data[i + 1]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 elif data[i + 1] == 0:
                     if lineTuples:
                         # flush the line command, then append the h and then the remaining line coords
                         newPath.append(('l', lineTuples))
                         lineTuples = []
                     newPath.append(('h', [data[i]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 else:
                     lineTuples.extend(data[i:i + 2])
                 i += 2
@@ -2333,7 +2317,7 @@ def cleanPath(element, options):
                         cmd = 'l'  # dealing with linetos now
                     # append the v and then the remaining line coords
                     newPath.append(('v', [data[i + 1]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 elif data[i + 1] == 0:
                     if lineTuples:
                         # flush the m/l command, then append the h and then the remaining line coords
@@ -2341,7 +2325,7 @@ def cleanPath(element, options):
                         lineTuples = []
                         cmd = 'l'  # dealing with linetos now
                     newPath.append(('h', [data[i]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 else:
                     lineTuples.extend(data[i:i + 2])
                 i += 2
@@ -2370,7 +2354,7 @@ def cleanPath(element, options):
                         curveTuples = []
                     # append the s command
                     newPath.append(('s', [data[i + 2], data[i + 3], data[i + 4], data[i + 5]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 else:
                     j = 0
                     while j <= 5:
@@ -2395,7 +2379,7 @@ def cleanPath(element, options):
                         curveTuples = []
                     # append the t command
                     newPath.append(('t', [data[i + 2], data[i + 3]]))
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 else:
                     j = 0
                     while j <= 3:
@@ -2424,7 +2408,7 @@ def cleanPath(element, options):
                 if isSameSign(data[coordIndex - 1], data[coordIndex]):
                     data[coordIndex - 1] += data[coordIndex]
                     del data[coordIndex]
-                    numPathSegmentsReduced += 1
+                    _num_path_segments_removed += 1
                 else:
                     coordIndex += 1
 
@@ -2459,7 +2443,7 @@ def cleanPath(element, options):
     # if for whatever reason we actually made the path longer don't use it
     # TODO: maybe we could compare path lengths after each optimization step and use the shortest
     if len(newPathStr) <= len(oldPathStr):
-        numBytesSavedInPathData += (len(oldPathStr) - len(newPathStr))
+        _num_bytes_saved_in_path_data += (len(oldPathStr) - len(newPathStr))
         element.setAttribute('d', newPathStr)
 
 
@@ -2527,7 +2511,7 @@ def cleanPolygon(elem, options):
     """
        Remove unnecessary closing point of polygon points attribute
     """
-    global numPointsRemovedFromPolygon
+    global _num_points_removed_from_polygon
 
     pts = parseListOfPoints(elem.getAttribute('points'))
     N = len(pts) / 2
@@ -2536,7 +2520,7 @@ def cleanPolygon(elem, options):
         (endx, endy) = pts[-2:]
         if startx == endx and starty == endy:
             del pts[-2:]
-            numPointsRemovedFromPolygon += 1
+            _num_points_removed_from_polygon += 1
     elem.setAttribute('points', scourCoordinates(pts, options, True))
 
 
@@ -2944,10 +2928,10 @@ def removeComments(element):
     """
        Removes comments from the element and its children.
     """
-    global numCommentBytes
+    global _num_bytes_saved_in_comments
 
     if isinstance(element, xml.dom.minidom.Comment):
-        numCommentBytes += len(element.data)
+        _num_bytes_saved_in_comments += len(element.data)
         element.parentNode.removeChild(element)
     else:
         for subelement in element.childNodes[:]:
@@ -2961,7 +2945,7 @@ def embedRasters(element, options):
       Converts raster references to inline images.
       NOTE: there are size limits to base64-encoding handling in browsers
    """
-    global numRastersEmbedded
+    global _num_rasters_embedded
 
     href = element.getAttributeNS(NS['XLINK'], 'href')
 
@@ -3009,7 +2993,7 @@ def embedRasters(element, options):
                         ext = 'jpeg'
 
                     element.setAttributeNS(NS['XLINK'], 'href', 'data:image/' + ext + ';base64,' + b64eRaster)
-                    numRastersEmbedded += 1
+                    _num_rasters_embedded += 1
                     del b64eRaster
 
 
@@ -3253,14 +3237,37 @@ def scourString(in_string, options=None):
     global scouringContext
     scouringContext = Context(prec=options.digits)
 
-    global numAttrsRemoved
-    global numStylePropsFixed
-    global numElemsRemoved
-    global numBytesSavedInColors
-    global numCommentsRemoved
-    global numBytesSavedInIDs
-    global numBytesSavedInLengths
-    global numBytesSavedInTransforms
+    # globals for tracking statistics
+    # TODO: get rid of these globals...
+    global _num_elements_removed
+    global _num_attributes_removed
+    global _num_ids_removed
+    global _num_comments_removed
+    global _num_style_properties_fixed
+    global _num_rasters_embedded
+    global _num_path_segments_removed
+    global _num_points_removed_from_polygon
+    global _num_bytes_saved_in_path_data
+    global _num_bytes_saved_in_colors
+    global _num_bytes_saved_in_comments
+    global _num_bytes_saved_in_ids
+    global _num_bytes_saved_in_lengths
+    global _num_bytes_saved_in_transforms
+    _num_elements_removed = 0
+    _num_attributes_removed = 0
+    _num_ids_removed = 0
+    _num_comments_removed = 0
+    _num_style_properties_fixed = 0
+    _num_rasters_embedded = 0
+    _num_path_segments_removed = 0
+    _num_points_removed_from_polygon = 0
+    _num_bytes_saved_in_path_data = 0
+    _num_bytes_saved_in_colors = 0
+    _num_bytes_saved_in_comments = 0
+    _num_bytes_saved_in_ids = 0
+    _num_bytes_saved_in_lengths = 0
+    _num_bytes_saved_in_transforms = 0
+
     doc = xml.dom.minidom.parseString(in_string)
 
     # determine number of flowRoot elements in input document
@@ -3295,7 +3302,7 @@ def scourString(in_string, options=None):
 
         for attr in xmlnsDeclsToRemove:
             doc.documentElement.removeAttribute(attr)
-            numAttrsRemoved += 1
+            _num_attributes_removed += 1
 
     # ensure namespace for SVG is declared
     # TODO: what if the default namespace is something else (i.e. some valid namespace)?
@@ -3330,24 +3337,24 @@ def scourString(in_string, options=None):
 
     for attrName in xmlnsDeclsToRemove:
         doc.documentElement.removeAttribute(attrName)
-        numAttrsRemoved += 1
+        _num_attributes_removed += 1
 
     for prefix in redundantPrefixes:
         remapNamespacePrefix(doc.documentElement, prefix, '')
 
     if options.strip_comments:
-        numCommentsRemoved = removeComments(doc)
+        _num_comments_removed = removeComments(doc)
 
     if options.strip_xml_space_attribute and doc.documentElement.hasAttribute('xml:space'):
         doc.documentElement.removeAttribute('xml:space')
-        numAttrsRemoved += 1
+        _num_attributes_removed += 1
 
     # repair style (remove unnecessary style properties and change them into XML attributes)
-    numStylePropsFixed = repairStyle(doc.documentElement, options)
+    _num_style_properties_fixed = repairStyle(doc.documentElement, options)
 
     # convert colors to #RRGGBB format
     if options.simple_colors:
-        numBytesSavedInColors = convertColors(doc.documentElement)
+        _num_bytes_saved_in_colors = convertColors(doc.documentElement)
 
     # remove unreferenced gradients/patterns outside of defs
     # and most unreferenced elements inside of defs
@@ -3369,7 +3376,7 @@ def scourString(in_string, options=None):
                     removeElem = True
             if removeElem:
                 elem.parentNode.removeChild(elem)
-                numElemsRemoved += 1
+                _num_elements_removed += 1
 
     if options.strip_ids:
         bContinueLooping = True
@@ -3401,10 +3408,10 @@ def scourString(in_string, options=None):
     # doesn't accept fill=, stroke= etc.!
     referencedIds = findReferencedElements(doc.documentElement)
     for child in doc.documentElement.childNodes:
-        numAttrsRemoved += moveCommonAttributesToParentGroup(child, referencedIds)
+        _num_attributes_removed += moveCommonAttributesToParentGroup(child, referencedIds)
 
     # remove unused attributes from parent
-    numAttrsRemoved += removeUnusedAttributesOnParent(doc.documentElement)
+    _num_attributes_removed += removeUnusedAttributesOnParent(doc.documentElement)
 
     # Collapse groups LAST, because we've created groups. If done before
     # moveAttributesToParentGroup, empty <g>'s may remain.
@@ -3429,7 +3436,7 @@ def scourString(in_string, options=None):
 
     # shorten ID names as much as possible
     if options.shorten_ids:
-        numBytesSavedInIDs += shortenIDs(doc, options.shorten_ids_prefix, unprotected_ids(doc, options))
+        _num_bytes_saved_in_ids += shortenIDs(doc, options.shorten_ids_prefix, unprotected_ids(doc, options))
 
     # scour lengths (including coordinates)
     for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line',
@@ -3441,13 +3448,13 @@ def scourString(in_string, options=None):
                     elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
 
     # more length scouring in this function
-    numBytesSavedInLengths = reducePrecision(doc.documentElement)
+    _num_bytes_saved_in_lengths = reducePrecision(doc.documentElement)
 
     # remove default values of attributes
-    numAttrsRemoved += removeDefaultAttributeValues(doc.documentElement, options)
+    _num_attributes_removed += removeDefaultAttributeValues(doc.documentElement, options)
 
     # reduce the length of transformation attributes
-    numBytesSavedInTransforms = optimizeTransforms(doc.documentElement, options)
+    _num_bytes_saved_in_transforms = optimizeTransforms(doc.documentElement, options)
 
     # convert rasters references to base64-encoded strings
     if options.embed_rasters:
@@ -3734,19 +3741,22 @@ def getInOut(options):
 
 
 def getReport():
-    return ' Number of elements removed: ' + str(numElemsRemoved) + os.linesep + \
-        ' Number of attributes removed: ' + str(numAttrsRemoved) + os.linesep + \
-        ' Number of unreferenced id attributes removed: ' + str(numIDsRemoved) + os.linesep + \
-        ' Number of style properties fixed: ' + str(numStylePropsFixed) + os.linesep + \
-        ' Number of raster images embedded inline: ' + str(numRastersEmbedded) + os.linesep + \
-        ' Number of path segments reduced/removed: ' + str(numPathSegmentsReduced) + os.linesep + \
-        ' Number of bytes saved in path data: ' + str(numBytesSavedInPathData) + os.linesep + \
-        ' Number of bytes saved in colors: ' + str(numBytesSavedInColors) + os.linesep + \
-        ' Number of points removed from polygons: ' + str(numPointsRemovedFromPolygon) + os.linesep + \
-        ' Number of bytes saved in comments: ' + str(numCommentBytes) + os.linesep + \
-        ' Number of bytes saved in id attributes: ' + str(numBytesSavedInIDs) + os.linesep + \
-        ' Number of bytes saved in lengths: ' + str(numBytesSavedInLengths) + os.linesep + \
-        ' Number of bytes saved in transformations: ' + str(numBytesSavedInTransforms)
+    return (
+        '  Number of elements removed: ' + str(_num_elements_removed) + os.linesep +
+        '  Number of attributes removed: ' + str(_num_attributes_removed) + os.linesep +
+        '  Number of unreferenced IDs removed: ' + str(_num_ids_removed) + os.linesep +
+        '  Number of comments removed: ' + str(_num_comments_removed) + os.linesep +
+        '  Number of style properties fixed: ' + str(_num_style_properties_fixed) + os.linesep +
+        '  Number of raster images embedded: ' + str(_num_rasters_embedded) + os.linesep +
+        '  Number of path segments reduced/removed: ' + str(_num_path_segments_removed) + os.linesep +
+        '  Number of points removed from polygons: ' + str(_num_points_removed_from_polygon) + os.linesep +
+        '  Number of bytes saved in path data: ' + str(_num_bytes_saved_in_path_data) + os.linesep +
+        '  Number of bytes saved in colors: ' + str(_num_bytes_saved_in_colors) + os.linesep +
+        '  Number of bytes saved in comments: ' + str(_num_bytes_saved_in_comments) + os.linesep +
+        '  Number of bytes saved in IDs: ' + str(_num_bytes_saved_in_ids) + os.linesep +
+        '  Number of bytes saved in lengths: ' + str(_num_bytes_saved_in_lengths) + os.linesep +
+        '  Number of bytes saved in transformations: ' + str(_num_bytes_saved_in_transforms)
+    )
 
 
 def start(options, input, output):
