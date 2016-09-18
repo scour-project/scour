@@ -3759,12 +3759,10 @@ def start(options, input, output):
     output.write(out_string)
 
     # Close input and output files (but do not attempt to close stdin/stdout!)
-    if input is not sys.stdin:
-        if hasattr(input, 'buffer') and input is not sys.stdin.buffer:
-            input.close()
-    if output is not sys.stdout:
-        if hasattr(output, 'buffer') and output is not sys.stdout.buffer:
-            output.close()
+    if not ((input is sys.stdin) or (hasattr(input, 'buffer') and input is sys.stdin.buffer)):
+        input.close()
+    if not ((output is sys.stdout) or (hasattr(output, 'buffer') and output is sys.stdout.buffer)):
+        output.close()
 
     end = walltime()
 
