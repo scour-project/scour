@@ -3758,9 +3758,13 @@ def start(options, input, output):
     out_string = scourString(in_string, options).encode("UTF-8")
     output.write(out_string)
 
-    # Close input and output files
-    input.close()
-    output.close()
+    # Close input and output files (but do not attempt to close stdin/stdout!)
+    if input is not sys.stdin:
+        if hasattr(input, 'buffer') and input is not sys.stdin.buffer:
+            input.close()
+    if output is not sys.stdout:
+        if hasattr(output, 'buffer') and output is not sys.stdout.buffer:
+            output.close()
 
     end = walltime()
 
