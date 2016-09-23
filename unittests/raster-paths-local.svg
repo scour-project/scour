@@ -6,7 +6,7 @@
   <image x="10" y="90" width="150" height="50" xlink:href="./raster.png"/>
   <image x="10" y="150" width="150" height="50" xlink:href="../unittests/raster.png"/>
   <!-- path can also be absolute but this will obviously not work across systems -->
-  <image x="10" y="210" width="150" height="50" xlink:href="/E:/Temp/Scour/scour.git/unittests/raster.png"/>
+  <!--<image x="10" y="210" width="150" height="50" xlink:href="/E:/Temp/Scour/scour.git/unittests/raster.png"/>-->
  </g>
  <g transform="translate(160)">
   <text x="10" y="20">Local files (file: protocol)</text>
@@ -14,6 +14,6 @@
   <image x="10" y="90" width="150" height="50" xlink:href="file:./raster.png"/>
   <image x="10" y="150" width="150" height="50" xlink:href="file:../unittests/raster.png"/>
   <!-- path can also be absolute but this will obviously not work across systems -->
-  <image x="10" y="210" width="150" height="50" xlink:href="file:///E:/Temp/Scour/scour.git/unittests/raster.png"/>
+  <!--<image x="10" y="210" width="150" height="50" xlink:href="file:///E:/Temp/Scour/scour.git/unittests/raster.png"/>-->
  </g>
 </svg>

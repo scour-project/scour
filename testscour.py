@@ -2386,6 +2386,29 @@ class EmbedRasters(unittest.TestCase):
             self.assertTrue(href.startswith('data:image/'),
                             "Raster image from local path '" + href + "' not embedded.")
 
+    def test_raster_paths_local_absolute(self):
+        with open('unittests/raster-formats.svg', 'r') as f:
+            svg = f.read()
+
+        # create a reference string by scouring the original file with relative links
+        options = ScourOptions
+        options.infilename = 'unittests/raster-formats.svg'
+        reference_svg = scourString(svg, options)
+
+        # this will not always create formally valid paths but it'll check how robust our implementation is
+        # (the third path is invalid for sure because file: needs three slashes according to URI spec)
+        svg = svg.replace('raster.png',
+                          '/' + os.path.abspath(os.path.dirname(__file__)) + '\\unittests\\raster.png')
+        svg = svg.replace('raster.gif',
+                          'file:///' + os.path.abspath(os.path.dirname(__file__)) + '/unittests/raster.gif')
+        svg = svg.replace('raster.jpg',
+                          'file:/' + os.path.abspath(os.path.dirname(__file__)) + '/unittests/raster.jpg')
+
+        svg = scourString(svg)
+
+        self.assertEqual(svg, reference_svg,
+                         "Raster images from absolute local paths not properly embedded.")
+
     @unittest.skipIf(_ping('raw.githubusercontent.com') != 0, "Remote server not reachable.")
     def test_raster_paths_remote(self):
         doc = scourXmlFile('unittests/raster-paths-remote.svg')
