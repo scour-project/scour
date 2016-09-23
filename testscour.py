@@ -2341,9 +2341,62 @@ class CommandLineUsage(unittest.TestCase):
                          "Statistics output not as expected when '--verbose' option was used")
 
 
+class EmbedRasters(unittest.TestCase):
+
+    # quick way to ping a host using the OS 'ping' command and return the execution result
+    def _ping(host):
+        import os
+        import platform
+
+        system = platform.system().lower()
+        ping_count = '-n' if system == 'windows' else '-c'
+        dev_null = 'NUL' if system == 'windows' else '/dev/null'
+
+        return os.system('ping ' + ping_count + ' 1 ' + host + ' > ' + dev_null)
+
+    def test_disable_embed_rasters(self):
+        doc = scourXmlFile('unittests/raster-formats.svg',
+                           parse_args(['--disable-embed-rasters']))
+        self.assertEqual(doc.getElementById('png').getAttribute('xlink:href'), 'raster.png',
+                         "Raster image embedded when '--disable-embed-rasters' was specified")
+
+    def test_raster_formats(self):
+        doc = scourXmlFile('unittests/raster-formats.svg')
+        self.assertEqual(doc.getElementById('png').getAttribute('xlink:href'),
+                         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAABAgMAAABmjvwnAAAAC'
+                         'VBMVEUAAP//AAAA/wBmtfVOAAAACklEQVQI12NIAAAAYgBhGxZhsAAAAABJRU5ErkJggg==',
+                         "Raster image (PNG) not correctly embedded.")
+        self.assertEqual(doc.getElementById('gif').getAttribute('xlink:href'),
+                         'data:image/gif;base64,R0lGODdhAwABAKEDAAAA//8AAAD/AP///ywAAAAAAwABAAACAoxQADs=',
+                         "Raster image (GIF) not correctly embedded.")
+        self.assertEqual(doc.getElementById('jpg').getAttribute('xlink:href'),
+                         'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD//gATQ3JlYXRlZCB3aXRoIEdJTVD/'
+                         '2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/'
+                         '2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/'
+                         'wAARCAABAAMDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAACv/EABoQAAEFAQAAAAAAAAAAAAAAAAgABQc3d7j/'
+                         'xAAVAQEBAAAAAAAAAAAAAAAAAAAHCv/EABwRAAEDBQAAAAAAAAAAAAAAAAgAB7gJODl2eP/aAAwDAQACEQMRAD8AMeaF'
+                         '/u2aj5z1Fqp7oN4rxx2kn5cPuhV6LkzG7qOyYL2r/9k=',
+                         "Raster image (JPG) not correctly embedded.")
+
+    def test_raster_paths_local(self):
+        doc = scourXmlFile('unittests/raster-paths-local.svg')
+        images = doc.getElementsByTagName('image')
+        for image in images:
+            href = image.getAttribute('xlink:href')
+            self.assertTrue(href.startswith('data:image/'),
+                            "Raster image from local path '" + href + "' not embedded.")
+
+    @unittest.skipIf(_ping('raw.githubusercontent.com') != 0, "Remote server not reachable.")
+    def test_raster_paths_remote(self):
+        doc = scourXmlFile('unittests/raster-paths-remote.svg')
+        images = doc.getElementsByTagName('image')
+        for image in images:
+            href = image.getAttribute('xlink:href')
+            self.assertTrue(href.startswith('data:image/'),
+                            "Raster image from remote path '" + href + "' not embedded.")
+
+
 # TODO: write tests for --enable-viewboxing
-# TODO; write a test for embedding rasters
-# TODO: write a test for --disable-embed-rasters
 # TODO: write tests for --keep-editor-data
 
 if __name__ == '__main__':
