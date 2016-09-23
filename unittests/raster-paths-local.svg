@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink" width="330" height="270">
+ <g>
+  <text x="10" y="20">Local files</text>
+  <image x="10" y="30" width="150" height="50" xlink:href="raster.png"/>
+  <image x="10" y="90" width="150" height="50" xlink:href="./raster.png"/>
+  <image x="10" y="150" width="150" height="50" xlink:href="../unittests/raster.png"/>
+  <!-- path can also be absolute but this will obviously not work across systems -->
+  <!--<image x="10" y="210" width="150" height="50" xlink:href="/E:/Temp/Scour/scour.git/unittests/raster.png"/>-->
+ </g>
+ <g transform="translate(160)">
+  <text x="10" y="20">Local files (file: protocol)</text>
+  <image x="10" y="30" width="150" height="50" xlink:href="file:raster.png"/>
+  <image x="10" y="90" width="150" height="50" xlink:href="file:./raster.png"/>
+  <image x="10" y="150" width="150" height="50" xlink:href="file:../unittests/raster.png"/>
+  <!-- path can also be absolute but this will obviously not work across systems -->
+  <!--<image x="10" y="210" width="150" height="50" xlink:href="file:///E:/Temp/Scour/scour.git/unittests/raster.png"/>-->
+ </g>
+</svg>

@@ -60,7 +60,7 @@ from collections import namedtuple
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
-from six.moves import range
+from six.moves import range, urllib
 
 from scour.svg_regex import svg_parser
 from scour.svg_transform import svg_transform_parser
@@ -2939,47 +2939,65 @@ def removeComments(element):
 
 def embedRasters(element, options):
     import base64
-    import urllib
     """
       Converts raster references to inline images.
       NOTE: there are size limits to base64-encoding handling in browsers
-   """
+    """
     global _num_rasters_embedded
 
     href = element.getAttributeNS(NS['XLINK'], 'href')
 
     # if xlink:href is set, then grab the id
     if href != '' and len(href) > 1:
-        # find if href value has filename ext
         ext = os.path.splitext(os.path.basename(href))[1].lower()[1:]
 
-        # look for 'png', 'jpg', and 'gif' extensions
-        if ext == 'png' or ext == 'jpg' or ext == 'gif':
+        # only operate on files with 'png', 'jpg', and 'gif' file extensions
+        if ext in ['png', 'jpg', 'gif']:
+            # fix common issues with file paths
+            #     TODO: should we warn the user instead of trying to correct those invalid URIs?
+            # convert backslashes to slashes
+            href_fixed = href.replace('\\', '/')
+            # absolute 'file:' URIs have to use three slashes (unless specifying a host which I've never seen)
+            href_fixed = re.sub('file:/+', 'file:///', href_fixed)
 
-            # file:// URLs denote files on the local system too
-            if href[:7] == 'file://':
-                href = href[7:]
-            # does the file exist?
-            if os.path.isfile(href):
-                # if this is not an absolute path, set path relative
-                # to script file based on input arg
-                infilename = '.'
+            # parse the URI to get scheme and path
+            # in principle it would make sense to work only with this ParseResult and call 'urlunparse()' in the end
+            # however 'urlunparse(urlparse(file:raster.png))' -> 'file:///raster.png' which is nonsense
+            parsed_href = urllib.parse.urlparse(href_fixed)
+
+            # assume locations without protocol point to local files (and should use the 'file:' protocol)
+            if parsed_href.scheme == '':
+                parsed_href = parsed_href._replace(scheme='file')
+                if href_fixed[0] == '/':
+                    href_fixed = 'file://' + href_fixed
+                else:
+                    href_fixed = 'file:' + href_fixed
+
+            # relative local paths are relative to the input file, therefore temporarily change the working dir
+            working_dir_old = None
+            if parsed_href.scheme == 'file' and parsed_href.path[0] != '/':
                 if options.infilename:
-                    infilename = options.infilename
-                href = os.path.join(os.path.dirname(infilename), href)
+                    working_dir_old = os.getcwd()
+                    working_dir_new = os.path.abspath(os.path.dirname(options.infilename))
+                    os.chdir(working_dir_new)
 
-            rasterdata = ''
-            # test if file exists locally
-            if os.path.isfile(href):
-                # open raster file as raw binary
-                raster = open(href, "rb")
-                rasterdata = raster.read()
-            elif href[:7] == 'http://':
-                webFile = urllib.urlopen(href)
-                rasterdata = webFile.read()
-                webFile.close()
+            # open/download the file
+            try:
+                file = urllib.request.urlopen(href_fixed)
+                rasterdata = file.read()
+                file.close()
+            except Exception as e:
+                print("WARNING: Could not open file '" + href + "' for embedding. "
+                      "The raster image will be kept as a reference but might be invalid. "
+                      "(Exception details: " + str(e) + ")", file=sys.stderr)
+                rasterdata = ''
+            finally:
+                # always restore initial working directory if we changed it above
+                if working_dir_old is not None:
+                    os.chdir(working_dir_old)
 
-            # ... should we remove all images which don't resolve?
+            # TODO: should we remove all images which don't resolve?
+            #   then we also have to consider unreachable remote locations (i.e. if there is no internet connection)
             if rasterdata != '':
                 # base64-encode raster
                 b64eRaster = base64.b64encode(rasterdata)
@@ -2991,7 +3009,8 @@ def embedRasters(element, options):
                     if ext == 'jpg':
                         ext = 'jpeg'
 
-                    element.setAttributeNS(NS['XLINK'], 'href', 'data:image/' + ext + ';base64,' + b64eRaster)
+                    element.setAttributeNS(NS['XLINK'], 'href',
+                                           'data:image/' + ext + ';base64,' + b64eRaster.decode())
                     _num_rasters_embedded += 1
                     del b64eRaster
 
@@ -3500,10 +3519,17 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
+    # we need to set infilename (otherwise relative references in the SVG won't work)
+    if options is None:
+        options = generateDefaultOptions()
+    options.infilename = filename
+
+    # open the file and scour it
     with open(filename, "rb") as f:
         in_string = f.read()
     out_string = scourString(in_string, options)
 
+    # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
     # since minidom does not seem to parse DTDs properly
