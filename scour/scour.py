@@ -3519,10 +3519,17 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
+    # we need to set infilename (otherwise relative references in the SVG won't work)
+    if options is None:
+        options = generateDefaultOptions()
+    options.infilename = filename
+
+    # open the file and scour it
     with open(filename, "rb") as f:
         in_string = f.read()
     out_string = scourString(in_string, options)
 
+    # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
     # since minidom does not seem to parse DTDs properly
