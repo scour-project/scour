@@ -3564,6 +3564,7 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
 # GZ: would prefer this to be in a function or class scope, but tests etc need
 #     access to the defaults anyway
 _options_parser = optparse.OptionParser(
+    prog=APP,
     usage="%prog [INPUT.SVG [OUTPUT.SVG]] [OPTIONS]",
     description=("If the input/output files are not specified, stdin/stdout are used. "
                  "If the input/output files are specified with a svgz extension, "

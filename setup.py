@@ -33,7 +33,7 @@ Authors:
   - Tobias Oberstein (maintainer)
 """
 
-VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
+VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "version.py")
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
