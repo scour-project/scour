@@ -2928,13 +2928,17 @@ def removeComments(element):
        Removes comments from the element and its children.
     """
     global _num_bytes_saved_in_comments
+    num = 0
 
     if isinstance(element, xml.dom.minidom.Comment):
         _num_bytes_saved_in_comments += len(element.data)
         element.parentNode.removeChild(element)
+        num += 1
     else:
         for subelement in element.childNodes[:]:
-            removeComments(subelement)
+            num += removeComments(subelement)
+
+    return num
 
 
 def embedRasters(element, options):
