@@ -3710,16 +3710,10 @@ def parse_args(args=None, ignore_additional_args=False):
     return options
 
 
+# this function was replaced by 'sanitizeOptions()' and is only kept for backwards compatibility
+# TODO: delete this at some point or continue to keep it around?
 def generateDefaultOptions():
-    # FIXME: clean up this mess/hack and refactor arg parsing to argparse
-    class Struct:
-
-        def __init__(self, **entries):
-            self.__dict__.update(entries)
-
-    d = parse_args(args=[], ignore_additional_args=True).__dict__.copy()
-
-    return Struct(**d)
+    return sanitizeOptions()
 
 
 # sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
