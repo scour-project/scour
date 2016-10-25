@@ -1,6 +1,6 @@
 # Release Notes for Scour
 
-## Version 0.35 (not released yet)
+## Version 0.35 (2016-09-14)
 
 * Drop official support for Python 2.6. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 2.6 and should find/fix any compatibility issues pull requests are welcome, though.)
 * Fix: Unused IDs were not shortended when `--shorten-ids` was used. ([#19](https://github.com/scour-project/scour/issues/62))
