@@ -3523,10 +3523,10 @@ def scourString(in_string, options=None):
 # input is a filename
 # returns the minidom doc representation of the SVG
 def scourXmlFile(filename, options=None):
-    # we need to set infilename (otherwise relative references in the SVG won't work)
-    if options is None:
-        options = generateDefaultOptions()
-    options.infilename = filename
+    # sanitize options (take missing attributes from defaults, discard unknown attributes)
+    options = sanitizeOptions(options)
+    # we need to make sure infilename is set correctly (otherwise relative references in the SVG won't work)
+    options.ensure_value("infilename", filename)
 
     # open the file and scour it
     with open(filename, "rb") as f:
@@ -3783,6 +3783,8 @@ def getReport():
 
 
 def start(options, input, output):
+    # sanitize options (take missing attributes from defaults, discard unknown attributes)
+    options = sanitizeOptions(options)
 
     start = walltime()
 

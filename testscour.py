@@ -30,7 +30,7 @@ import unittest
 import six
 from six.moves import map, range
 
-from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile, run
+from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile, start, run
 from scour.svg_regex import svg_parser
 from scour import __version__
 
@@ -58,15 +58,45 @@ class ScourOptions:
 
 class EmptyOptions(unittest.TestCase):
 
-    def runTest(self):
+    MINIMAL_SVG = '<?xml version="1.0" encoding="UTF-8"?>\n' \
+                  '<svg xmlns="http://www.w3.org/2000/svg"/>\n'
+
+    def test_scourString(self):
         options = ScourOptions
         try:
-            scourXmlFile('unittests/ids-to-strip.svg', options)
+            scourString(self.MINIMAL_SVG, options)
             fail = False
         except:
             fail = True
         self.assertEqual(fail, False,
-                         'Exception when calling Scour with empty options object')
+                         'Exception when calling "scourString" with empty options object')
+
+    def test_scourXmlFile(self):
+        options = ScourOptions
+        try:
+            scourXmlFile('unittests/minimal.svg', options)
+            fail = False
+        except:
+            fail = True
+        self.assertEqual(fail, False,
+                         'Exception when calling "scourXmlFile" with empty options object')
+
+    def test_start(self):
+        options = ScourOptions
+        input = open('unittests/minimal.svg', 'rb')
+        output = open('testscour_temp.svg', 'wb')
+
+        stdout_temp = sys.stdout
+        sys.stdout = None
+        try:
+            start(options, input, output)
+            fail = False
+        except:
+            fail = True
+        sys.stdout = stdout_temp
+
+        self.assertEqual(fail, False,
+                         'Exception when calling "start" with empty options object')
 
 
 class InvalidOptions(unittest.TestCase):
