@@ -52,5 +52,6 @@ class ElementSelectorWithProperty(unittest.TestCase):
         self.assertEqual(len(r[0]['properties']), 1, 'Property list for foo did not have 1')
         self.assertEqual(r[0]['properties']['bar'], 'baz', 'Property bar did not have baz value')
 
+
 if __name__ == '__main__':
     unittest.main()

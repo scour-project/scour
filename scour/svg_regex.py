@@ -55,6 +55,8 @@ class _EOF(object):
 
     def __repr__(self):
         return 'EOF'
+
+
 EOF = _EOF()
 
 lexicon = [
@@ -96,6 +98,7 @@ class Lexer(object):
                     yield (name, m)
                     break
         yield (EOF, None)
+
 
 svg_lexer = Lexer(lexicon)
 

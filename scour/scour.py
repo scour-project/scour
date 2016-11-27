@@ -405,6 +405,7 @@ default_properties = {  # excluded all properties with 'auto' as default
 
 def isSameSign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 
+
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
 number = re.compile(r"[-+]?(\d*\.?)?\d+")
 sciExponent = re.compile(r"[eE]([-+]?\d+)")
@@ -1944,6 +1945,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
         num += removeDefaultAttributeValues(child, options, tainted.copy())
 
     return num
+
 
 rgb = re.compile(r"\s*rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*")
 rgbp = re.compile(r"\s*rgb\(\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*\)\s*")
