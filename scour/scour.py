@@ -2539,7 +2539,7 @@ def serializePath(pathObj, options):
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a')) for cmd, data in pathObj])
+    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a'), cmd) for cmd, data in pathObj])
 
 
 def serializeTransform(transformObj):
@@ -2554,7 +2554,7 @@ def serializeTransform(transformObj):
     )
 
 
-def scourCoordinates(data, options, forceCommaWsp=False):
+def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2567,7 +2567,7 @@ def scourCoordinates(data, options, forceCommaWsp=False):
         c = 0
         previousCoord = ''
         for coord in data:
-            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround)
+            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround, isControlPoint=((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2)))
             # only need the comma if the current number starts with a digit
             # (numbers can start with - without needing a comma before)
             # or if forceCommaWsp is True
@@ -2613,7 +2613,7 @@ def scourLength(length):
     return scourUnitlessLength(length.value) + Unit.str(length.units)
 
 
-def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of a numeric type
+def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=False):  # length is of a numeric type
     """
     Scours the numeric part of a length only. Does not accept units.
 
@@ -2625,7 +2625,26 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
-    length = scouringContext.plus(length)
+    sContext = scouringContext;
+    roundNearZero = scouringRoundNearZero
+    if(isControlPoint):
+       sContext = scouringContextC;
+       roundNearZero = scouringRoundNearZeroC;
+
+    if(roundNearZero and length > -1 and length < 1):
+       length = getcontext().create_decimal(str(int(round(length))))
+    else:
+       if(scouringKeepIntPrecision):
+          length_as_int = int(round(length))
+          len_length_as_int = len(str(abs(length_as_int)))
+          saved_prec = sContext.prec;
+          if(sContext.prec < len_length_as_int):
+             # preserve all digits left of the decimal point
+             sContext.prec = len_length_as_int;
+          length = sContext.plus(length)
+          sContext.prec = saved_prec;
+       else:
+          length = sContext.plus(length)
 
     # remove trailing zeroes as we do not care for significance
     intLength = length.to_integral_value()
@@ -3259,7 +3278,27 @@ def scourString(in_string, options=None):
     # calculations should be done in the default context (precision defaults to 28 significant digits)
     # to minimize errors
     global scouringContext
+    global scouringContextC
+    global scouringKeepIntPrecision
+    global scouringRoundNearZero
+    global scouringRoundNearZeroC
+    scouringKeepIntPrecision = options.keep_int_precision
+    scouringRoundNearZero = False
+    scouringRoundNearZeroC = False
+    # must have at least 1 significant digit
+    # interrept digits == 0 as rounding to nearest int for values between -1 and 1 
+    if(options.digits == 0):
+        options.digits = 1
+        scouringRoundNearZero = True
+    if(options.cdigits == 0):
+        options.cdigits = 1
+        scouringRoundNearZeroC = True
     scouringContext = Context(prec=options.digits)
+    if(options.cdigits < options.digits):
+        scouringContextC = Context(prec=options.cdigits)
+    else:
+        scouringContextC = scouringContext
+
 
     # globals for tracking statistics
     # TODO: get rid of these globals...
@@ -3590,6 +3629,12 @@ _option_group_optimization = optparse.OptionGroup(_options_parser, "Optimization
 _option_group_optimization.add_option("-p", "--set-precision",
                                       action="store", type=int, dest="digits", default=5, metavar="NUM",
                                       help="set number of significant digits (default: %default)")
+_option_group_optimization.add_option("-c", "--set-c-precision",
+                                      action="store", type=int, dest="cdigits", default=5, metavar="NUM",
+                                      help="set number of significant digits for curve control points (default: %default)")
+_option_group_optimization.add_option("-k", "--keep-int-precision",
+                                      action="store_true", dest="keep_int_precision", default=False,
+                                      help="preserves all digits left of decimal point regardless of set precision")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert all colors to #RRGGBB format")
@@ -3702,6 +3747,8 @@ def parse_args(args=None, ignore_additional_args=False):
             _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
     if options.digits < 0:
         _options_parser.error("Can't have negative significant digits, see --help")
+    if options.cdigits < 0:
+        _options_parser.error("Can't have negative significant digits for curve control points , see --help")
     if options.indent_type not in ['tab', 'space', 'none']:
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
