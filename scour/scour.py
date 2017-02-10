@@ -2567,7 +2567,8 @@ def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
         c = 0
         previousCoord = ''
         for coord in data:
-            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround, isControlPoint=((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2)))
+            cp = ((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2))
+            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround, isControlPoint=cp)
             # only need the comma if the current number starts with a digit
             # (numbers can start with - without needing a comma before)
             # or if forceCommaWsp is True
@@ -2625,26 +2626,26 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
-    sContext = scouringContext;
+    sContext = scouringContext
     roundNearZero = scouringRoundNearZero
     if(isControlPoint):
-       sContext = scouringContextC;
-       roundNearZero = scouringRoundNearZeroC;
+        sContext = scouringContextC
+        roundNearZero = scouringRoundNearZeroC
 
     if(roundNearZero and length > -1 and length < 1):
-       length = getcontext().create_decimal(str(int(round(length))))
+        length = getcontext().create_decimal(str(int(round(length))))
     else:
-       if(scouringKeepIntPrecision):
-          length_as_int = int(round(length))
-          len_length_as_int = len(str(abs(length_as_int)))
-          saved_prec = sContext.prec;
-          if(sContext.prec < len_length_as_int):
-             # preserve all digits left of the decimal point
-             sContext.prec = len_length_as_int;
-          length = sContext.plus(length)
-          sContext.prec = saved_prec;
-       else:
-          length = sContext.plus(length)
+        if(scouringKeepIntPrecision):
+            length_as_int = int(round(length))
+            len_length_as_int = len(str(abs(length_as_int)))
+            saved_prec = sContext.prec
+            if(sContext.prec < len_length_as_int):
+                # preserve all digits left of the decimal point
+                sContext.prec = len_length_as_int
+            length = sContext.plus(length)
+            sContext.prec = saved_prec
+        else:
+            length = sContext.plus(length)
 
     # remove trailing zeroes as we do not care for significance
     intLength = length.to_integral_value()
