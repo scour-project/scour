@@ -3299,7 +3299,6 @@ def scourString(in_string, options=None):
     else:
         scouringContextC = scouringContext
 
-
     # globals for tracking statistics
     # TODO: get rid of these globals...
     global _num_elements_removed
