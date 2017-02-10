@@ -3631,10 +3631,10 @@ _option_group_optimization.add_option("-p", "--set-precision",
                                       help="set number of significant digits (default: %default)")
 _option_group_optimization.add_option("-c", "--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=5, metavar="NUM",
-                                      help="set number of significant digits for curve control points (default: %default)")
+                                      help="set no. of sig. digits (path [c/s] control points) (default: %default)")
 _option_group_optimization.add_option("-k", "--keep-int-precision",
                                       action="store_true", dest="keep_int_precision", default=False,
-                                      help="preserves all digits left of decimal point regardless of set precision")
+                                      help="keep all digits left of decimal point regardless of set precision")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert all colors to #RRGGBB format")
