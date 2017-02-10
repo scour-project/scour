@@ -3286,7 +3286,7 @@ def scourString(in_string, options=None):
     scouringRoundNearZero = False
     scouringRoundNearZeroC = False
     # must have at least 1 significant digit
-    # interrept digits == 0 as rounding to nearest int for values between -1 and 1 
+    # interrept digits == 0 as rounding to nearest int for values between -1 and 1
     if(options.digits == 0):
         options.digits = 1
         scouringRoundNearZero = True
