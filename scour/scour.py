@@ -2568,7 +2568,9 @@ def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
         previousCoord = ''
         for coord in data:
             cp = ((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2))
-            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround, isControlPoint=cp)
+            scouredCoord = scourUnitlessLength(coord,
+                                               needsRendererWorkaround=options.renderer_workaround,
+                                               isControlPoint=cp)
             # only need the comma if the current number starts with a digit
             # (numbers can start with - without needing a comma before)
             # or if forceCommaWsp is True
