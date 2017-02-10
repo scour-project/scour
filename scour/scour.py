@@ -2640,12 +2640,11 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
         if(scouringKeepIntPrecision):
             length_as_int = int(round(length))
             len_length_as_int = len(str(abs(length_as_int)))
-            saved_prec = sContext.prec
             if(sContext.prec < len_length_as_int):
+                length = getcontext().create_decimal(str(int(round(length))))
+            else:
                 # preserve all digits left of the decimal point
-                sContext.prec = len_length_as_int
-            length = sContext.plus(length)
-            sContext.prec = saved_prec
+                length = sContext.plus(length)
         else:
             length = sContext.plus(length)
 
@@ -3290,6 +3289,10 @@ def scourString(in_string, options=None):
     scouringRoundNearZeroC = False
     # must have at least 1 significant digit
     # interrept digits == 0 as rounding to nearest int for values between -1 and 1
+    if(options.cdigits < 0):
+        # cdigits is negative value so use digits instead
+        options.cdigits = options.digits
+
     if(options.digits == 0):
         options.digits = 1
         scouringRoundNearZero = True
@@ -3297,6 +3300,8 @@ def scourString(in_string, options=None):
         options.cdigits = 1
         scouringRoundNearZeroC = True
     scouringContext = Context(prec=options.digits)
+
+    # cdigits cannot have higher precision, limit to digits
     if(options.cdigits < options.digits):
         scouringContextC = Context(prec=options.cdigits)
     else:
@@ -3632,7 +3637,7 @@ _option_group_optimization.add_option("-p", "--set-precision",
                                       action="store", type=int, dest="digits", default=5, metavar="NUM",
                                       help="set number of significant digits (default: %default)")
 _option_group_optimization.add_option("-c", "--set-c-precision",
-                                      action="store", type=int, dest="cdigits", default=5, metavar="NUM",
+                                      action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
                                       help="set no. of sig. digits (path [c/s] control points) (default: %default)")
 _option_group_optimization.add_option("-k", "--keep-int-precision",
                                       action="store_true", dest="keep_int_precision", default=False,
@@ -3749,8 +3754,6 @@ def parse_args(args=None, ignore_additional_args=False):
             _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
     if options.digits < 0:
         _options_parser.error("Can't have negative significant digits, see --help")
-    if options.cdigits < 0:
-        _options_parser.error("Can't have negative significant digits for curve control points , see --help")
     if options.indent_type not in ['tab', 'space', 'none']:
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
