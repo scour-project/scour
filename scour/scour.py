@@ -2623,6 +2623,16 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
     if not isinstance(length, Decimal):
         length = getcontext().create_decimal(str(length))
 
+    # remove trailing zeroes as we do not care for significance
+    intLength = length.to_integral_value()
+    if length == intLength:
+        length = Decimal(intLength)
+    else:
+        length = length.normalize()
+
+    # Gather the initial non-scientific notation version of the coordinate (we want to compare with it later)
+    initial_value = '{0:f}'.format(length)
+
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
     length = scouringContext.plus(length)
@@ -2634,15 +2644,14 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
     else:
         length = length.normalize()
 
-    # gather the non-scientific notation version of the coordinate.
-    # this may actually be in scientific notation if the value is
-    # sufficiently large or small, so this is a misnomer.
-    nonsci = six.text_type(length).lower().replace("e+", "e")
+    # Gather the non-scientific notation version of the coordinate.
+    nonsci = '{0:f}'.format(length)
     if not needsRendererWorkaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
         elif len(nonsci) > 3 and nonsci[:3] == '-0.':
             nonsci = '-' + nonsci[2:]  # remove the 0, leave the minus and dot
+    return_value = nonsci
 
     # Gather the scientific notation version of the coordinate which
     # can only be shorter if the length of the number is at least 4 characters (e.g. 1000 = 1e3).
@@ -2655,11 +2664,13 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
         sci = six.text_type(length) + 'e' + six.text_type(exponent)
 
         if len(sci) < len(nonsci):
-            return sci
-        else:
-            return nonsci
+            return_value = sci
+
+    # Return the shortest representation (if they are equal prefer the original as it still has the full precision)
+    if len(return_value) < len(initial_value):
+        return return_value
     else:
-        return nonsci
+        return initial_value
 
 
 def reducePrecision(element):

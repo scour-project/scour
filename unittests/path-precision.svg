@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" version="1.1">
-  <path d="M 100.0000001 99.9999999 h100.01 v123456789.123456789 h-100 z" fill="red" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg vxmlns="http://www.w3.org/2000/svg">
+  <path id="p0" d="M 100.0000001 99.9999999 h100.01 v123456789.123456789 h-100 z" />
+  
+  <path id="p1" d="m  1    12    123    1234    12345    123456  " />
+  <path id="p2" d="m  1.0  12.0  123.0  1234.0  12345.0  123456.0" />
+  <path id="p3" d="m 01   012   0123   01234   012345   0123456  " />
+  <path id="p4" d="m -1   -12   -123   -1234   -12345   -123456  " />
 </svg>
