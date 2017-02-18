@@ -2622,16 +2622,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
     """
     if not isinstance(length, Decimal):
         length = getcontext().create_decimal(str(length))
-
-    # remove trailing zeroes as we do not care for significance
-    intLength = length.to_integral_value()
-    if length == intLength:
-        length = Decimal(intLength)
-    else:
-        length = length.normalize()
-
-    # Gather the initial non-scientific notation version of the coordinate (we want to compare with it later)
-    initial_value = '{0:f}'.format(length)
+    initial_length = length
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
@@ -2645,7 +2636,10 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
         length = length.normalize()
 
     # Gather the non-scientific notation version of the coordinate.
+    # Re-quantize from the initial value to prevent unnecessary loss of precision
+    # (e.g. 123.4 should become 123, not 120 or even 100)
     nonsci = '{0:f}'.format(length)
+    nonsci = '{0:f}'.format(initial_length.quantize(Decimal(nonsci)))
     if not needsRendererWorkaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
@@ -2666,11 +2660,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
         if len(sci) < len(nonsci):
             return_value = sci
 
-    # Return the shortest representation (if they are equal prefer the original as it still has the full precision)
-    if len(return_value) < len(initial_value):
-        return return_value
-    else:
-        return initial_value
+    return return_value
 
 
 def reducePrecision(element):
