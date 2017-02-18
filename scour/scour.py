@@ -2634,10 +2634,8 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
     else:
         length = length.normalize()
 
-    # gather the non-scientific notation version of the coordinate.
-    # this may actually be in scientific notation if the value is
-    # sufficiently large or small, so this is a misnomer.
-    nonsci = six.text_type(length).lower().replace("e+", "e")
+    # Gather the non-scientific notation version of the coordinate.
+    nonsci = '{0:f}'.format(length)
     if not needsRendererWorkaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
