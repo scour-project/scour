@@ -956,6 +956,40 @@ class LimitPrecisionInPathData(unittest.TestCase):
                          'Not correctly limiting precision on path data')
 
 
+class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=1']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1e3 1e4 1e5",
+                             'Precision not correctly reduced with "--set-precision=1" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1e3 -1e4 -1e5",
+                         'Precision not correctly reduced with "--set-precision=1" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=2']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 1.2e5",
+                             'Precision not correctly reduced with "--set-precision=2" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-1.2e5",
+                         'Precision not correctly reduced with "--set-precision=2" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=3']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+                             'Precision not correctly reduced with "--set-precision=3" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+                         'Precision not correctly reduced with "--set-precision=3" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+
+
 class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
 
     def runTest(self):
