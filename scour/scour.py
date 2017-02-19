@@ -3037,7 +3037,7 @@ def properlySizeDoc(docElement, options):
     # else we have a statically sized image and we should try to remedy that
 
     # parse viewBox attribute
-    vbSep = re.split("\\s*\\,?\\s*", docElement.getAttribute('viewBox'), 3)
+    vbSep = re.split('[, ]+', docElement.getAttribute('viewBox'))
     # if we have a valid viewBox we need to check it
     vbWidth, vbHeight = 0, 0
     if len(vbSep) == 4:
@@ -3471,6 +3471,11 @@ def scourString(in_string, options=None):
                          'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
                 if elem.getAttribute(attr) != '':
                     elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
+    viewBox = doc.documentElement.getAttribute('viewBox')
+    if viewBox:
+        lengths = re.split('[, ]+', viewBox)
+        lengths = [scourUnitlessLength(lenght) for lenght in lengths]
+        doc.documentElement.setAttribute('viewBox', ' '.join(lengths))
 
     # more length scouring in this function
     _num_bytes_saved_in_lengths = reducePrecision(doc.documentElement)
