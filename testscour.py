@@ -2505,7 +2505,21 @@ class EmbedRasters(unittest.TestCase):
                             "Raster image from remote path '" + href + "' not embedded.")
 
 
-# TODO: write tests for --enable-viewboxing
+class ViewBox(unittest.TestCase):
+
+    def test_viewbox_create(self):
+        doc = scourXmlFile('unittests/viewbox-create.svg', parse_args(['--enable-viewboxing']))
+        viewBox = doc.documentElement.getAttribute('viewBox')
+        self.assertEqual(viewBox, '0 0 123.46 654.32', "viewBox not properly created with '--enable-viewboxing'.")
+
+    def test_viewbox_remove_width_and_height(self):
+        doc = scourXmlFile('unittests/viewbox-remove.svg', parse_args(['--enable-viewboxing']))
+        width = doc.documentElement.getAttribute('width')
+        height = doc.documentElement.getAttribute('height')
+        self.assertEqual(width, '', "width not removed with '--enable-viewboxing'.")
+        self.assertEqual(height, '', "height not removed with '--enable-viewboxing'.")
+
+
 # TODO: write tests for --keep-editor-data
 
 if __name__ == '__main__':
