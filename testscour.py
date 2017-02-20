@@ -956,6 +956,62 @@ class LimitPrecisionInPathData(unittest.TestCase):
                          'Not correctly limiting precision on path data')
 
 
+class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=1']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1e3 1e4 1e5",
+                             'Precision not correctly reduced with "--set-precision=1" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1e3 -1e4 -1e5",
+                         'Precision not correctly reduced with "--set-precision=1" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+        self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
+                         'Precision not correctly reduced with "--set-precision=1" '
+                         'for path with ID ' + paths[5].getAttribute('id'))
+
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=2']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 1.2e5",
+                             'Precision not correctly reduced with "--set-precision=2" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-1.2e5",
+                         'Precision not correctly reduced with "--set-precision=2" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+        self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
+                         'Precision not correctly reduced with "--set-precision=2" '
+                         'for path with ID ' + paths[5].getAttribute('id'))
+
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=3']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+                             'Precision not correctly reduced with "--set-precision=3" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+                         'Precision not correctly reduced with "--set-precision=3" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+        self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
+                         'Precision not correctly reduced with "--set-precision=3" '
+                         'for path with ID ' + paths[5].getAttribute('id'))
+
+        doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=4']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths[1:3]:
+            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+                             'Precision not correctly reduced with "--set-precision=4" '
+                             'for path with ID ' + path.getAttribute('id'))
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+                         'Precision not correctly reduced with "--set-precision=4" '
+                         'for path with ID ' + paths[4].getAttribute('id'))
+        self.assertEqual(paths[5].getAttribute('d'), "m123.5 101-123.5-101",
+                         'Precision not correctly reduced with "--set-precision=4" '
+                         'for path with ID ' + paths[5].getAttribute('id'))
+
+
 class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
 
     def runTest(self):
@@ -2449,7 +2505,21 @@ class EmbedRasters(unittest.TestCase):
                             "Raster image from remote path '" + href + "' not embedded.")
 
 
-# TODO: write tests for --enable-viewboxing
+class ViewBox(unittest.TestCase):
+
+    def test_viewbox_create(self):
+        doc = scourXmlFile('unittests/viewbox-create.svg', parse_args(['--enable-viewboxing']))
+        viewBox = doc.documentElement.getAttribute('viewBox')
+        self.assertEqual(viewBox, '0 0 123.46 654.32', "viewBox not properly created with '--enable-viewboxing'.")
+
+    def test_viewbox_remove_width_and_height(self):
+        doc = scourXmlFile('unittests/viewbox-remove.svg', parse_args(['--enable-viewboxing']))
+        width = doc.documentElement.getAttribute('width')
+        height = doc.documentElement.getAttribute('height')
+        self.assertEqual(width, '', "width not removed with '--enable-viewboxing'.")
+        self.assertEqual(height, '', "height not removed with '--enable-viewboxing'.")
+
+
 # TODO: write tests for --keep-editor-data
 
 if __name__ == '__main__':

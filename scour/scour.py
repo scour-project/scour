@@ -2625,6 +2625,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
     """
     if not isinstance(length, Decimal):
         length = getcontext().create_decimal(str(length))
+    initial_length = length
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
@@ -2655,15 +2656,17 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
     else:
         length = length.normalize()
 
-    # gather the non-scientific notation version of the coordinate.
-    # this may actually be in scientific notation if the value is
-    # sufficiently large or small, so this is a misnomer.
-    nonsci = six.text_type(length).lower().replace("e+", "e")
+    # Gather the non-scientific notation version of the coordinate.
+    # Re-quantize from the initial value to prevent unnecessary loss of precision
+    # (e.g. 123.4 should become 123, not 120 or even 100)
+    nonsci = '{0:f}'.format(length)
+    nonsci = '{0:f}'.format(initial_length.quantize(Decimal(nonsci)))
     if not needsRendererWorkaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
         elif len(nonsci) > 3 and nonsci[:3] == '-0.':
             nonsci = '-' + nonsci[2:]  # remove the 0, leave the minus and dot
+    return_value = nonsci
 
     # Gather the scientific notation version of the coordinate which
     # can only be shorter if the length of the number is at least 4 characters (e.g. 1000 = 1e3).
@@ -2676,11 +2679,9 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
         sci = six.text_type(length) + 'e' + six.text_type(exponent)
 
         if len(sci) < len(nonsci):
-            return sci
-        else:
-            return nonsci
-    else:
-        return nonsci
+            return_value = sci
+
+    return return_value
 
 
 def reducePrecision(element):
@@ -3057,7 +3058,7 @@ def properlySizeDoc(docElement, options):
     # else we have a statically sized image and we should try to remedy that
 
     # parse viewBox attribute
-    vbSep = re.split("\\s*\\,?\\s*", docElement.getAttribute('viewBox'), 3)
+    vbSep = re.split('[, ]+', docElement.getAttribute('viewBox'))
     # if we have a valid viewBox we need to check it
     vbWidth, vbHeight = 0, 0
     if len(vbSep) == 4:
@@ -3516,6 +3517,11 @@ def scourString(in_string, options=None):
                          'x1', 'y1', 'x2', 'y2', 'fx', 'fy', 'offset']:
                 if elem.getAttribute(attr) != '':
                     elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
+    viewBox = doc.documentElement.getAttribute('viewBox')
+    if viewBox:
+        lengths = re.split('[, ]+', viewBox)
+        lengths = [scourUnitlessLength(lenght) for lenght in lengths]
+        doc.documentElement.setAttribute('viewBox', ' '.join(lengths))
 
     # more length scouring in this function
     _num_bytes_saved_in_lengths = reducePrecision(doc.documentElement)
