@@ -2434,6 +2434,11 @@ class EmbedRasters(unittest.TestCase):
         import os
         import platform
 
+        # work around https://github.com/travis-ci/travis-ci/issues/3080 as pypy throws if 'ping' can't be executed
+        import distutils.spawn
+        if not distutils.spawn.find_executable('ping'):
+            return -1
+
         system = platform.system().lower()
         ping_count = '-n' if system == 'windows' else '-c'
         dev_null = 'NUL' if system == 'windows' else '/dev/null'
