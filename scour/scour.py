@@ -2630,24 +2630,10 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
     sContext = scouringContext
-    roundNearZero = scouringRoundNearZero
     if(isControlPoint):
         sContext = scouringContextC
-        roundNearZero = scouringRoundNearZeroC
 
-    if(roundNearZero and length > -1 and length < 1):
-        length = getcontext().create_decimal(str(int(round(length))))
-    else:
-        if(scouringKeepIntPrecision):
-            length_as_int = int(round(length))
-            len_length_as_int = len(str(abs(length_as_int)))
-            if(sContext.prec < len_length_as_int):
-                length = getcontext().create_decimal(str(int(round(length))))
-            else:
-                # preserve all digits left of the decimal point
-                length = sContext.plus(length)
-        else:
-            length = sContext.plus(length)
+    length = sContext.plus(length)
 
     # remove trailing zeroes as we do not care for significance
     intLength = length.to_integral_value()
@@ -3282,24 +3268,10 @@ def scourString(in_string, options=None):
     # to minimize errors
     global scouringContext
     global scouringContextC
-    global scouringKeepIntPrecision
-    global scouringRoundNearZero
-    global scouringRoundNearZeroC
-    scouringKeepIntPrecision = options.keep_int_precision
-    scouringRoundNearZero = False
-    scouringRoundNearZeroC = False
-    # must have at least 1 significant digit
-    # interrept digits == 0 as rounding to nearest int for values between -1 and 1
     if(options.cdigits < 0):
         # cdigits is negative value so use digits instead
         options.cdigits = options.digits
 
-    if(options.digits == 0):
-        options.digits = 1
-        scouringRoundNearZero = True
-    if(options.cdigits == 0):
-        options.cdigits = 1
-        scouringRoundNearZeroC = True
     scouringContext = Context(prec=options.digits)
 
     # cdigits cannot have higher precision, limit to digits
@@ -3645,9 +3617,6 @@ _option_group_optimization.add_option("-p", "--set-precision",
 _option_group_optimization.add_option("-c", "--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
                                       help="set no. of sig. digits (path [c/s] control points) (default: %default)")
-_option_group_optimization.add_option("-k", "--keep-int-precision",
-                                      action="store_true", dest="keep_int_precision", default=False,
-                                      help="keep all digits left of decimal point regardless of set precision")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert all colors to #RRGGBB format")
