@@ -95,6 +95,8 @@ class EmptyOptions(unittest.TestCase):
             fail = True
         sys.stdout = stdout_temp
 
+        os.remove('testscour_temp.svg')
+
         self.assertEqual(fail, False,
                          'Exception when calling "start" with empty options object')
 
