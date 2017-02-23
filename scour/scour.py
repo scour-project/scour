@@ -2539,7 +2539,7 @@ def serializePath(pathObj, options):
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a')) for cmd, data in pathObj])
+    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a'), cmd) for cmd, data in pathObj])
 
 
 def serializeTransform(transformObj):
@@ -2554,7 +2554,7 @@ def serializeTransform(transformObj):
     )
 
 
-def scourCoordinates(data, options, forceCommaWsp=False):
+def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2567,7 +2567,10 @@ def scourCoordinates(data, options, forceCommaWsp=False):
         c = 0
         previousCoord = ''
         for coord in data:
-            scouredCoord = scourUnitlessLength(coord, needsRendererWorkaround=options.renderer_workaround)
+            cp = ((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2))
+            scouredCoord = scourUnitlessLength(coord,
+                                               needsRendererWorkaround=options.renderer_workaround,
+                                               isControlPoint=cp)
             # only need the comma if the current number starts with a digit
             # (numbers can start with - without needing a comma before)
             # or if forceCommaWsp is True
@@ -2613,7 +2616,7 @@ def scourLength(length):
     return scourUnitlessLength(length.value) + Unit.str(length.units)
 
 
-def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of a numeric type
+def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=False):  # length is of a numeric type
     """
     Scours the numeric part of a length only. Does not accept units.
 
@@ -2626,7 +2629,11 @@ def scourUnitlessLength(length, needsRendererWorkaround=False):  # length is of 
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
-    length = scouringContext.plus(length)
+    sContext = scouringContext
+    if(isControlPoint):
+        sContext = scouringContextC
+
+    length = sContext.plus(length)
 
     # remove trailing zeroes as we do not care for significance
     intLength = length.to_integral_value()
@@ -3260,7 +3267,18 @@ def scourString(in_string, options=None):
     # calculations should be done in the default context (precision defaults to 28 significant digits)
     # to minimize errors
     global scouringContext
+    global scouringContextC
+    if(options.cdigits < 0):
+        # cdigits is negative value so use digits instead
+        options.cdigits = options.digits
+
     scouringContext = Context(prec=options.digits)
+
+    # cdigits cannot have higher precision, limit to digits
+    if(options.cdigits < options.digits):
+        scouringContextC = Context(prec=options.cdigits)
+    else:
+        scouringContextC = scouringContext
 
     # globals for tracking statistics
     # TODO: get rid of these globals...
@@ -3596,6 +3614,9 @@ _option_group_optimization = optparse.OptionGroup(_options_parser, "Optimization
 _option_group_optimization.add_option("-p", "--set-precision",
                                       action="store", type=int, dest="digits", default=5, metavar="NUM",
                                       help="set number of significant digits (default: %default)")
+_option_group_optimization.add_option("-c", "--set-c-precision",
+                                      action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
+                                      help="set no. of sig. digits (path [c/s] control points) (default: %default)")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert all colors to #RRGGBB format")
