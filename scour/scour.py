@@ -3597,12 +3597,16 @@ _options_parser = optparse.OptionParser(
     formatter=HeaderedFormatter(max_help_position=33),
     version=VER)
 
+# legacy options (kept around for backwards compatibility, should not be used in new code)
+_options_parser.add_option("-p", action="store", type=int, dest="digits", help=optparse.SUPPRESS_HELP)
+
+# general options
 _options_parser.add_option("-q", "--quiet",
                            action="store_true", dest="quiet", default=False,
                            help="suppress non-error output")
 _options_parser.add_option("-v", "--verbose",
                            action="store_true", dest="verbose", default=False,
-                           help="verbose output (optimization statistics, etc.)")
+                           help="verbose output (statistics, etc.)")
 _options_parser.add_option("-i",
                            action="store", dest="infilename", metavar="INPUT.SVG",
                            help="alternative way to specify input filename")
@@ -3611,15 +3615,16 @@ _options_parser.add_option("-o",
                            help="alternative way to specify output filename")
 
 _option_group_optimization = optparse.OptionGroup(_options_parser, "Optimization")
-_option_group_optimization.add_option("-p", "--set-precision",
+_option_group_optimization.add_option("--set-precision",
                                       action="store", type=int, dest="digits", default=5, metavar="NUM",
                                       help="set number of significant digits (default: %default)")
-_option_group_optimization.add_option("-c", "--set-c-precision",
+_option_group_optimization.add_option("--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
-                                      help="set no. of sig. digits (path [c/s] control points) (default: %default)")
+                                      help="set number of significant digits for control points "
+                                           "(default: same as '--set-precision')")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
-                                      help="won't convert all colors to #RRGGBB format")
+                                      help="won't convert colors to #RRGGBB format")
 _option_group_optimization.add_option("--disable-style-to-xml",
                                       action="store_false", dest="style_to_xml", default=True,
                                       help="won't convert styles into XML attributes")
@@ -3712,8 +3717,8 @@ _options_parser.add_option_group(_option_group_ids)
 _option_group_compatibility = optparse.OptionGroup(_options_parser, "SVG compatibility checks")
 _option_group_compatibility.add_option("--error-on-flowtext",
                                        action="store_true", dest="error_on_flowtext", default=False,
-                                       help="If the input SVG uses non-standard flowing text exit with error. "
-                                            "Otherwise only warn.")
+                                       help="exit with error if the input SVG uses non-standard flowing text "
+                                            "(only warn by default)")
 _options_parser.add_option_group(_option_group_compatibility)
 
 
