@@ -2554,13 +2554,13 @@ def serializeTransform(transformObj):
     )
 
 
-def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
+def scourCoordinates(data, options, force_whitespace=False, cmd=''):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
           - integerize coordinates if possible
           - removes extraneous whitespace
-          - adds spaces between values in a subcommand if required (or if forceCommaWsp is True)
+          - adds spaces between values in a subcommand if required (or if force_whitespace is True)
     """
     if data is not None:
         newData = []
@@ -2571,13 +2571,12 @@ def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
             scouredCoord = scourUnitlessLength(coord,
                                                needsRendererWorkaround=options.renderer_workaround,
                                                isControlPoint=cp)
-            # only need the comma if the current number starts with a digit
-            # (numbers can start with - without needing a comma before)
-            # or if forceCommaWsp is True
-            # or if this number starts with a dot and the previous number
-            #   had *no* dot or exponent (so we can go like -5.5.5 for -5.5,0.5
-            #   and 4e4.5 for 40000,0.5)
-            if c > 0 and (forceCommaWsp
+            # don't output a space if this number starts with a dot (.) or minus sign (-); we only need a space if
+            #   - this number starts with a digit
+            #   - this number starts with a dot but the previous number had *no* dot or exponent
+            #     i.e. '1.3 0.5' -> '1.3.5' or '1e3 0.5' -> '1e3.5' is fine but '123 0.5' -> '123.5' is obviously not
+            #   - 'force_whitespace' is explicitly set to 'True'
+            if c > 0 and (force_whitespace
                           or scouredCoord[0].isdigit()
                           or (scouredCoord[0] == '.' and not ('.' in previousCoord or 'e' in previousCoord))
                           ):
@@ -2588,13 +2587,11 @@ def scourCoordinates(data, options, forceCommaWsp=False, cmd=''):
             previousCoord = scouredCoord
             c += 1
 
-        # What we need to do to work around GNOME bugs 548494, 563933 and
-        # 620565, which are being fixed and unfixed in Ubuntu, is
-        # to make sure that a dot doesn't immediately follow a command
-        # (so 'h50' and 'h0.5' are allowed, but not 'h.5').
-        # Then, we need to add a space character after any coordinates
-        # having an 'e' (scientific notation), so as to have the exponent
-        # separate from the next number.
+        # What we need to do to work around GNOME bugs 548494, 563933 and 620565, is to make sure that a dot doesn't
+        # immediately follow a command  (so 'h50' and 'h0.5' are allowed, but not 'h.5').
+        # Then, we need to add a space character after any coordinates  having an 'e' (scientific notation),
+        # so as to have the exponent separate from the next number.
+        # TODO: Check whether this is still required (bugs all marked as fixed, might be time to phase it out)
         if options.renderer_workaround:
             if len(newData) > 0:
                 for i in range(1, len(newData)):
