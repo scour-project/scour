@@ -1640,15 +1640,6 @@ class PropagateCommonAttributesUp(unittest.TestCase):
                          'Did not move common fill attribute to grandparent')
 
 
-class PathEllipticalArcParsingCommaWsp(unittest.TestCase):
-
-    def runTest(self):
-        p = scourXmlFile('unittests/path-elliptical-arc-parsing.svg') \
-                 .getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), 'm100 100a100 100 0 1 1 -50 100z',
-                         'Did not parse elliptical arc command properly')
-
-
 class RemoveUnusedAttributesOnParent(unittest.TestCase):
 
     def runTest(self):

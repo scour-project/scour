@@ -2539,7 +2539,7 @@ def serializePath(pathObj, options):
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options, (cmd == 'a'), cmd) for cmd, data in pathObj])
+    return ''.join([cmd + scourCoordinates(data, options, path_cmd=cmd) for cmd, data in pathObj])
 
 
 def serializeTransform(transformObj):
@@ -2554,7 +2554,7 @@ def serializeTransform(transformObj):
     )
 
 
-def scourCoordinates(data, options, force_whitespace=False, cmd=''):
+def scourCoordinates(data, options, force_whitespace=False, path_cmd=''):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2567,7 +2567,7 @@ def scourCoordinates(data, options, force_whitespace=False, cmd=''):
         c = 0
         previousCoord = ''
         for coord in data:
-            cp = ((cmd == 'c' and (c % 6) < 4) or (cmd == 's' and (c % 4) < 2))
+            cp = ((path_cmd == 'c' and (c % 6) < 4) or (path_cmd == 's' and (c % 4) < 2))
             scouredCoord = scourUnitlessLength(coord,
                                                needsRendererWorkaround=options.renderer_workaround,
                                                isControlPoint=cp)
