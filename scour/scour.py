@@ -2533,13 +2533,32 @@ def cleanPolyline(elem, options):
     elem.setAttribute('points', scourCoordinates(pts, options, True))
 
 
+def controlPoints(cmd, data):
+    """
+       Checks if there are control points in the path
+
+       Returns False if there aren't any
+       Returns a list of bools set to True for coordinates in the path data which are control points
+    """
+    cmd = cmd.lower()
+    if cmd in ['c', 's', 'q']:
+        indices = range(0, len(data))
+        if cmd == 'c':  # c: (x1 y1 x2 y2 x y)+
+            return [(index % 6) < 4 for index in indices]
+        elif cmd in ['s', 'q']:  # s: (x2 y2 x y)+   q: (x1 y1 x y)+
+            return [(index % 4) < 2 for index in indices]
+
+    return False
+
+
 def serializePath(pathObj, options):
     """
        Reserializes the path data with some cleanups.
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options, path_cmd=cmd) for cmd, data in pathObj])
+    return ''.join([cmd + scourCoordinates(data, options, reduce_precision=controlPoints(cmd, data))
+                    for cmd, data in pathObj])
 
 
 def serializeTransform(transformObj):
@@ -2554,7 +2573,7 @@ def serializeTransform(transformObj):
     )
 
 
-def scourCoordinates(data, options, force_whitespace=False, path_cmd=''):
+def scourCoordinates(data, options, force_whitespace=False, reduce_precision=False):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2567,7 +2586,7 @@ def scourCoordinates(data, options, force_whitespace=False, path_cmd=''):
         c = 0
         previousCoord = ''
         for coord in data:
-            cp = ((path_cmd == 'c' and (c % 6) < 4) or (path_cmd == 's' and (c % 4) < 2))
+            cp = reduce_precision[c] if isinstance(reduce_precision, list) else reduce_precision
             scouredCoord = scourUnitlessLength(coord,
                                                needsRendererWorkaround=options.renderer_workaround,
                                                isControlPoint=cp)
