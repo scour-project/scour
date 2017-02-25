@@ -3014,7 +3014,7 @@ def embedRasters(element, options):
             except Exception as e:
                 print("WARNING: Could not open file '" + href + "' for embedding. "
                       "The raster image will be kept as a reference but might be invalid. "
-                      "(Exception details: " + str(e) + ")", file=sys.stderr)
+                      "(Exception details: " + str(e) + ")", file=options.ensure_value("stdout", sys.stdout))
                 rasterdata = ''
             finally:
                 # always restore initial working directory if we changed it above
@@ -3274,22 +3274,17 @@ def scourString(in_string, options=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
-    # create decimal context with reduced precision for scouring numbers
+    # default or invalid value
+    if(options.cdigits < 0):
+        options.cdigits = options.digits
+
+    # create decimal contexts with reduced precision for scouring numbers
     # calculations should be done in the default context (precision defaults to 28 significant digits)
     # to minimize errors
     global scouringContext
-    global scouringContextC
-    if(options.cdigits < 0):
-        # cdigits is negative value so use digits instead
-        options.cdigits = options.digits
-
+    global scouringContextC  # even more reduced precision for control points
     scouringContext = Context(prec=options.digits)
-
-    # cdigits cannot have higher precision, limit to digits
-    if(options.cdigits < options.digits):
-        scouringContextC = Context(prec=options.cdigits)
-    else:
-        scouringContextC = scouringContext
+    scouringContextC = Context(prec=options.cdigits)
 
     # globals for tracking statistics
     # TODO: get rid of these globals...
@@ -3743,8 +3738,12 @@ def parse_args(args=None, ignore_additional_args=False):
             options.outfilename = rargs.pop(0)
         if not ignore_additional_args and rargs:
             _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
-    if options.digits < 0:
-        _options_parser.error("Can't have negative significant digits, see --help")
+    if options.digits < 1:
+        _options_parser.error("Number of significant digits has to be larger than zero, see --help")
+    if options.cdigits > options.digits:
+        options.cdigits = -1
+        print("WARNING: The value for '--set-c-precision' should be lower than the value for '--set-precision'. "
+              "Number of significant digits for control points reset to defsault value, see --help", file=sys.stderr)
     if options.indent_type not in ['tab', 'space', 'none']:
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
