@@ -1014,6 +1014,20 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
                          'for path with ID ' + paths[5].getAttribute('id'))
 
 
+class LimitPrecisionInControlPointPathData(unittest.TestCase):
+
+    def runTest(self):
+        path_data = ("m1.1 2.2 3.3 4.4m-4.4-6.7"
+                     "c1 2 3 4 5.6 6.7 1 2 3 4 5.6 6.7 1 2 3 4 5.6 6.7m-17-20"
+                     "s1 2 3.3 4.4 1 2 3.3 4.4 1 2 3.3 4.4m-10-13"
+                     "q1 2 3.3 4.4 1 2 3.3 4.4 1 2 3.3 4.4")
+        doc = scourXmlFile('unittests/path-precision-control-points.svg',
+                           parse_args(['--set-precision=2', '--set-c-precision=1']))
+        path_data2 = doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d')
+        self.assertEqual(path_data2, path_data,
+                         'Not correctly limiting precision on path data with --set-c-precision')
+
+
 class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
 
     def runTest(self):
