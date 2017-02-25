@@ -2565,12 +2565,8 @@ def serializeTransform(transformObj):
     """
        Reserializes the transform data with some cleanups.
     """
-    return ' '.join(
-        [command + '(' + ' '.join(
-           [scourUnitlessLength(number) for number in numbers]
-        ) + ')'
-            for command, numbers in transformObj]
-    )
+    return ' '.join([command + '(' + ' '.join([scourUnitlessLength(number) for number in numbers]) + ')'
+                     for command, numbers in transformObj])
 
 
 def scourCoordinates(data, options, force_whitespace=False, reduce_precision=False):
@@ -2588,8 +2584,8 @@ def scourCoordinates(data, options, force_whitespace=False, reduce_precision=Fal
         for coord in data:
             cp = reduce_precision[c] if isinstance(reduce_precision, list) else reduce_precision
             scouredCoord = scourUnitlessLength(coord,
-                                               needsRendererWorkaround=options.renderer_workaround,
-                                               isControlPoint=cp)
+                                               renderer_workaround=options.renderer_workaround,
+                                               reduce_precision=cp)
             # don't output a space if this number starts with a dot (.) or minus sign (-); we only need a space if
             #   - this number starts with a digit
             #   - this number starts with a dot but the previous number had *no* dot or exponent
@@ -2632,7 +2628,7 @@ def scourLength(length):
     return scourUnitlessLength(length.value) + Unit.str(length.units)
 
 
-def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=False):  # length is of a numeric type
+def scourUnitlessLength(length, renderer_workaround=False, reduce_precision=False):  # length is of a numeric type
     """
     Scours the numeric part of a length only. Does not accept units.
 
@@ -2645,11 +2641,10 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
-    sContext = scouringContext
-    if(isControlPoint):
-        sContext = scouringContextC
-
-    length = sContext.plus(length)
+    if reduce_precision:
+        length = scouringContextC.plus(length)
+    else:
+        length = scouringContext.plus(length)
 
     # remove trailing zeroes as we do not care for significance
     intLength = length.to_integral_value()
@@ -2663,7 +2658,7 @@ def scourUnitlessLength(length, needsRendererWorkaround=False, isControlPoint=Fa
     # (e.g. 123.4 should become 123, not 120 or even 100)
     nonsci = '{0:f}'.format(length)
     nonsci = '{0:f}'.format(initial_length.quantize(Decimal(nonsci)))
-    if not needsRendererWorkaround:
+    if not renderer_workaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
         elif len(nonsci) > 3 and nonsci[:3] == '-0.':
