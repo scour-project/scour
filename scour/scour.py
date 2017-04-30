@@ -3328,7 +3328,7 @@ def scourString(in_string, options=None):
         if options.error_on_flowtext:
             raise Exception(errmsg)
         else:
-            print("WARNING: {}".format(errmsg), file=options.ensure_value("stdout", sys.stdout))
+            print("WARNING: {}".format(errmsg), file=sys.stderr)
 
     # remove descriptive elements
     removeDescriptiveElements(doc, options)
