@@ -1411,7 +1411,7 @@ def removeDuplicateGradients(doc):
 
             # for each element that referenced the gradient we are going to replace dup_id with master_id
             dup_id = dupGrad.getAttribute('id')
-            funcIRI = re.compile('url\\([\'"]?#' + dup_id + '[\'"]?\\)')  # matches url(#a), url('#a') and url("#a")
+            funcIRI = re.compile(r'url\([\'"]?#' + dup_id + '[\'"]?\)')  # matches url(#a), url('#a') and url("#a")
             for elem in referencedIDs[dup_id][1]:
                 # find out which attribute referenced the duplicate gradient
                 for attr in ['fill', 'stroke']:
