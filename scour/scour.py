@@ -2742,7 +2742,7 @@ def optimizeAngle(angle):
         angle %= -360
     else:
         angle %= 360
-    # 720 degrees is unneccessary, as 360 covers all angles.
+    # 720 degrees is unnecessary, as 360 covers all angles.
     # As "-x" is shorter than "35x" and "-xxx" one character
     # longer than positive angles <= 260, we constrain angle
     # range to [-90, 270[ (or, equally valid: ]-100, 260]).
@@ -3498,7 +3498,7 @@ def scourString(in_string, options=None):
     viewBox = doc.documentElement.getAttribute('viewBox')
     if viewBox:
         lengths = re.split('[, ]+', viewBox)
-        lengths = [scourUnitlessLength(lenght) for lenght in lengths]
+        lengths = [scourUnitlessLength(length) for length in lengths]
         doc.documentElement.setAttribute('viewBox', ' '.join(lengths))
 
     # more length scouring in this function
@@ -3693,7 +3693,7 @@ _option_group_formatting.add_option("--nindent",
 _option_group_formatting.add_option("--no-line-breaks",
                                     action="store_false", dest="newlines", default=True,
                                     help="do not create line breaks in output"
-                                    "(also disables indentation; might be overriden by xml:space=\"preserve\")")
+                                    "(also disables indentation; might be overridden by xml:space=\"preserve\")")
 _option_group_formatting.add_option("--strip-xml-space",
                                     action="store_true", dest="strip_xml_space_attribute", default=False,
                                     help="strip the xml:space=\"preserve\" attribute from the root SVG element")
