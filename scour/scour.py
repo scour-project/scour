@@ -403,10 +403,14 @@ default_properties = {  # excluded all properties with 'auto' as default
 }
 
 
-def is_same_sign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+def is_same_sign(a, b):
+    return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 
 
-def is_same_slope(x1, y1, x2, y2): return y1/x1 - y2/x2 == 0
+    
+def is_same_slope(x1, y1, x2, y2):
+    diff = y1/x1 - y2/x2
+    return scouringContext.plus(1 + diff) == 1
 
 
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
