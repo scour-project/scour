@@ -2049,6 +2049,10 @@ def cleanPath(element, options):
     # we do not want to collapse empty segments, as they are actually rendered.
     withRoundLineCaps = element.getAttribute('stroke-linecap') == 'round'
 
+    # This determines whether the stroke has intermediate markers.  If it does, we do not want to collapse
+    # straight segments running in the same direction, as markers are rendered on the intermediate nodes.
+    has_markers = element.hasAttribute('marker') or element.hasAttribute('marker-mid')
+
     # The first command must be a moveto, and whether it's relative (m)
     # or absolute (M), the first set of coordinates *is* absolute. So
     # the first iteration of the loop below will get x,y and startx,starty.
@@ -2396,14 +2400,15 @@ def cleanPath(element, options):
             newPath.append((cmd, data))
     path = newPath
 
-    # for each h or v, collapse unnecessary coordinates that run in the same direction
-    # i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
+    # For each h or v, collapse unnecessary coordinates that run in the same direction
+    # i.e. "h-100-100" becomes "h-200" but "h300-100" does not change.
+    # If the path has intermediate markers we have to preserve intermediate nodes, though.
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists, even if we're deleting items, because these
     # deletions are relatively cheap.
     for pathIndex in range(1, len(path)):
         cmd, data = path[pathIndex]
-        if cmd in ['h', 'v'] and len(data) > 1:
+        if cmd in ['h', 'v'] and len(data) > 1 and not has_markers:
             coordIndex = 1
             while coordIndex < len(data):
                 if isSameSign(data[coordIndex - 1], data[coordIndex]):
