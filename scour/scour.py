@@ -2045,9 +2045,9 @@ def cleanPath(element, options):
     oldPathStr = element.getAttribute('d')
     path = svg_parser.parse(oldPathStr)
 
-    # This determines whether the stroke has round linecaps.  If it does,
-    # we do not want to collapse empty segments, as they are actually rendered.
-    withRoundLineCaps = element.getAttribute('stroke-linecap') == 'round'
+    # This determines whether the stroke has round or square linecaps.  If it does, we do not want to collapse empty
+    # segments, as they are actually rendered (as circles or squares with diameter/dimension matching the path-width).
+    has_round_or_square_linecaps = element.getAttribute('stroke-linecap') in ['round', 'square']
 
     # This determines whether the stroke has intermediate markers.  If it does, we do not want to collapse
     # straight segments running in the same direction, as markers are rendered on the intermediate nodes.
@@ -2162,7 +2162,7 @@ def cleanPath(element, options):
     # remove empty segments
     # Reuse the data structure 'path' and the coordinate lists, even if we're
     # deleting items, because these deletions are relatively cheap.
-    if not withRoundLineCaps:
+    if not has_round_or_square_linecaps:
         for pathIndex in range(0, len(path)):
             cmd, data = path[pathIndex]
             i = 0
