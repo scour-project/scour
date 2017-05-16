@@ -403,7 +403,8 @@ default_properties = {  # excluded all properties with 'auto' as default
 }
 
 
-def isSameSign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+def is_same_sign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+def is_same_slope(x1, y1, x2, y2): return y1/x1 - y2/x2 == 0
 
 
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
@@ -2400,7 +2401,7 @@ def cleanPath(element, options):
             newPath.append((cmd, data))
     path = newPath
 
-    # For each h or v, collapse unnecessary coordinates that run in the same direction
+    # For each m, l, h or v, collapse unnecessary coordinates that run in the same direction
     # i.e. "h-100-100" becomes "h-200" but "h300-100" does not change.
     # If the path has intermediate markers we have to preserve intermediate nodes, though.
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
@@ -2411,12 +2412,23 @@ def cleanPath(element, options):
         if cmd in ['h', 'v'] and len(data) > 1 and not has_markers:
             coordIndex = 1
             while coordIndex < len(data):
-                if isSameSign(data[coordIndex - 1], data[coordIndex]):
+                if is_same_sign(data[coordIndex - 1], data[coordIndex]):
                     data[coordIndex - 1] += data[coordIndex]
                     del data[coordIndex]
                     _num_path_segments_removed += 1
                 else:
                     coordIndex += 1
+        if cmd in ['m', 'l'] and len(data) > 3 and not has_markers:
+            coordIndex = 2
+            while coordIndex < len(data):
+                if is_same_slope(data[coordIndex-2], data[coordIndex-1], data[coordIndex], data[coordIndex+1]):
+                    data[coordIndex - 2] += data[coordIndex]
+                    data[coordIndex - 1] += data[coordIndex+1]
+                    del data[coordIndex]
+                    del data[coordIndex]
+                    _num_path_segments_removed += 1
+                else:
+                    coordIndex += 2
 
     # it is possible that we have consecutive h, v, c, t commands now
     # so again collapse all consecutive commands of the same type into one command
