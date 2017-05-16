@@ -407,9 +407,12 @@ def is_same_sign(a, b):
     return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 
 
-def is_same_slope(x1, y1, x2, y2):
-    diff = y1/x1 - y2/x2
-    return scouringContext.plus(1 + diff) == 1
+def is_same_direction(x1, y1, x2, y2):
+    if is_same_sign(x1, x2) and is_same_sign(y1, y2):
+        diff = y1/x1 - y2/x2
+        return scouringContext.plus(1 + diff) == 1
+    else:
+        return False
 
 
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
@@ -2431,7 +2434,7 @@ def cleanPath(element, options):
             elif cmd is 'l' and len(data) >= 4:
                 coordIndex = 0
                 while coordIndex+2 < len(data):
-                    if is_same_slope(*data[coordIndex:coordIndex+4]):
+                    if is_same_direction(*data[coordIndex:coordIndex+4]):
                         data[coordIndex] += data[coordIndex+2]
                         data[coordIndex+1] += data[coordIndex+3]
                         del data[coordIndex+2]  # delete the next two elements
@@ -2444,7 +2447,7 @@ def cleanPath(element, options):
             elif cmd is 'm' and len(data) >= 6:
                 coordIndex = 2;
                 while coordIndex+2 < len(data):
-                    if is_same_slope(*data[coordIndex:coordIndex+4]):
+                    if is_same_direction(*data[coordIndex:coordIndex+4]):
                         data[coordIndex] += data[coordIndex+2]
                         data[coordIndex+1] += data[coordIndex+3]
                         del data[coordIndex+2]  # delete the next two elements
