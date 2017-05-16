@@ -404,6 +404,8 @@ default_properties = {  # excluded all properties with 'auto' as default
 
 
 def is_same_sign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+
+
 def is_same_slope(x1, y1, x2, y2): return y1/x1 - y2/x2 == 0
 
 
@@ -2407,28 +2409,33 @@ def cleanPath(element, options):
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists, even if we're deleting items, because these
     # deletions are relatively cheap.
-    for pathIndex in range(1, len(path)):
-        cmd, data = path[pathIndex]
-        if cmd in ['h', 'v'] and len(data) > 1 and not has_markers:
-            coordIndex = 1
-            while coordIndex < len(data):
-                if is_same_sign(data[coordIndex - 1], data[coordIndex]):
-                    data[coordIndex - 1] += data[coordIndex]
-                    del data[coordIndex]
-                    _num_path_segments_removed += 1
-                else:
-                    coordIndex += 1
-        if cmd in ['m', 'l'] and len(data) > 3 and not has_markers:
-            coordIndex = 2
-            while coordIndex < len(data):
-                if is_same_slope(data[coordIndex-2], data[coordIndex-1], data[coordIndex], data[coordIndex+1]):
-                    data[coordIndex - 2] += data[coordIndex]
-                    data[coordIndex - 1] += data[coordIndex+1]
-                    del data[coordIndex]
-                    del data[coordIndex]
-                    _num_path_segments_removed += 1
-                else:
-                    coordIndex += 2
+    if not has_markers:
+        for pathIndex in range(len(path)):
+            cmd, data = path[pathIndex]
+
+            # the first (moveto) command in a path is always absolute, so we have to skip it
+            startIndex = (pathIndex == 0)
+
+            if cmd in ['h', 'v'] and len(data) > startIndex+1:   # h,v expect only one parameter
+                coordIndex = startIndex
+                while coordIndex+1 < len(data):
+                    if is_same_sign(data[coordIndex], data[coordIndex+1]):
+                        data[coordIndex] += data[coordIndex+1]
+                        del data[coordIndex+1]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 1
+            elif cmd in ['m', 'l'] and len(data) > (startIndex+1)*2:  # m,l expect two parameters
+                coordIndex = startIndex * 2
+                while coordIndex+2 < len(data):
+                    if is_same_slope(*data[coordIndex:coordIndex+4]):
+                        data[coordIndex] += data[coordIndex+2]
+                        data[coordIndex+1] += data[coordIndex+3]
+                        del data[coordIndex+2]  # delete the next two elements
+                        del data[coordIndex+2]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 2
 
     # it is possible that we have consecutive h, v, c, t commands now
     # so again collapse all consecutive commands of the same type into one command
