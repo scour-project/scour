@@ -407,7 +407,6 @@ def is_same_sign(a, b):
     return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
 
 
-    
 def is_same_slope(x1, y1, x2, y2):
     diff = y1/x1 - y2/x2
     return scouringContext.plus(1 + diff) == 1
@@ -2417,11 +2416,9 @@ def cleanPath(element, options):
         for pathIndex in range(len(path)):
             cmd, data = path[pathIndex]
 
-            # the first (moveto) command in a path is always absolute, so we have to skip it
-            startIndex = (pathIndex == 0)
-
-            if cmd in ['h', 'v'] and len(data) > startIndex+1:   # h,v expect only one parameter
-                coordIndex = startIndex
+            # h / v expects only one parameter and we start drawing with the first (so we need at least 2)
+            if cmd in ['h', 'v'] and len(data) >= 2:
+                coordIndex = 0
                 while coordIndex+1 < len(data):
                     if is_same_sign(data[coordIndex], data[coordIndex+1]):
                         data[coordIndex] += data[coordIndex+1]
@@ -2429,8 +2426,23 @@ def cleanPath(element, options):
                         _num_path_segments_removed += 1
                     else:
                         coordIndex += 1
-            elif cmd in ['m', 'l'] and len(data) > (startIndex+1)*2:  # m,l expect two parameters
-                coordIndex = startIndex * 2
+
+            # l expects two parameters and we start drawing with the first (so we need at least 4)
+            elif cmd is 'l' and len(data) >= 4:
+                coordIndex = 0
+                while coordIndex+2 < len(data):
+                    if is_same_slope(*data[coordIndex:coordIndex+4]):
+                        data[coordIndex] += data[coordIndex+2]
+                        data[coordIndex+1] += data[coordIndex+3]
+                        del data[coordIndex+2]  # delete the next two elements
+                        del data[coordIndex+2]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 2
+
+            # m expects two parameters but we have to skip the first pair as it's not drawn (so we need at least 6)
+            elif cmd is 'm' and len(data) >= 6:
+                coordIndex = 2;
                 while coordIndex+2 < len(data):
                     if is_same_slope(*data[coordIndex:coordIndex+4]):
                         data[coordIndex] += data[coordIndex+2]
