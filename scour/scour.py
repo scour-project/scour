@@ -2053,14 +2053,23 @@ def cleanPath(element, options):
     # this gets the parser object from svg_regex.py
     oldPathStr = element.getAttribute('d')
     path = svg_parser.parse(oldPathStr)
+    style = _getStyle(element)
 
     # This determines whether the stroke has round or square linecaps.  If it does, we do not want to collapse empty
     # segments, as they are actually rendered (as circles or squares with diameter/dimension matching the path-width).
-    has_round_or_square_linecaps = element.getAttribute('stroke-linecap') in ['round', 'square']
+    has_round_or_square_linecaps = (
+        element.getAttribute('stroke-linecap') in ['round', 'square']
+        or 'stroke-linecap' in style and style['stroke-linecap'] in ['round', 'square']
+    )
 
     # This determines whether the stroke has intermediate markers.  If it does, we do not want to collapse
     # straight segments running in the same direction, as markers are rendered on the intermediate nodes.
-    has_markers = element.hasAttribute('marker') or element.hasAttribute('marker-mid')
+    has_intermediate_markers = (
+        element.hasAttribute('marker')
+        or element.hasAttribute('marker-mid')
+        or 'marker' in style
+        or 'marker-mid' in style
+    )
 
     # The first command must be a moveto, and whether it's relative (m)
     # or absolute (M), the first set of coordinates *is* absolute. So
@@ -2414,7 +2423,7 @@ def cleanPath(element, options):
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists, even if we're deleting items, because these
     # deletions are relatively cheap.
-    if not has_markers:
+    if not has_intermediate_markers:
         for pathIndex in range(len(path)):
             cmd, data = path[pathIndex]
 
