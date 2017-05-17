@@ -1036,16 +1036,25 @@ class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
         self.assertEqual(path[4][0], 'z',
                          'Did not remove an empty line segment from path')
 
-# Do not remove empty segments if round linecaps.
 
-
-class DoNotRemoveEmptySegmentsFromPathWithRoundLineCaps(unittest.TestCase):
+class RemoveEmptySegmentsFromPathWithButtLineCaps(unittest.TestCase):
 
     def runTest(self):
-        doc = scourXmlFile('unittests/path-with-caps.svg')
-        path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
-        self.assertEqual(len(path), 2,
-                         'Did not preserve empty segments when path had round linecaps')
+        doc = scourXmlFile('unittests/path-with-caps.svg', parse_args(['--disable-style-to-xml']))
+        for id in ['none', 'attr_butt', 'style_butt']:
+            path = svg_parser.parse(doc.getElementById(id).getAttribute('d'))
+            self.assertEqual(len(path), 1,
+                             'Did not remove empty segments when path had butt linecaps')
+
+
+class DoNotRemoveEmptySegmentsFromPathWithRoundSquareLineCaps(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/path-with-caps.svg', parse_args(['--disable-style-to-xml']))
+        for id in ['attr_round', 'attr_square', 'style_round', 'style_square']:
+            path = svg_parser.parse(doc.getElementById(id).getAttribute('d'))
+            self.assertEqual(len(path), 2,
+                             'Did remove empty segments when path had round or square linecaps')
 
 
 class ChangeLineToHorizontalLineSegmentInPath(unittest.TestCase):
