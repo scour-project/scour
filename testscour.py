@@ -964,10 +964,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=1']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1e3 1e4 1e5",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4e3 5e4 7e5",
                              'Precision not correctly reduced with "--set-precision=1" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1e3 -1e4 -1e5",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4e3 -5e4 -7e5",
                          'Precision not correctly reduced with "--set-precision=1" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -977,10 +977,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=2']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 1.2e5",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 6.5e5",
                              'Precision not correctly reduced with "--set-precision=2" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-1.2e5",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-6.5e5",
                          'Precision not correctly reduced with "--set-precision=2" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -990,10 +990,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=3']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 654321",
                              'Precision not correctly reduced with "--set-precision=3" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-654321",
                          'Precision not correctly reduced with "--set-precision=3" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -1003,10 +1003,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=4']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 654321",
                              'Precision not correctly reduced with "--set-precision=4" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-654321",
                          'Precision not correctly reduced with "--set-precision=4" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123.5 101-123.5-101",
@@ -1036,16 +1036,25 @@ class RemoveEmptyLineSegmentsFromPath(unittest.TestCase):
         self.assertEqual(path[4][0], 'z',
                          'Did not remove an empty line segment from path')
 
-# Do not remove empty segments if round linecaps.
 
-
-class DoNotRemoveEmptySegmentsFromPathWithRoundLineCaps(unittest.TestCase):
+class RemoveEmptySegmentsFromPathWithButtLineCaps(unittest.TestCase):
 
     def runTest(self):
-        doc = scourXmlFile('unittests/path-with-caps.svg')
-        path = svg_parser.parse(doc.getElementsByTagNameNS(SVGNS, 'path')[0].getAttribute('d'))
-        self.assertEqual(len(path), 2,
-                         'Did not preserve empty segments when path had round linecaps')
+        doc = scourXmlFile('unittests/path-with-caps.svg', parse_args(['--disable-style-to-xml']))
+        for id in ['none', 'attr_butt', 'style_butt']:
+            path = svg_parser.parse(doc.getElementById(id).getAttribute('d'))
+            self.assertEqual(len(path), 1,
+                             'Did not remove empty segments when path had butt linecaps')
+
+
+class DoNotRemoveEmptySegmentsFromPathWithRoundSquareLineCaps(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/path-with-caps.svg', parse_args(['--disable-style-to-xml']))
+        for id in ['attr_round', 'attr_square', 'style_round', 'style_square']:
+            path = svg_parser.parse(doc.getElementById(id).getAttribute('d'))
+            self.assertEqual(len(path), 2,
+                             'Did remove empty segments when path had round or square linecaps')
 
 
 class ChangeLineToHorizontalLineSegmentInPath(unittest.TestCase):
@@ -1215,35 +1224,51 @@ class RemoveFontStylesFromNonTextShapes(unittest.TestCase):
                          'font-size not removed from rect')
 
 
-class CollapseConsecutiveHLinesSegments(unittest.TestCase):
+class CollapseStraightPathSegments(unittest.TestCase):
 
     def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), 'm100 100h200v100h-200z',
-                         'Did not collapse consecutive hlines segments')
+        doc = scourXmlFile('unittests/collapse-straight-path-segments.svg', parse_args(['--disable-style-to-xml']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        path_data = [path.getAttribute('d') for path in paths]
+        path_data_expected = ['m0 0h30',
+                              'm0 0v30',
+                              'm0 0h10.5v10.5',
+                              'm0 0h10-1v10-1',
+                              'm0 0h30',
+                              'm0 0h30',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0 20 40v1l10 20',
+                              'm0 0 10 10-20-20 10 10-20-20',
+                              'm0 0 1 2m1 2 2 4m1 2 2 4',
+                              'm6.3228 7.1547 81.198 45.258']
 
+        self.assertEqual(path_data[0:3], path_data_expected[0:3],
+                         'Did not collapse h/v commands into a single h/v commands')
+        self.assertEqual(path_data[3], path_data_expected[3],
+                         'Collapsed h/v commands with different direction')
+        self.assertEqual(path_data[4:6], path_data_expected[4:6],
+                         'Did not collapse h/v commands with only start/end markers present')
+        self.assertEqual(path_data[6:10], path_data_expected[6:10],
+                         'Did not preserve h/v commands with intermediate markers present')
 
-class CollapseConsecutiveHLinesCoords(unittest.TestCase):
-
-    def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[1]
-        self.assertEqual(p.getAttribute('d'), 'm100 300h200v100h-200z',
-                         'Did not collapse consecutive hlines coordinates')
-
-
-class DoNotCollapseConsecutiveHLinesSegsWithDifferingSigns(unittest.TestCase):
-
-    def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[2]
-        self.assertEqual(p.getAttribute('d'), 'm100 500h300-100v100h-200z',
-                         'Collapsed consecutive hlines segments with differing signs')
+        self.assertEqual(path_data[10], path_data_expected[10],
+                         'Did not collapse lineto commands into a single (implicit) lineto command')
+        self.assertEqual(path_data[11], path_data_expected[11],
+                         'Collapsed lineto commands with different direction')
+        self.assertEqual(path_data[12], path_data_expected[12],
+                         'Collapsed first parameter pair of a moveto subpath')
+        self.assertEqual(path_data[13], path_data_expected[13],
+                         'Did not collapse the nodes of a straight real world path')
 
 
 class ConvertStraightCurvesToLines(unittest.TestCase):
 
     def runTest(self):
         p = scourXmlFile('unittests/straight-curve.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), 'm10 10l40 40 40-40z',
+        self.assertEqual(p.getAttribute('d'), 'm10 10 40 40 40-40z',
                          'Did not convert straight curves into lines')
 
 
@@ -1380,7 +1405,7 @@ class CollapseSamePathPoints(unittest.TestCase):
 
     def runTest(self):
         p = scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), "m100 100l100.12 100.12c14.877 4.8766-15.123-5.1234 0 0z",
+        self.assertEqual(p.getAttribute('d'), "m100 100 100.12 100.12c14.877 4.8766-15.123-5.1234 0 0z",
                          'Did not collapse same path points')
 
 
@@ -1986,7 +2011,7 @@ class PathEmptyMove(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/path-empty-move.svg')
-        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100l200 100z')
+        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100 200 100z')
         self.assertEqual(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z')
 
 

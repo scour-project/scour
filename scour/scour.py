@@ -403,7 +403,16 @@ default_properties = {  # excluded all properties with 'auto' as default
 }
 
 
-def isSameSign(a, b): return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+def is_same_sign(a, b):
+    return (a <= 0 and b <= 0) or (a >= 0 and b >= 0)
+
+
+def is_same_direction(x1, y1, x2, y2):
+    if is_same_sign(x1, x2) and is_same_sign(y1, y2):
+        diff = y1/x1 - y2/x2
+        return scouringContext.plus(1 + diff) == 1
+    else:
+        return False
 
 
 scinumber = re.compile(r"[-+]?(\d*\.?)?\d+[eE][-+]?\d+")
@@ -2044,10 +2053,23 @@ def cleanPath(element, options):
     # this gets the parser object from svg_regex.py
     oldPathStr = element.getAttribute('d')
     path = svg_parser.parse(oldPathStr)
+    style = _getStyle(element)
 
-    # This determines whether the stroke has round linecaps.  If it does,
-    # we do not want to collapse empty segments, as they are actually rendered.
-    withRoundLineCaps = element.getAttribute('stroke-linecap') == 'round'
+    # This determines whether the stroke has round or square linecaps.  If it does, we do not want to collapse empty
+    # segments, as they are actually rendered (as circles or squares with diameter/dimension matching the path-width).
+    has_round_or_square_linecaps = (
+        element.getAttribute('stroke-linecap') in ['round', 'square']
+        or 'stroke-linecap' in style and style['stroke-linecap'] in ['round', 'square']
+    )
+
+    # This determines whether the stroke has intermediate markers.  If it does, we do not want to collapse
+    # straight segments running in the same direction, as markers are rendered on the intermediate nodes.
+    has_intermediate_markers = (
+        element.hasAttribute('marker')
+        or element.hasAttribute('marker-mid')
+        or 'marker' in style
+        or 'marker-mid' in style
+    )
 
     # The first command must be a moveto, and whether it's relative (m)
     # or absolute (M), the first set of coordinates *is* absolute. So
@@ -2057,7 +2079,7 @@ def cleanPath(element, options):
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists since we're not adding or removing any.
     x = y = 0
-    for pathIndex in range(0, len(path)):
+    for pathIndex in range(len(path)):
         cmd, data = path[pathIndex]  # Changes to cmd don't get through to the data structure
         i = 0
         # adjust abs to rel
@@ -2158,8 +2180,8 @@ def cleanPath(element, options):
     # remove empty segments
     # Reuse the data structure 'path' and the coordinate lists, even if we're
     # deleting items, because these deletions are relatively cheap.
-    if not withRoundLineCaps:
-        for pathIndex in range(0, len(path)):
+    if not has_round_or_square_linecaps:
+        for pathIndex in range(len(path)):
             cmd, data = path[pathIndex]
             i = 0
             if cmd in ['m', 'l', 't']:
@@ -2253,26 +2275,25 @@ def cleanPath(element, options):
     prevData = []
     newPath = []
     for (cmd, data) in path:
-        # flush the previous command if it is not the same type as the current command
-        if prevCmd != '':
-            if cmd != prevCmd or cmd == 'm':
-                newPath.append((prevCmd, prevData))
-                prevCmd = ''
-                prevData = []
-
-        # if the previous and current commands are the same type,
-        # or the previous command is moveto and the current is lineto, collapse,
-        # but only if they are not move commands (since move can contain implicit lineto commands)
-        if (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')) and cmd != 'm':
-            prevData.extend(data)
-
-        # save last command and data
-        else:
+        if prevCmd == '':
+            # initialize with current path cmd and data
             prevCmd = cmd
             prevData = data
+        else:
+            # collapse if
+            # - cmd is not moveto (explicit moveto commands are not drawn)
+            # - the previous and current commands are the same type,
+            # - the previous command is moveto and the current is lineto
+            #   (subsequent moveto pairs are treated as implicit lineto commands)
+            if cmd != 'm' and (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')):
+                prevData.extend(data)
+            # else flush the previous command if it is not the same type as the current command
+            else:
+                newPath.append((prevCmd, prevData))
+                prevCmd = cmd
+                prevData = data
     # flush last command and data
-    if prevCmd != '':
-        newPath.append((prevCmd, prevData))
+    newPath.append((prevCmd, prevData))
     path = newPath
 
     # convert to shorthand path segments where possible
@@ -2396,22 +2417,52 @@ def cleanPath(element, options):
             newPath.append((cmd, data))
     path = newPath
 
-    # for each h or v, collapse unnecessary coordinates that run in the same direction
-    # i.e. "h-100-100" becomes "h-200" but "h300-100" does not change
+    # For each m, l, h or v, collapse unnecessary coordinates that run in the same direction
+    # i.e. "h-100-100" becomes "h-200" but "h300-100" does not change.
+    # If the path has intermediate markers we have to preserve intermediate nodes, though.
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists, even if we're deleting items, because these
     # deletions are relatively cheap.
-    for pathIndex in range(1, len(path)):
-        cmd, data = path[pathIndex]
-        if cmd in ['h', 'v'] and len(data) > 1:
-            coordIndex = 1
-            while coordIndex < len(data):
-                if isSameSign(data[coordIndex - 1], data[coordIndex]):
-                    data[coordIndex - 1] += data[coordIndex]
-                    del data[coordIndex]
-                    _num_path_segments_removed += 1
-                else:
-                    coordIndex += 1
+    if not has_intermediate_markers:
+        for pathIndex in range(len(path)):
+            cmd, data = path[pathIndex]
+
+            # h / v expects only one parameter and we start drawing with the first (so we need at least 2)
+            if cmd in ['h', 'v'] and len(data) >= 2:
+                coordIndex = 0
+                while coordIndex+1 < len(data):
+                    if is_same_sign(data[coordIndex], data[coordIndex+1]):
+                        data[coordIndex] += data[coordIndex+1]
+                        del data[coordIndex+1]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 1
+
+            # l expects two parameters and we start drawing with the first (so we need at least 4)
+            elif cmd == 'l' and len(data) >= 4:
+                coordIndex = 0
+                while coordIndex+2 < len(data):
+                    if is_same_direction(*data[coordIndex:coordIndex+4]):
+                        data[coordIndex] += data[coordIndex+2]
+                        data[coordIndex+1] += data[coordIndex+3]
+                        del data[coordIndex+2]  # delete the next two elements
+                        del data[coordIndex+2]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 2
+
+            # m expects two parameters but we have to skip the first pair as it's not drawn (so we need at least 6)
+            elif cmd == 'm' and len(data) >= 6:
+                coordIndex = 2
+                while coordIndex+2 < len(data):
+                    if is_same_direction(*data[coordIndex:coordIndex+4]):
+                        data[coordIndex] += data[coordIndex+2]
+                        data[coordIndex+1] += data[coordIndex+3]
+                        del data[coordIndex+2]  # delete the next two elements
+                        del data[coordIndex+2]
+                        _num_path_segments_removed += 1
+                    else:
+                        coordIndex += 2
 
     # it is possible that we have consecutive h, v, c, t commands now
     # so again collapse all consecutive commands of the same type into one command
@@ -2542,7 +2593,7 @@ def controlPoints(cmd, data):
     """
     cmd = cmd.lower()
     if cmd in ['c', 's', 'q']:
-        indices = range(0, len(data))
+        indices = range(len(data))
         if cmd == 'c':  # c: (x1 y1 x2 y2 x y)+
             return [(index % 6) < 4 for index in indices]
         elif cmd in ['s', 'q']:  # s: (x2 y2 x y)+   q: (x1 y1 x y)+

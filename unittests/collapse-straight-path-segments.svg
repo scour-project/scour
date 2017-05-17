@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+ <defs>
+  <marker id="dot">
+   <circle r="5px"/>
+  </marker>
+ </defs>
+
+ <!-- h/v commands should be collapsed into a single h/v commands -->
+ <path d="m0 0h10 20"/>
+ <path d="m0 0v10 20"/>
+ <path d="m0 0h10 0.5v10 0.5"/>
+ <!-- h/v commands should not be collapsed if they have different direction -->
+ <path d="m0 0h10 -1v10 -1"/>
+ <!-- h/v commands should also be collapsed if only start/end markers are present -->
+ <path d="m0 0h10 20" marker-start="url(#dot)" marker-end="url(#dot)"/>
+ <path d="m0 0h10 20" style="marker-start:url(#dot);marker-end:url(#dot)"/>
+ <!-- h/v commands should be preserved if intermediate markers are present -->
+ <path d="m0 0h10 20" marker="url(#dot)"/>
+ <path d="m0 0h10 20" marker-mid="url(#dot)"/>
+ <path d="m0 0h10 20" style="marker:url(#dot)"/>
+ <path d="m0 0h10 20" style="marker-mid:url(#dot)"/>
+
+ <!-- all consecutive lineto commands pointing into the sam direction
+      should be collapsed into a single (implicit if possible) lineto command -->
+ <path d="m 0 0 l 10 20 0.25 0.5 l 0.75 1.5 l 5 10 0.2 0.4 l 3 6 0.8 1.6 l 0 1 l 1 2 9 18"/>
+ <!-- must not be collapsed (same slope, but different direction) -->
+ <path d="m 0 0 10 10 -20 -20 l 10 10 -20 -20"/>
+ <!-- first parameter pair of a moveto subpath must not be collapsed as it's not drawn on canvas -->
+ <path d="m0 0 1 2 m 1 2 1 2l 1 2 m 1 2 1 2 1 2"/>
+ <!-- real world example of straight path with multiple nodes -->
+ <path d="m 6.3227953,7.1547422 10.6709787,5.9477588 9.20334,5.129731 22.977448,12.807101 30.447251,16.970601 7.898986,4.402712"/>
+</svg>
