@@ -964,10 +964,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=1']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1e3 1e4 1e5",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4e3 5e4 7e5",
                              'Precision not correctly reduced with "--set-precision=1" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1e3 -1e4 -1e5",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4e3 -5e4 -7e5",
                          'Precision not correctly reduced with "--set-precision=1" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -977,10 +977,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=2']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 1.2e5",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 6.5e5",
                              'Precision not correctly reduced with "--set-precision=2" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-1.2e5",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-6.5e5",
                          'Precision not correctly reduced with "--set-precision=2" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -990,10 +990,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=3']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 654321",
                              'Precision not correctly reduced with "--set-precision=3" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-654321",
                          'Precision not correctly reduced with "--set-precision=3" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123 101-123-101",
@@ -1003,10 +1003,10 @@ class KeepPrecisionInPathDataIfSameLength(unittest.TestCase):
         doc = scourXmlFile('unittests/path-precision.svg', parse_args(['--set-precision=4']))
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths[1:3]:
-            self.assertEqual(path.getAttribute('d'), "m1 12 123 1234 12345 123456",
+            self.assertEqual(path.getAttribute('d'), "m1 21 321 4321 54321 654321",
                              'Precision not correctly reduced with "--set-precision=4" '
                              'for path with ID ' + path.getAttribute('id'))
-        self.assertEqual(paths[4].getAttribute('d'), "m-1-12-123-1234-12345-123456",
+        self.assertEqual(paths[4].getAttribute('d'), "m-1-21-321-4321-54321-654321",
                          'Precision not correctly reduced with "--set-precision=4" '
                          'for path with ID ' + paths[4].getAttribute('id'))
         self.assertEqual(paths[5].getAttribute('d'), "m123.5 101-123.5-101",

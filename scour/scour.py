@@ -2445,7 +2445,7 @@ def cleanPath(element, options):
 
             # m expects two parameters but we have to skip the first pair as it's not drawn (so we need at least 6)
             elif cmd is 'm' and len(data) >= 6:
-                coordIndex = 2;
+                coordIndex = 2
                 while coordIndex+2 < len(data):
                     if is_same_direction(*data[coordIndex:coordIndex+4]):
                         data[coordIndex] += data[coordIndex+2]
