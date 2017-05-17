@@ -2079,7 +2079,7 @@ def cleanPath(element, options):
     # Reuse the data structure 'path', since we're not adding or removing subcommands.
     # Also reuse the coordinate lists since we're not adding or removing any.
     x = y = 0
-    for pathIndex in range(0, len(path)):
+    for pathIndex in range(len(path)):
         cmd, data = path[pathIndex]  # Changes to cmd don't get through to the data structure
         i = 0
         # adjust abs to rel
@@ -2181,7 +2181,7 @@ def cleanPath(element, options):
     # Reuse the data structure 'path' and the coordinate lists, even if we're
     # deleting items, because these deletions are relatively cheap.
     if not has_round_or_square_linecaps:
-        for pathIndex in range(0, len(path)):
+        for pathIndex in range(len(path)):
             cmd, data = path[pathIndex]
             i = 0
             if cmd in ['m', 'l', 't']:
@@ -2593,7 +2593,7 @@ def controlPoints(cmd, data):
     """
     cmd = cmd.lower()
     if cmd in ['c', 's', 'q']:
-        indices = range(0, len(data))
+        indices = range(len(data))
         if cmd == 'c':  # c: (x1 y1 x2 y2 x y)+
             return [(index % 6) < 4 for index in indices]
         elif cmd in ['s', 'q']:  # s: (x2 y2 x y)+   q: (x1 y1 x y)+
