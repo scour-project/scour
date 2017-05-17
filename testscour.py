@@ -1240,7 +1240,7 @@ class CollapseStraightPathSegments(unittest.TestCase):
                               'm0 0h10 20',
                               'm0 0h10 20',
                               'm0 0h10 20',
-                              'm0 0 20 40',
+                              'm0 0 20 40v1l10 20',
                               'm0 0 10 10-20-20 10 10-20-20',
                               'm0 0 1 2m1 2 2 4m1 2 2 4',
                               'm6.3228 7.1547 81.198 45.258']
