@@ -2266,26 +2266,25 @@ def cleanPath(element, options):
     prevData = []
     newPath = []
     for (cmd, data) in path:
-        # flush the previous command if it is not the same type as the current command
-        if prevCmd != '':
-            if cmd != prevCmd or cmd == 'm':
-                newPath.append((prevCmd, prevData))
-                prevCmd = ''
-                prevData = []
-
-        # if the previous and current commands are the same type,
-        # or the previous command is moveto and the current is lineto, collapse,
-        # but only if they are not move commands (since move can contain implicit lineto commands)
-        if (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')) and cmd != 'm':
-            prevData.extend(data)
-
-        # save last command and data
-        else:
+        if prevCmd == '':
+            # initialize with current path cmd and data
             prevCmd = cmd
             prevData = data
+        else:
+            # collapse if
+            # - cmd is not moveto (explicit moveto commands are not drawn)
+            # - the previous and current commands are the same type,
+            # - the previous command is moveto and the current is lineto
+            #   (subsequent moveto pairs are treated as implicit lineto commands)
+            if cmd != 'm' and (cmd == prevCmd or (cmd == 'l' and prevCmd == 'm')):
+                prevData.extend(data)
+            # else flush the previous command if it is not the same type as the current command
+            else:
+                newPath.append((prevCmd, prevData))
+                prevCmd = cmd
+                prevData = data
     # flush last command and data
-    if prevCmd != '':
-        newPath.append((prevCmd, prevData))
+    newPath.append((prevCmd, prevData))
     path = newPath
 
     # convert to shorthand path segments where possible
