@@ -2439,7 +2439,7 @@ def cleanPath(element, options):
                         coordIndex += 1
 
             # l expects two parameters and we start drawing with the first (so we need at least 4)
-            elif cmd is 'l' and len(data) >= 4:
+            elif cmd == 'l' and len(data) >= 4:
                 coordIndex = 0
                 while coordIndex+2 < len(data):
                     if is_same_direction(*data[coordIndex:coordIndex+4]):
@@ -2452,7 +2452,7 @@ def cleanPath(element, options):
                         coordIndex += 2
 
             # m expects two parameters but we have to skip the first pair as it's not drawn (so we need at least 6)
-            elif cmd is 'm' and len(data) >= 6:
+            elif cmd == 'm' and len(data) >= 6:
                 coordIndex = 2
                 while coordIndex+2 < len(data):
                     if is_same_direction(*data[coordIndex:coordIndex+4]):
