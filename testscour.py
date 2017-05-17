@@ -1224,28 +1224,44 @@ class RemoveFontStylesFromNonTextShapes(unittest.TestCase):
                          'font-size not removed from rect')
 
 
-class CollapseConsecutiveHLinesSegments(unittest.TestCase):
+class CollapseStraightPathSegments(unittest.TestCase):
 
     def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), 'm100 100h200v100h-200z',
-                         'Did not collapse consecutive hlines segments')
+        doc = scourXmlFile('unittests/collapse-straight-path-segments.svg', parse_args(['--disable-style-to-xml']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        path_data = [path.getAttribute('d') for path in paths]
+        path_data_expected = ['m0 0h30',
+                              'm0 0v30',
+                              'm0 0h10.5v10.5',
+                              'm0 0h10-1v10-1',
+                              'm0 0h30',
+                              'm0 0h30',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0h10 20',
+                              'm0 0 20 40',
+                              'm0 0 10 10-20-20 10 10-20-20',
+                              'm0 0 1 2m1 2 2 4m1 2 2 4',
+                              'm6.3228 7.1547 81.198 45.258']
 
+        self.assertEqual(path_data[0:3], path_data_expected[0:3],
+                         'Did not collapse h/v commands into a single h/v commands')
+        self.assertEqual(path_data[3], path_data_expected[3],
+                         'Collapsed h/v commands with different direction')
+        self.assertEqual(path_data[4:6], path_data_expected[4:6],
+                         'Did not collapse h/v commands with only start/end markers present')
+        self.assertEqual(path_data[6:10], path_data_expected[6:10],
+                         'Did not preserve h/v commands with intermediate markers present')
 
-class CollapseConsecutiveHLinesCoords(unittest.TestCase):
-
-    def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[1]
-        self.assertEqual(p.getAttribute('d'), 'm100 300h200v100h-200z',
-                         'Did not collapse consecutive hlines coordinates')
-
-
-class DoNotCollapseConsecutiveHLinesSegsWithDifferingSigns(unittest.TestCase):
-
-    def runTest(self):
-        p = scourXmlFile('unittests/consecutive-hlines.svg').getElementsByTagNameNS(SVGNS, 'path')[2]
-        self.assertEqual(p.getAttribute('d'), 'm100 500h300-100v100h-200z',
-                         'Collapsed consecutive hlines segments with differing signs')
+        self.assertEqual(path_data[10], path_data_expected[10],
+                         'Did not collapse lineto commands into a single (implicit) lineto command')
+        self.assertEqual(path_data[11], path_data_expected[11],
+                         'Collapsed lineto commands with different direction')
+        self.assertEqual(path_data[12], path_data_expected[12],
+                         'Collapsed first parameter pair of a moveto subpath')
+        self.assertEqual(path_data[13], path_data_expected[13],
+                         'Did not collapse the nodes of a straight real world path')
 
 
 class ConvertStraightCurvesToLines(unittest.TestCase):
