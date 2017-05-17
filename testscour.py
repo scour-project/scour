@@ -1243,7 +1243,7 @@ class ConvertStraightCurvesToLines(unittest.TestCase):
 
     def runTest(self):
         p = scourXmlFile('unittests/straight-curve.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), 'm10 10l40 40 40-40z',
+        self.assertEqual(p.getAttribute('d'), 'm10 10 40 40 40-40z',
                          'Did not convert straight curves into lines')
 
 
@@ -1380,7 +1380,7 @@ class CollapseSamePathPoints(unittest.TestCase):
 
     def runTest(self):
         p = scourXmlFile('unittests/collapse-same-path-points.svg').getElementsByTagNameNS(SVGNS, 'path')[0]
-        self.assertEqual(p.getAttribute('d'), "m100 100l100.12 100.12c14.877 4.8766-15.123-5.1234 0 0z",
+        self.assertEqual(p.getAttribute('d'), "m100 100 100.12 100.12c14.877 4.8766-15.123-5.1234 0 0z",
                          'Did not collapse same path points')
 
 
@@ -1986,7 +1986,7 @@ class PathEmptyMove(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/path-empty-move.svg')
-        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100l200 100z')
+        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100 200 100z')
         self.assertEqual(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z')
 
 
