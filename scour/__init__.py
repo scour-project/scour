@@ -16,4 +16,18 @@
 #
 ###############################################################################
 
-__version__ = u'0.35'
+
+from .version import __version__
+
+
+# public API
+from .scour import scourString as scour_string
+from .scour import scourXmlFile as scour_xml_file
+from .scour import sanitizeOptions as options
+from .scour import parse_args
+
+__all__ = ['scour_string', 'scour_xml_file', 'options', 'parse_args']
+
+
+# silence pyflakes
+version = __version__
