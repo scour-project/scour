@@ -3,7 +3,18 @@
 ## Version 0.36 (not released yet)
 * Fix embedding of raster images which was broken in most cases and did not work at all in Python 3. ([#120](https://github.com/scour-project/scour/issues/62))
 * Some minor fixes for statistics output.
-
+* Greatly improve the algorithm to reduce numeric precision.
+  * Precision was not properly reduced for some numbers.
+  * Only use reduced precision if it results in a shorter string representation, otherwise preserve full precision in output (e.g. use "123" instead of "1e2" when precision is set to 1).
+  * Reduce precision of lengths in `viewBox` ([#127](https://github.com/scour-project/scour/issues/127))
+  * Add option `--set-c-precision` which allows to set a reduced numeric precision for control points.<br/>Control points determine how a path is bent in between two nodes and are less sensitive to a reduced precision than the position coordinates of the nodes themselves. This option can be used to save a few additional bytes without affecting visual appearance negatively.
+* Fix: Unnecessary whitespace was not stripped from elliptical paths. ([#89](https://github.com/scour-project/scour/issues/89))
+* Improve and fix functionality to collapse straight paths segments. ([#146](https://github.com/scour-project/scour/issues/146))
+  * Collapse subpaths of moveto `m` and lineto `l`commands if they have the same direction (before we only collapsed horizontal/vertical `h`/`v` lineto commands).
+  * Attempt to collapse lineto `l` commands into a preceding moveto `m` command (these are then called "implicit lineto commands")
+  * Do not collapse straight path segments in paths that have intermediate markers. ([#145](https://github.com/scour-project/scour/issues/145))
+  * Preserve empty path segments if they have `stroke-linecap` set to `round` or `square`. They render no visible line but a tiny dot or square.
+  
 
 ## Version 0.35 (2016-09-14)
 
