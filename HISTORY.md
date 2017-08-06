@@ -1,6 +1,6 @@
 # Release Notes for Scour
 
-## Version 0.36 (not released yet)
+## Version 0.36 (2017-08-06)
 * Fix embedding of raster images which was broken in most cases and did not work at all in Python 3. ([#120](https://github.com/scour-project/scour/issues/62))
 * Some minor fixes for statistics output.
 * Greatly improve the algorithm to reduce numeric precision.
