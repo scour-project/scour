@@ -22,15 +22,20 @@ import re
 from setuptools import find_packages, setup
 
 LONGDESC = """
-Scour is a SVG optimizer/sanitizer that can be used to produce SVGs for Web deployment.
+Scour is an SVG optimizer/cleaner that reduces the size of scalable vector graphics by optimizing structure and removing unnecessary data.
+
+It can be used to create streamlined vector graphics suitable for web deployment, publishing/sharing or further processing.
+
+The goal of Scour is to output a file that renderes identically at a fraction of the size by removing a lot of redundant information created by most SVG editors. Optimization options are typically lossless but can be tweaked for more agressive cleaning.
 
 Website
   - http://www.codedread.com/scour/ (original website)
-  - https://github.com/codedread/scour (today)
+  - https://github.com/scour-project/scour (today)
 
 Authors:
   - Jeff Schiller, Louis Simard (original authors)
   - Tobias Oberstein (maintainer)
+  - Eduard Braun (maintainer)
 """
 
 VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
@@ -52,7 +57,7 @@ setup(
     license='Apache License 2.0',
     author='Jeff Schiller',
     author_email='codedread@gmail.com',
-    url='https://github.com/codedread/scour',
+    url='https://github.com/scour-project/scour',
     platforms=('Any'),
     install_requires=['six>=1.9.0'],
     packages=find_packages(),

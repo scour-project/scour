@@ -7,7 +7,11 @@
 
 ---
 
-Scour is a Python tool that takes an SVG file and produces a cleaner and more concise file. It is intended to be used **after** exporting to SVG with a GUI editor, such as Inkscape or Adobe Illustrator.
+Scour is an SVG optimizer/cleaner that reduces the size of scalable vector graphics by optimizing structure and removing unnecessary data written in Python.
+
+It can be used to create streamlined vector graphics suitable for web deployment, publishing/sharing or further processing.
+
+The goal of Scour is to output a file that renderes identically at a fraction of the size by removing a lot of redundant information created by most SVG editors. Optimization options are typically lossless but can be tweaked for more agressive cleaning.
 
 Scour is open-source and licensed under [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE).
 
