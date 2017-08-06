@@ -11,9 +11,8 @@ Scour is a Python tool that takes an SVG file and produces a cleaner and more co
 
 Scour is open-source and licensed under [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE).
 
-Scour was originally developed by Jeff "codedread" Schiller and Louis Simard. Development is [now maintained](https://github.com/codedread/scour/issues/11) by Tobias "oberstet" Oberstein.
-
-This Github repository is the official one. The official website as well as older packages can be found at [www.codedread.com/scour](http://www.codedread.com/scour/).
+Scour was originally developed by Jeff "codedread" Schiller and Louis Simard in in 2010.
+The project moved to GitLab in 2013 an is now maintained by Tobias "oberstet" Oberstein and Eduard "Ede_123" Braun.
 
 ## Installation
 
