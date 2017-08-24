@@ -3282,9 +3282,12 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
             elif attrValue == 'default':
                 preserveWhitespace = False
 
-    # if no children, self-close
     children = element.childNodes
-    if children.length > 0:
+    if children.length == 0:
+        outParts.append('/>')
+        if indent > 0:
+            outParts.append(newline)
+    else:
         outParts.append('>')
 
         onNewLine = False
@@ -3317,10 +3320,6 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
         if onNewLine:
             outParts.append(I * ind)
         outParts.extend(['</', element.nodeName, '>'])
-        if indent > 0:
-            outParts.append(newline)
-    else:
-        outParts.append('/>')
         if indent > 0:
             outParts.append(newline)
 
