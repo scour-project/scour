@@ -3215,26 +3215,11 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
 
     outParts.extend([(I * ind), '<', element.nodeName])
 
-    # always serialize the id or xml:id attributes first
-    id = element.getAttribute('id')
-    if id != '':
-        quot = '"'
-        if id.find('"') != -1:
-            quot = "'"
-        outParts.extend([' id=', quot, id, quot])
-
-    id = element.getAttribute('xml:id')
-    if id != '':
-        quot = '"'
-        if id.find('"') != -1:
-            quot = "'"
-        outParts.extend([' xml:id=', quot, id, quot])
-
     # now serialize the other attributes
     known_attr = [
         # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
         # (but should be kept inuitively ordered)
-        'id', 'class',
+        'id', 'xml:id', 'class',
         'transform',
         'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
         'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
@@ -3254,8 +3239,6 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
     attrIndices += [attrName2Index[name] for name in sorted(attrName2Index.keys())]
     for index in attrIndices:
         attr = attrList.item(index)
-        if attr.nodeName == 'id' or attr.nodeName == 'xml:id':
-            continue
         # if the attribute value contains a double-quote, use single-quotes
         quot = '"'
         if attr.nodeValue.find('"') != -1:
