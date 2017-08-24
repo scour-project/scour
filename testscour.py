@@ -30,7 +30,12 @@ import unittest
 import six
 from six.moves import map, range
 
-from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile, start, run
+from scour.scour import (
+    makeWellFormed, parse_args, scourString,
+    scourXmlFileAndReturnString, scourXmlFile,
+    start, run
+)
+
 from scour.svg_regex import svg_parser
 from scour import __version__
 
@@ -1779,7 +1784,42 @@ class XmlEntities(unittest.TestCase):
 
     def runTest(self):
         self.assertEqual(makeWellFormed('<>&'), '&lt;&gt;&amp;',
-                         'Incorrectly translated XML entities')
+                         'Incorrectly translated unquoted XML entities')
+        self.assertEqual(makeWellFormed('<>&', "'"), '&lt;&gt;&amp;',
+                         'Incorrectly translated single-quoted XML entities')
+        self.assertEqual(makeWellFormed('<>&', '"'), '&lt;&gt;&amp;',
+                         'Incorrectly translated double-quoted XML entities')
+
+        self.assertEqual(makeWellFormed("'"), "'",
+                         'Incorrectly translated unquoted single quote')
+        self.assertEqual(makeWellFormed('"'), '"',
+                         'Incorrectly translated unquoted double quote')
+
+        self.assertEqual(makeWellFormed("'", '"'), "'",
+                         'Incorrectly translated double-quoted single quote')
+        self.assertEqual(makeWellFormed('"', "'"), '"',
+                         'Incorrectly translated single-quoted double quote')
+
+        self.assertEqual(makeWellFormed("'", "'"), '&apos;',
+                         'Incorrectly translated single-quoted single quote')
+        self.assertEqual(makeWellFormed('"', '"'), '&quot;',
+                         'Incorrectly translated double-quoted double quote')
+
+
+class HandleQuotesInAttributes(unittest.TestCase):
+
+    def runTest(self):
+        output = scourXmlFileAndReturnString('unittests/entities.svg')
+        self.assertTrue('a="\'"' in output,
+                        'Failed on attribute value with non-double quote')
+        self.assertTrue("b='\"'" in output,
+                        'Failed on attribute value with non-single quote')
+        self.assertTrue("c=\"''&quot;\"" in output,
+                        'Failed on attribute value with more single quotes than double quotes')
+        self.assertTrue('d=\'""&apos;\'' in output,
+                        'Failed on attribute value with more double quotes than single quotes')
+        self.assertTrue("e=\"''&quot;&quot;\"" in output,
+                        'Failed on attribute value with the same number of double quotes as single quotes')
 
 
 class DoNotStripCommentsOutsideOfRoot(unittest.TestCase):

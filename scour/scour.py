@@ -647,7 +647,7 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
     for elem in defElem.childNodes:
         # only look at it if an element and not referenced anywhere else
         if elem.nodeType == Node.ELEMENT_NODE and (elem.getAttribute('id') == '' or
-                                   elem.getAttribute('id') not in referencedIDs):
+                                                   elem.getAttribute('id') not in referencedIDs):
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
@@ -3597,9 +3597,7 @@ def scourString(in_string, options=None):
 
 
 # used mostly by unit tests
-# input is a filename
-# returns the minidom doc representation of the SVG
-def scourXmlFile(filename, options=None):
+def scourXmlFileAndReturnString(filename, options=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
     # we need to make sure infilename is set correctly (otherwise relative references in the SVG won't work)
@@ -3608,7 +3606,14 @@ def scourXmlFile(filename, options=None):
     # open the file and scour it
     with open(filename, "rb") as f:
         in_string = f.read()
-    out_string = scourString(in_string, options)
+
+    return scourString(in_string, options)
+
+
+# used mostly by unit tests
+# returns the minidom doc representation of the SVG
+def scourXmlFile(filename, options=None):
+    out_string = scourXmlFileAndReturnString(filename, options)
 
     # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
