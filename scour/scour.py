@@ -3178,21 +3178,23 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
         remapNamespacePrefix(child, oldprefix, newprefix)
 
 
-def makeWellFormed(str):
-    # Don't escape quotation marks for now as they are fine in text nodes
-    # as well as in attributes if used reciprocally
-    #     xml_ents = { '<':'&lt;', '>':'&gt;', '&':'&amp;', "'":'&apos;', '"':'&quot;'}
+def makeWellFormed(str, quote=''):
     xml_ents = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
-
-#  starr = []
-#  for c in str:
-#      if c in xml_ents:
-#          starr.append(xml_ents[c])
-#      else:
-#          starr.append(c)
-
-    # this list comprehension is short-form for the above for-loop:
+    if quote:
+        xml_ents[quote] = '&apos;' if (quote == "'") else "&quot;"
     return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
+
+
+def chooseQuoteCharacter(str):
+    quotCount = str.count('"')
+    aposCount = str.count("'")
+    if quotCount > aposCount:
+        quote = "'"
+        hasEmbeddedQuote = aposCount
+    else:
+        quote = '"'
+        hasEmbeddedQuote = quotCount
+    return (quote, hasEmbeddedQuote)
 
 
 # hand-rolled serialization function that has the following benefits:
@@ -3239,12 +3241,11 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
     attrIndices += [attrName2Index[name] for name in sorted(attrName2Index.keys())]
     for index in attrIndices:
         attr = attrList.item(index)
-        # if the attribute value contains a double-quote, use single-quotes
-        quot = '"'
-        if attr.nodeValue.find('"') != -1:
-            quot = "'"
 
-        attrValue = makeWellFormed(attr.nodeValue)
+        attrValue = attr.nodeValue
+        (quote, hasEmbeddedQuote) = chooseQuoteCharacter(attrValue)
+        attrValue = makeWellFormed(attrValue, quote if hasEmbeddedQuote else '')
+
         if attr.nodeName == 'style':
             # sort declarations
             attrValue = ';'.join([p for p in sorted(attrValue.split(';'))])
@@ -3258,7 +3259,7 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
                 outParts.append('xmlns:')
             elif attr.namespaceURI == 'http://www.w3.org/1999/xlink':
                 outParts.append('xlink:')
-        outParts.extend([attr.localName, '=', quot, attrValue, quot])
+        outParts.extend([attr.localName, '=', quote, attrValue, quote])
 
         if attr.nodeName == 'xml:space':
             if attrValue == 'preserve':
