@@ -3216,14 +3216,15 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
     outParts.extend([(I * ind), '<', element.nodeName])
 
     # always serialize the id or xml:id attributes first
-    if element.getAttribute('id') != '':
-        id = element.getAttribute('id')
+    id = element.getAttribute('id')
+    if id != '':
         quot = '"'
         if id.find('"') != -1:
             quot = "'"
         outParts.extend([' id=', quot, id, quot])
-    if element.getAttribute('xml:id') != '':
-        id = element.getAttribute('xml:id')
+
+    id = element.getAttribute('xml:id')
+    if id != '':
         quot = '"'
         if id.find('"') != -1:
             quot = "'"
@@ -3282,9 +3283,12 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
             elif attrValue == 'default':
                 preserveWhitespace = False
 
-    # if no children, self-close
     children = element.childNodes
-    if children.length > 0:
+    if children.length == 0:
+        outParts.append('/>')
+        if indent > 0:
+            outParts.append(newline)
+    else:
         outParts.append('>')
 
         onNewLine = False
@@ -3317,10 +3321,6 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
         if onNewLine:
             outParts.append(I * ind)
         outParts.extend(['</', element.nodeName, '>'])
-        if indent > 0:
-            outParts.append(newline)
-    else:
-        outParts.append('/>')
         if indent > 0:
             outParts.append(newline)
 
