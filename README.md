@@ -7,7 +7,7 @@
 
 ---
 
-Scour is an SVG optimizer/cleaner that reduces the size of scalable vector graphics by optimizing structure and removing unnecessary data written in Python.
+Scour is an SVG optimizer/cleaner that reduces the size of scalable vector graphics by optimizing structure and removing unnecessary data; scour is written in Python.
 
 It can be used to create streamlined vector graphics suitable for web deployment, publishing/sharing or further processing.
 
@@ -16,11 +16,11 @@ The goal of Scour is to output a file that renderes identically at a fraction of
 Scour is open-source and licensed under [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE).
 
 Scour was originally developed by Jeff "codedread" Schiller and Louis Simard in in 2010.
-The project moved to GitLab in 2013 an is now maintained by Tobias "oberstet" Oberstein and Eduard "Ede_123" Braun.
+The project moved to GitLab in 2013, and then later to GitHub; it is now maintained by Tobias Oberstein ("oberstet") and Eduard Braun ("Ede123").
 
 ## Installation
 
-Scour requires [Python](https://www.python.org) 2.7 or 3.3+. Further, for installation, [pip](https://pip.pypa.io) should be used.
+Scour requires [Python](https://www.python.org) 2.7 or 3.3+; for installation, [pip](https://pip.pypa.io) should be used.
 
 To install the [latest release](https://pypi.python.org/pypi/scour) of Scour from PyPI:
 
@@ -28,7 +28,7 @@ To install the [latest release](https://pypi.python.org/pypi/scour) of Scour fro
 pip install scour
 ```
 
-To install the [latest trunk](https://github.com/codedread/scour) version (which might be broken!) from GitHub:
+To install the [latest version](https://github.com/codedread/scour) (*which might be broken!*):
 
 ```console
 pip install https://github.com/codedread/scour/archive/master.zip
