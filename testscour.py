@@ -1818,6 +1818,17 @@ class HandleQuotesInAttributes(unittest.TestCase):
                         'Failed on attribute value with the same number of double quotes as single quotes')
 
 
+class PreserveQuotesInStyles(unittest.TestCase):
+
+    def runTest(self):
+        with open('unittests/quotes-in-styles.svg', "rb") as f:
+            output = scourString(f.read())
+        self.assertTrue('use[id="t"]' in output,
+                        'Failed to preserve quote characters in a style element')
+        self.assertTrue("'Times New Roman'" in output,
+                        'Failed to preserve quote characters in a style attribute')
+
+
 class DoNotStripCommentsOutsideOfRoot(unittest.TestCase):
 
     def runTest(self):
