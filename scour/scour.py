@@ -1471,7 +1471,7 @@ def _getStyle(node):
 
 def _setStyle(node, styleMap):
     u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
-    fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in list(styleMap.keys())])
+    fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in styleMap])
     if fixedStyle != '':
         node.setAttribute('style', fixedStyle)
     elif node.getAttribute('style'):
