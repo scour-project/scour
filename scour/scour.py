@@ -1295,14 +1295,14 @@ def removeDuplicateGradientStops(doc):
     return num
 
 
-def collapseSinglyReferencedGradients(doc):
+def collapseSinglyReferencedGradients(doc, referencedIDs):
     global _num_elements_removed
     num = 0
 
     identifiedElements = findElementsWithId(doc.documentElement)
 
     # make sure to reset the ref'ed ids for when we are running this in testscour
-    for rid, nodes in six.iteritems(findReferencedElements(doc.documentElement)):
+    for rid, nodes in six.iteritems(referencedIDs):
         # Make sure that there's actually a defining element for the current ID name.
         # (Cyn: I've seen documents with #id references but no element with that ID!)
         if len(nodes) == 1 and rid in identifiedElements:
@@ -1355,7 +1355,7 @@ def collapseSinglyReferencedGradients(doc):
     return num
 
 
-def removeDuplicateGradients(doc):
+def removeDuplicateGradients(doc, referencedIDs):
     global _num_elements_removed
     num = 0
 
@@ -1417,8 +1417,6 @@ def removeDuplicateGradients(doc):
                         gradientsToRemove[grad].append(ograd)
                         duplicateToMaster[ograd] = grad
 
-    # get a collection of all elements that are referenced and their referencing elements
-    referencedIDs = findReferencedElements(doc.documentElement)
     for masterGrad in gradientsToRemove:
         master_id = masterGrad.getAttribute('id')
         for dupGrad in gradientsToRemove[masterGrad]:
@@ -3470,27 +3468,37 @@ def scourString(in_string, options=None):
                 elem.parentNode.removeChild(elem)
                 _num_elements_removed += 1
 
+    referencedIDs = None
     if options.strip_ids:
+        referencedIDs = findReferencedElements(doc.documentElement)
         bContinueLooping = True
         while bContinueLooping:
             identifiedElements = unprotected_ids(doc, options)
-            referencedIDs = findReferencedElements(doc.documentElement)
             bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
+            referencedIDs = findReferencedElements(doc.documentElement)
 
     while removeDuplicateGradientStops(doc) > 0:
-        pass
+        # removeDuplicateGradientStops does not need referencedIDs, but it can
+        # remove nodes.  Make no assumptions about referencedIDs still being valid
+        # after this call.
+        referencedIDs = None
+
+    if referencedIDs is None:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # remove gradients that are only referenced by one other gradient
-    while collapseSinglyReferencedGradients(doc) > 0:
-        pass
+    while collapseSinglyReferencedGradients(doc, referencedIDs) > 0:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # remove duplicate gradients
-    while removeDuplicateGradients(doc) > 0:
-        pass
+    while removeDuplicateGradients(doc, referencedIDs) > 0:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # create <g> elements if there are runs of elements with the same attributes.
     # this MUST be before moveCommonAttributesToParentGroup.
     if options.group_create:
+        # This does remove nodes, so referencedIDs should remain
+        # valid after this.
         createGroupsForCommonAttributes(doc.documentElement)
 
     # move common attributes to parent group
@@ -3498,9 +3506,8 @@ def scourString(in_string, options=None):
     # all have the same value for an attribute, it must not
     # get moved to the <svg> element. The <svg> element
     # doesn't accept fill=, stroke= etc.!
-    referencedIds = findReferencedElements(doc.documentElement)
     for child in doc.documentElement.childNodes:
-        _num_attributes_removed += moveCommonAttributesToParentGroup(child, referencedIds)
+        _num_attributes_removed += moveCommonAttributesToParentGroup(child, referencedIDs)
 
     # remove unused attributes from parent
     _num_attributes_removed += removeUnusedAttributesOnParent(doc.documentElement)
