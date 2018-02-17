@@ -56,7 +56,7 @@ import re
 import sys
 import time
 import xml.dom.minidom
-from xml.dom import Node
+from xml.dom import Node, NotFoundErr
 from collections import namedtuple
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
@@ -3619,7 +3619,7 @@ def scourXmlFile(filename, options=None):
     for node in all_nodes:
         try:
             node.setIdAttribute('id')
-        except:
+        except NotFoundErr:
             pass
 
     return doc
