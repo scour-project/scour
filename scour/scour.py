@@ -641,11 +641,14 @@ def findReferencingProperty(node, prop, val, ids):
                     ids[id] = [1, [node]]
 
 
-def removeUnusedDefs(doc, defElem, elemsToRemove=None):
+def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
     if elemsToRemove is None:
         elemsToRemove = []
 
-    referencedIDs = findReferencedElements(doc.documentElement)
+    # removeUnusedDefs do not change the XML itself; therefore there is no point in
+    # recomputing findReferencedElements when we recurse into child nodes.
+    if referencedIDs is None:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
     for elem in defElem.childNodes:
@@ -655,7 +658,7 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None):
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
-                elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove)
+                elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove, referencedIDs=referencedIDs)
             # we only remove if it is not one of our tags we always keep (see above)
             elif elem.nodeName not in keepTags:
                 elemsToRemove.append(elem)
