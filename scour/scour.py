@@ -1896,34 +1896,38 @@ def taint(taintedSet, taintedAttribute):
     return taintedSet
 
 
-def removeDefaultAttributeValue(node, attribute):
+def removeDefaultAttributeValuesFromNode(node, attributes):
     """
-    Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
+    Removes each of the 'DefaultAttribute's from 'node' if specified conditions are fulfilled
     """
-    if not node.hasAttribute(attribute.name):
-        return 0
+    count = 0
+    for attribute in attributes:
+        if not node.hasAttribute(attribute.name):
+            continue
 
-    if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
-        return 0
+        if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
+            continue
 
-    # differentiate between text and numeric values
-    if isinstance(attribute.value, str):
-        if node.getAttribute(attribute.name) == attribute.value:
-            if (attribute.conditions is None) or attribute.conditions(node):
-                node.removeAttribute(attribute.name)
-                return 1
-    else:
-        nodeValue = SVGLength(node.getAttribute(attribute.name))
-        if ((attribute.value is None)
-                or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID))):
-            if ((attribute.units is None)
-                    or (nodeValue.units == attribute.units)
-                    or (isinstance(attribute.units, list) and nodeValue.units in attribute.units)):
+        # differentiate between text and numeric values
+        if isinstance(attribute.value, str):
+            if node.getAttribute(attribute.name) == attribute.value:
                 if (attribute.conditions is None) or attribute.conditions(node):
                     node.removeAttribute(attribute.name)
-                    return 1
+                    count += 1
+                    continue
+        else:
+            nodeValue = SVGLength(node.getAttribute(attribute.name))
+            if ((attribute.value is None)
+                    or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID))):
+                if ((attribute.units is None)
+                        or (nodeValue.units == attribute.units)
+                        or (isinstance(attribute.units, list) and nodeValue.units in attribute.units)):
+                    if (attribute.conditions is None) or attribute.conditions(node):
+                        node.removeAttribute(attribute.name)
+                        count += 1
+                        continue
 
-    return 0
+    return count
 
 
 def removeDefaultAttributeValues(node, options, tainted=set()):
@@ -1935,8 +1939,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
         return 0
 
     # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
-    for attribute in default_attributes:
-        num += removeDefaultAttributeValue(node, attribute)
+    num += removeDefaultAttributeValuesFromNode(node, default_attributes)
 
     # Summarily get rid of default properties
     attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
