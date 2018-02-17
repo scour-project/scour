@@ -3201,21 +3201,20 @@ def chooseQuoteCharacter(str):
 # - pretty printing
 # - somewhat judicious use of whitespace
 # - ensure id attributes are first
-def serializeXML(element, options, ind=0, preserveWhitespace=False):
+def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
     outParts = []
 
-    indent = ind
-    line_prefix = ''
+    indent_type = ''
     newline = ''
     if options.newlines:
         if options.indent_type == 'tab':
-            line_prefix = '\t'
+            indent_type = '\t'
         elif options.indent_type == 'space':
-            line_prefix = ' '
-        line_prefix *= options.indent_depth
+            indent_type = ' '
+        indent_type *= options.indent_depth
         newline = '\n'
 
-    outParts.extend([(line_prefix * ind), '<', element.nodeName])
+    outParts.extend([(indent_type * indent_depth), '<', element.nodeName])
 
     # now serialize the other attributes
     known_attr = [
@@ -3270,7 +3269,7 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
     children = element.childNodes
     if children.length == 0:
         outParts.append('/>')
-        if indent > 0:
+        if indent_depth > 0:
             outParts.append(newline)
     else:
         outParts.append('>')
@@ -3282,7 +3281,7 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
                 if preserveWhitespace:
                     outParts.append(serializeXML(child, options, 0, preserveWhitespace))
                 else:
-                    outParts.extend([newline, serializeXML(child, options, indent + 1, preserveWhitespace)])
+                    outParts.extend([newline, serializeXML(child, options, indent_depth + 1, preserveWhitespace)])
                     onNewLine = True
             # text node
             elif child.nodeType == Node.TEXT_NODE:
@@ -3303,9 +3302,9 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
                 pass
 
         if onNewLine:
-            outParts.append(line_prefix * ind)
+            outParts.append(indent_type * indent_depth)
         outParts.extend(['</', element.nodeName, '>'])
-        if indent > 0:
+        if indent_depth > 0:
             outParts.append(newline)
 
     return "".join(outParts)
