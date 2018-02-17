@@ -846,7 +846,7 @@ def unprotected_ids(doc, options):
         protect_ids_list = options.protect_ids_list.split(",")
     if options.protect_ids_prefix:
         protect_ids_prefixes = options.protect_ids_prefix.split(",")
-    for id in list(identifiedElements.keys()):
+    for id in list(identifiedElements):
         protected = False
         if options.protect_ids_noninkscape and not id[-1].isdigit():
             protected = True
@@ -870,7 +870,7 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
     global _num_ids_removed
     keepTags = ['font']
     num = 0
-    for id in list(identifiedElements.keys()):
+    for id in identifiedElements:
         node = identifiedElements[id]
         if id not in referencedIDs and node.nodeName not in keepTags:
             node.removeAttribute('id')
@@ -1051,7 +1051,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
 
         distinctAttrs = []
         # loop through all current 'common' attributes
-        for name in list(commonAttrs.keys()):
+        for name in commonAttrs:
             # if this child doesn't match that attribute, schedule it for removal
             if child.getAttribute(name) != commonAttrs[name]:
                 distinctAttrs.append(name)
@@ -1060,7 +1060,7 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
             del commonAttrs[name]
 
     # commonAttrs now has all the inheritable attributes which are common among all child elements
-    for name in list(commonAttrs.keys()):
+    for name in commonAttrs:
         for child in childElements:
             child.removeAttribute(name)
         elem.setAttribute(name, commonAttrs[name])
@@ -1239,7 +1239,7 @@ def removeUnusedAttributesOnParent(elem):
     for childNum in range(len(childElements)):
         child = childElements[childNum]
         inheritedAttrs = []
-        for name in list(unusedAttrs.keys()):
+        for name in unusedAttrs:
             val = child.getAttribute(name)
             if val == '' or val is None or val == 'inherit':
                 inheritedAttrs.append(name)
@@ -1247,7 +1247,7 @@ def removeUnusedAttributesOnParent(elem):
             del unusedAttrs[a]
 
     # unusedAttrs now has all the parent attributes that are unused
-    for name in list(unusedAttrs.keys()):
+    for name in unusedAttrs:
         elem.removeAttribute(name)
         num += 1
 
@@ -1419,7 +1419,7 @@ def removeDuplicateGradients(doc):
 
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
-    for masterGrad in list(gradientsToRemove.keys()):
+    for masterGrad in gradientsToRemove:
         master_id = masterGrad.getAttribute('id')
         for dupGrad in gradientsToRemove[masterGrad]:
             # if the duplicate gradient no longer has a parent that means it was
@@ -1599,7 +1599,7 @@ def repairStyle(node, options):
         # now if any of the properties match known SVG attributes we prefer attributes
         # over style so emit them and remove them from the style map
         if options.style_to_xml:
-            for propName in list(styleMap.keys()):
+            for propName in list(styleMap):
                 if propName in svgAttributes:
                     node.setAttribute(propName, styleMap[propName])
                     del styleMap[propName]
@@ -1940,7 +1940,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
     attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
     for attribute in attributes:
         if attribute not in tainted:
-            if attribute in list(default_properties.keys()):
+            if attribute in default_properties:
                 if node.getAttribute(attribute) == default_properties[attribute]:
                     node.removeAttribute(attribute)
                     num += 1
@@ -1948,9 +1948,9 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
                     tainted = taint(tainted, attribute)
     # Properties might also occur as styles, remove them too
     styles = _getStyle(node)
-    for attribute in list(styles.keys()):
+    for attribute in list(styles):
         if attribute not in tainted:
-            if attribute in list(default_properties.keys()):
+            if attribute in default_properties:
                 if styles[attribute] == default_properties[attribute]:
                     del styles[attribute]
                     num += 1
@@ -1975,7 +1975,7 @@ def convertColor(value):
     """
     s = value
 
-    if s in list(colors.keys()):
+    if s in colors:
         s = colors[s]
 
     rgbpMatch = rgbp.match(s)
@@ -2031,7 +2031,7 @@ def convertColors(element):
                 element.setAttribute(attr, newColorValue)
                 numBytes += (oldBytes - len(element.getAttribute(attr)))
         # colors might also hide in styles
-        if attr in list(styles.keys()):
+        if attr in styles:
             oldColorValue = styles[attr]
             newColorValue = convertColor(oldColorValue)
             oldBytes = len(oldColorValue)
@@ -2770,7 +2770,7 @@ def reducePrecision(element):
                     num += len(val) - len(newVal)
                     element.setAttribute(lengthAttr, newVal)
         # repeat for attributes hidden in styles
-        if lengthAttr in list(styles.keys()):
+        if lengthAttr in styles:
             val = styles[lengthAttr]
             valLen = SVGLength(val)
             if valLen.units != Unit.INVALID:
