@@ -586,10 +586,9 @@ def findReferencedElements(node, ids=None):
         # we remove the hash mark from the beginning of the id
         id = href[1:]
         if id in ids:
-            ids[id][0] += 1
-            ids[id][1].append(node)
+            ids[id].append(node)
         else:
-            ids[id] = [1, [node]]
+            ids[id] = [node]
 
     # now get all style properties and the fill, stroke, filter attributes
     styles = node.getAttribute('style').split(';')
@@ -620,10 +619,9 @@ def findReferencingProperty(node, prop, val, ids):
         if len(val) >= 7 and val[0:5] == 'url(#':
             id = val[5:val.find(')')]
             if id in ids:
-                ids[id][0] += 1
-                ids[id][1].append(node)
+                ids[id].append(node)
             else:
-                ids[id] = [1, [node]]
+                ids[id] = [node]
         # if the url has a quote in it, we need to compensate
         elif len(val) >= 8:
             id = None
@@ -635,10 +633,9 @@ def findReferencingProperty(node, prop, val, ids):
                 id = val[6:val.find("')")]
             if id is not None:
                 if id in ids:
-                    ids[id][0] += 1
-                    ids[id][1].append(node)
+                    ids[id].append(node)
                 else:
-                    ids[id] = [1, [node]]
+                    ids[id] = [node]
 
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
@@ -721,7 +718,7 @@ def shortenIDs(doc, prefix, unprotectedElements=None):
     # descending, so the highest reference count is first.
     # First check that there's actually a defining element for the current ID name.
     # (Cyn: I've seen documents with #id references but no element with that ID!)
-    idList = [(referencedIDs[rid][0], rid) for rid in referencedIDs
+    idList = [(len(referencedIDs[rid]), rid) for rid in referencedIDs
               if rid in unprotectedElements]
     idList.sort(reverse=True)
     idList = [rid for count, rid in idList]
@@ -790,7 +787,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
         # exactly like findReferencedElements would.
         # Cyn: Duplicated processing!
 
-        for node in referringNodes[1]:
+        for node in referringNodes:
             # if this node is a style element, parse its text into CSS
             if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
                 # node.firstChild will be either a CDATA or a Text node now
@@ -1307,12 +1304,10 @@ def collapseSinglyReferencedGradients(doc):
     identifiedElements = findElementsWithId(doc.documentElement)
 
     # make sure to reset the ref'ed ids for when we are running this in testscour
-    for rid, nodeCount in six.iteritems(findReferencedElements(doc.documentElement)):
-        count = nodeCount[0]
-        nodes = nodeCount[1]
+    for rid, nodes in six.iteritems(findReferencedElements(doc.documentElement)):
         # Make sure that there's actually a defining element for the current ID name.
         # (Cyn: I've seen documents with #id references but no element with that ID!)
-        if count == 1 and rid in identifiedElements:
+        if len(nodes) == 1 and rid in identifiedElements:
             elem = identifiedElements[rid]
             if (
                 elem is not None and
@@ -1437,7 +1432,7 @@ def removeDuplicateGradients(doc):
             # for each element that referenced the gradient we are going to replace dup_id with master_id
             dup_id = dupGrad.getAttribute('id')
             funcIRI = re.compile('url\\([\'"]?#' + dup_id + '[\'"]?\\)')  # matches url(#a), url('#a') and url("#a")
-            for elem in referencedIDs[dup_id][1]:
+            for elem in referencedIDs[dup_id]:
                 # find out which attribute referenced the duplicate gradient
                 for attr in ['fill', 'stroke']:
                     v = elem.getAttribute(attr)
