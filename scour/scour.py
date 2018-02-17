@@ -551,14 +551,12 @@ referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-st
 
 def findReferencedElements(node, ids=None):
     """
-    Returns the number of times an ID is referenced as well as all elements
-    that reference it.  node is the node at which to start the search.  The
-    return value is a map which has the id as key and each value is an array
-    where the first value is a count and the second value is a list of nodes
-    that referenced it.
+    Returns IDs of all referenced elements
+    - node is the node at which to start the search.
+    - returns a map which has the id as key and
+      each value is is a list of nodes
 
-    Currently looks at fill, stroke, clip-path, mask, marker, and
-    xlink:href attributes.
+    Currently looks at 'xlink:href' and all attributes in 'referencingProps'
     """
     global referencingProps
     if ids is None:
