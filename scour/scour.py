@@ -593,8 +593,6 @@ def findReferencedElements(node, ids=None):
 
     # now get all style properties and the fill, stroke, filter attributes
     styles = node.getAttribute('style').split(';')
-    for attr in referencingProps:
-        styles.append(':'.join([attr, node.getAttribute(attr)]))
 
     for style in styles:
         propval = style.split(':')
@@ -602,6 +600,12 @@ def findReferencedElements(node, ids=None):
             prop = propval[0].strip()
             val = propval[1].strip()
             findReferencingProperty(node, prop, val, ids)
+
+    for attr in referencingProps:
+        val = node.getAttribute(attr).strip()
+        if not val:
+            continue
+        findReferencingProperty(node, attr, val, ids)
 
     if node.hasChildNodes():
         for child in node.childNodes:
