@@ -549,20 +549,23 @@ def findElementsWithId(node, elems=None):
 referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 'marker-end', 'marker-mid']
 
 
-def findReferencedElements(node, ids=None):
+def findReferencedElements(start_node):
     """
     Returns IDs of all referenced elements
-    - node is the node at which to start the search.
+    - start_node is the node at which to start the search.
     - returns a map which has the id as key and
       each value is is a list of nodes
 
     Currently looks at 'xlink:href' and all attributes in 'referencingProps'
     """
     global referencingProps
-    if ids is None:
-        ids = {}
+    ids = {}
 
-    if 1:  # Indent-only
+    # Search all nodes in depth-first search
+    stack = [start_node]
+
+    while stack:
+        node = stack.pop()
         # TODO: input argument ids is clunky here (see below how it is called)
         # GZ: alternative to passing dict, use **kwargs
 
@@ -578,7 +581,7 @@ def findReferencedElements(node, ids=None):
                     for propname in rule['properties']:
                         propval = rule['properties'][propname]
                         findReferencingProperty(node, propname, propval, ids)
-            return ids
+            continue
 
         # else if xlink:href is set, then grab the id
         href = node.getAttributeNS(NS['XLINK'], 'href')
@@ -607,9 +610,8 @@ def findReferencedElements(node, ids=None):
             findReferencingProperty(node, attr, val, ids)
 
         if node.hasChildNodes():
-            for child in node.childNodes:
-                if child.nodeType == Node.ELEMENT_NODE:
-                    findReferencedElements(child, ids)
+            stack.extend(n for n in node.childNodes if n.nodeType == Node.ELEMENT_NODE)
+
     return ids
 
 
