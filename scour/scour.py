@@ -3471,11 +3471,9 @@ def scourString(in_string, options=None):
                 _num_elements_removed += 1
 
     if options.strip_ids:
-        bContinueLooping = True
-        while bContinueLooping:
-            identifiedElements = unprotected_ids(doc, options)
-            referencedIDs = findReferencedElements(doc.documentElement)
-            bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
+        referencedIDs = findReferencedElements(doc.documentElement)
+        identifiedElements = unprotected_ids(doc, options)
+        removeUnreferencedIDs(referencedIDs, identifiedElements)
 
     while removeDuplicateGradientStops(doc) > 0:
         pass
