@@ -3205,17 +3205,17 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
     outParts = []
 
     indent = ind
-    I = ''
+    line_prefix = ''
     newline = ''
     if options.newlines:
         if options.indent_type == 'tab':
-            I = '\t'
+            line_prefix = '\t'
         elif options.indent_type == 'space':
-            I = ' '
-        I *= options.indent_depth
+            line_prefix = ' '
+        line_prefix *= options.indent_depth
         newline = '\n'
 
-    outParts.extend([(I * ind), '<', element.nodeName])
+    outParts.extend([(line_prefix * ind), '<', element.nodeName])
 
     # now serialize the other attributes
     known_attr = [
@@ -3303,7 +3303,7 @@ def serializeXML(element, options, ind=0, preserveWhitespace=False):
                 pass
 
         if onNewLine:
-            outParts.append(I * ind)
+            outParts.append(line_prefix * ind)
         outParts.extend(['</', element.nodeName, '>'])
         if indent > 0:
             outParts.append(newline)
