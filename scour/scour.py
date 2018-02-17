@@ -561,53 +561,55 @@ def findReferencedElements(node, ids=None):
     global referencingProps
     if ids is None:
         ids = {}
-    # TODO: input argument ids is clunky here (see below how it is called)
-    # GZ: alternative to passing dict, use **kwargs
 
-    # if this node is a style element, parse its text into CSS
-    if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
-        # one stretch of text, please! (we could use node.normalize(), but
-        # this actually modifies the node, and we don't want to keep
-        # whitespace around if there's any)
-        stylesheet = "".join([child.nodeValue for child in node.childNodes])
-        if stylesheet != '':
-            cssRules = parseCssString(stylesheet)
-            for rule in cssRules:
-                for propname in rule['properties']:
-                    propval = rule['properties'][propname]
-                    findReferencingProperty(node, propname, propval, ids)
-        return ids
+    if 1:  # Indent-only
+        # TODO: input argument ids is clunky here (see below how it is called)
+        # GZ: alternative to passing dict, use **kwargs
 
-    # else if xlink:href is set, then grab the id
-    href = node.getAttributeNS(NS['XLINK'], 'href')
-    if href != '' and len(href) > 1 and href[0] == '#':
-        # we remove the hash mark from the beginning of the id
-        id = href[1:]
-        if id in ids:
-            ids[id].append(node)
-        else:
-            ids[id] = [node]
+        # if this node is a style element, parse its text into CSS
+        if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
+            # one stretch of text, please! (we could use node.normalize(), but
+            # this actually modifies the node, and we don't want to keep
+            # whitespace around if there's any)
+            stylesheet = "".join([child.nodeValue for child in node.childNodes])
+            if stylesheet != '':
+                cssRules = parseCssString(stylesheet)
+                for rule in cssRules:
+                    for propname in rule['properties']:
+                        propval = rule['properties'][propname]
+                        findReferencingProperty(node, propname, propval, ids)
+            return ids
 
-    # now get all style properties and the fill, stroke, filter attributes
-    styles = node.getAttribute('style').split(';')
+        # else if xlink:href is set, then grab the id
+        href = node.getAttributeNS(NS['XLINK'], 'href')
+        if href != '' and len(href) > 1 and href[0] == '#':
+            # we remove the hash mark from the beginning of the id
+            id = href[1:]
+            if id in ids:
+                ids[id].append(node)
+            else:
+                ids[id] = [node]
 
-    for style in styles:
-        propval = style.split(':')
-        if len(propval) == 2:
-            prop = propval[0].strip()
-            val = propval[1].strip()
-            findReferencingProperty(node, prop, val, ids)
+        # now get all style properties and the fill, stroke, filter attributes
+        styles = node.getAttribute('style').split(';')
 
-    for attr in referencingProps:
-        val = node.getAttribute(attr).strip()
-        if not val:
-            continue
-        findReferencingProperty(node, attr, val, ids)
+        for style in styles:
+            propval = style.split(':')
+            if len(propval) == 2:
+                prop = propval[0].strip()
+                val = propval[1].strip()
+                findReferencingProperty(node, prop, val, ids)
 
-    if node.hasChildNodes():
-        for child in node.childNodes:
-            if child.nodeType == Node.ELEMENT_NODE:
-                findReferencedElements(child, ids)
+        for attr in referencingProps:
+            val = node.getAttribute(attr).strip()
+            if not val:
+                continue
+            findReferencingProperty(node, attr, val, ids)
+
+        if node.hasChildNodes():
+            for child in node.childNodes:
+                if child.nodeType == Node.ELEMENT_NODE:
+                    findReferencedElements(child, ids)
     return ids
 
 
