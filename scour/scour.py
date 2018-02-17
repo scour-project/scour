@@ -549,65 +549,69 @@ def findElementsWithId(node, elems=None):
 referencingProps = ['fill', 'stroke', 'filter', 'clip-path', 'mask',  'marker-start', 'marker-end', 'marker-mid']
 
 
-def findReferencedElements(node, ids=None):
+def findReferencedElements(start_node):
     """
     Returns IDs of all referenced elements
-    - node is the node at which to start the search.
+    - start_node is the node at which to start the search.
     - returns a map which has the id as key and
       each value is is a list of nodes
 
     Currently looks at 'xlink:href' and all attributes in 'referencingProps'
     """
     global referencingProps
-    if ids is None:
-        ids = {}
-    # TODO: input argument ids is clunky here (see below how it is called)
-    # GZ: alternative to passing dict, use **kwargs
+    ids = {}
 
-    # if this node is a style element, parse its text into CSS
-    if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
-        # one stretch of text, please! (we could use node.normalize(), but
-        # this actually modifies the node, and we don't want to keep
-        # whitespace around if there's any)
-        stylesheet = "".join([child.nodeValue for child in node.childNodes])
-        if stylesheet != '':
-            cssRules = parseCssString(stylesheet)
-            for rule in cssRules:
-                for propname in rule['properties']:
-                    propval = rule['properties'][propname]
-                    findReferencingProperty(node, propname, propval, ids)
-        return ids
+    # Search all nodes in depth-first search
+    stack = [start_node]
 
-    # else if xlink:href is set, then grab the id
-    href = node.getAttributeNS(NS['XLINK'], 'href')
-    if href != '' and len(href) > 1 and href[0] == '#':
-        # we remove the hash mark from the beginning of the id
-        id = href[1:]
-        if id in ids:
-            ids[id].append(node)
-        else:
-            ids[id] = [node]
+    while stack:
+        node = stack.pop()
+        # TODO: input argument ids is clunky here (see below how it is called)
+        # GZ: alternative to passing dict, use **kwargs
 
-    # now get all style properties and the fill, stroke, filter attributes
-    styles = node.getAttribute('style').split(';')
-
-    for style in styles:
-        propval = style.split(':')
-        if len(propval) == 2:
-            prop = propval[0].strip()
-            val = propval[1].strip()
-            findReferencingProperty(node, prop, val, ids)
-
-    for attr in referencingProps:
-        val = node.getAttribute(attr).strip()
-        if not val:
+        # if this node is a style element, parse its text into CSS
+        if node.nodeName == 'style' and node.namespaceURI == NS['SVG']:
+            # one stretch of text, please! (we could use node.normalize(), but
+            # this actually modifies the node, and we don't want to keep
+            # whitespace around if there's any)
+            stylesheet = "".join([child.nodeValue for child in node.childNodes])
+            if stylesheet != '':
+                cssRules = parseCssString(stylesheet)
+                for rule in cssRules:
+                    for propname in rule['properties']:
+                        propval = rule['properties'][propname]
+                        findReferencingProperty(node, propname, propval, ids)
             continue
-        findReferencingProperty(node, attr, val, ids)
 
-    if node.hasChildNodes():
-        for child in node.childNodes:
-            if child.nodeType == Node.ELEMENT_NODE:
-                findReferencedElements(child, ids)
+        # else if xlink:href is set, then grab the id
+        href = node.getAttributeNS(NS['XLINK'], 'href')
+        if href != '' and len(href) > 1 and href[0] == '#':
+            # we remove the hash mark from the beginning of the id
+            id = href[1:]
+            if id in ids:
+                ids[id].append(node)
+            else:
+                ids[id] = [node]
+
+        # now get all style properties and the fill, stroke, filter attributes
+        styles = node.getAttribute('style').split(';')
+
+        for style in styles:
+            propval = style.split(':')
+            if len(propval) == 2:
+                prop = propval[0].strip()
+                val = propval[1].strip()
+                findReferencingProperty(node, prop, val, ids)
+
+        for attr in referencingProps:
+            val = node.getAttribute(attr).strip()
+            if not val:
+                continue
+            findReferencingProperty(node, attr, val, ids)
+
+        if node.hasChildNodes():
+            stack.extend(n for n in node.childNodes if n.nodeType == Node.ELEMENT_NODE)
+
     return ids
 
 
@@ -1295,14 +1299,14 @@ def removeDuplicateGradientStops(doc):
     return num
 
 
-def collapseSinglyReferencedGradients(doc):
+def collapseSinglyReferencedGradients(doc, referencedIDs):
     global _num_elements_removed
     num = 0
 
     identifiedElements = findElementsWithId(doc.documentElement)
 
     # make sure to reset the ref'ed ids for when we are running this in testscour
-    for rid, nodes in six.iteritems(findReferencedElements(doc.documentElement)):
+    for rid, nodes in six.iteritems(referencedIDs):
         # Make sure that there's actually a defining element for the current ID name.
         # (Cyn: I've seen documents with #id references but no element with that ID!)
         if len(nodes) == 1 and rid in identifiedElements:
@@ -1355,7 +1359,7 @@ def collapseSinglyReferencedGradients(doc):
     return num
 
 
-def removeDuplicateGradients(doc):
+def removeDuplicateGradients(doc, referencedIDs):
     global _num_elements_removed
     num = 0
 
@@ -1417,8 +1421,6 @@ def removeDuplicateGradients(doc):
                         gradientsToRemove[grad].append(ograd)
                         duplicateToMaster[ograd] = grad
 
-    # get a collection of all elements that are referenced and their referencing elements
-    referencedIDs = findReferencedElements(doc.documentElement)
     for masterGrad in gradientsToRemove:
         master_id = masterGrad.getAttribute('id')
         for dupGrad in gradientsToRemove[masterGrad]:
@@ -1894,34 +1896,38 @@ def taint(taintedSet, taintedAttribute):
     return taintedSet
 
 
-def removeDefaultAttributeValue(node, attribute):
+def removeDefaultAttributeValuesFromNode(node, attributes):
     """
-    Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
+    Removes each of the 'DefaultAttribute's from 'node' if specified conditions are fulfilled
     """
-    if not node.hasAttribute(attribute.name):
-        return 0
+    count = 0
+    for attribute in attributes:
+        if not node.hasAttribute(attribute.name):
+            continue
 
-    if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
-        return 0
+        if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
+            continue
 
-    # differentiate between text and numeric values
-    if isinstance(attribute.value, str):
-        if node.getAttribute(attribute.name) == attribute.value:
-            if (attribute.conditions is None) or attribute.conditions(node):
-                node.removeAttribute(attribute.name)
-                return 1
-    else:
-        nodeValue = SVGLength(node.getAttribute(attribute.name))
-        if ((attribute.value is None)
-                or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID))):
-            if ((attribute.units is None)
-                    or (nodeValue.units == attribute.units)
-                    or (isinstance(attribute.units, list) and nodeValue.units in attribute.units)):
+        # differentiate between text and numeric values
+        if isinstance(attribute.value, str):
+            if node.getAttribute(attribute.name) == attribute.value:
                 if (attribute.conditions is None) or attribute.conditions(node):
                     node.removeAttribute(attribute.name)
-                    return 1
+                    count += 1
+                    continue
+        else:
+            nodeValue = SVGLength(node.getAttribute(attribute.name))
+            if ((attribute.value is None)
+                    or ((nodeValue.value == attribute.value) and not (nodeValue.units == Unit.INVALID))):
+                if ((attribute.units is None)
+                        or (nodeValue.units == attribute.units)
+                        or (isinstance(attribute.units, list) and nodeValue.units in attribute.units)):
+                    if (attribute.conditions is None) or attribute.conditions(node):
+                        node.removeAttribute(attribute.name)
+                        count += 1
+                        continue
 
-    return 0
+    return count
 
 
 def removeDefaultAttributeValues(node, options, tainted=set()):
@@ -1933,8 +1939,7 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
         return 0
 
     # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
-    for attribute in default_attributes:
-        num += removeDefaultAttributeValue(node, attribute)
+    num += removeDefaultAttributeValuesFromNode(node, default_attributes)
 
     # Summarily get rid of default properties
     attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
@@ -3470,27 +3475,37 @@ def scourString(in_string, options=None):
                 elem.parentNode.removeChild(elem)
                 _num_elements_removed += 1
 
+    referencedIDs = None
     if options.strip_ids:
+        referencedIDs = findReferencedElements(doc.documentElement)
         bContinueLooping = True
         while bContinueLooping:
             identifiedElements = unprotected_ids(doc, options)
-            referencedIDs = findReferencedElements(doc.documentElement)
             bContinueLooping = (removeUnreferencedIDs(referencedIDs, identifiedElements) > 0)
+            referencedIDs = findReferencedElements(doc.documentElement)
 
     while removeDuplicateGradientStops(doc) > 0:
-        pass
+        # removeDuplicateGradientStops does not need referencedIDs, but it can
+        # remove nodes.  Make no assumptions about referencedIDs still being valid
+        # after this call.
+        referencedIDs = None
+
+    if referencedIDs is None:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # remove gradients that are only referenced by one other gradient
-    while collapseSinglyReferencedGradients(doc) > 0:
-        pass
+    while collapseSinglyReferencedGradients(doc, referencedIDs) > 0:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # remove duplicate gradients
-    while removeDuplicateGradients(doc) > 0:
-        pass
+    while removeDuplicateGradients(doc, referencedIDs) > 0:
+        referencedIDs = findReferencedElements(doc.documentElement)
 
     # create <g> elements if there are runs of elements with the same attributes.
     # this MUST be before moveCommonAttributesToParentGroup.
     if options.group_create:
+        # This does remove nodes, so referencedIDs should remain
+        # valid after this.
         createGroupsForCommonAttributes(doc.documentElement)
 
     # move common attributes to parent group
@@ -3498,9 +3513,8 @@ def scourString(in_string, options=None):
     # all have the same value for an attribute, it must not
     # get moved to the <svg> element. The <svg> element
     # doesn't accept fill=, stroke= etc.!
-    referencedIds = findReferencedElements(doc.documentElement)
     for child in doc.documentElement.childNodes:
-        _num_attributes_removed += moveCommonAttributesToParentGroup(child, referencedIds)
+        _num_attributes_removed += moveCommonAttributesToParentGroup(child, referencedIDs)
 
     # remove unused attributes from parent
     _num_attributes_removed += removeUnusedAttributesOnParent(doc.documentElement)
