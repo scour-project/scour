@@ -66,7 +66,7 @@ class EmptyOptions(unittest.TestCase):
         try:
             scourString(self.MINIMAL_SVG, options)
             fail = False
-        except:
+        except Exception:
             fail = True
         self.assertEqual(fail, False,
                          'Exception when calling "scourString" with empty options object')
@@ -76,7 +76,7 @@ class EmptyOptions(unittest.TestCase):
         try:
             scourXmlFile('unittests/minimal.svg', options)
             fail = False
-        except:
+        except Exception:
             fail = True
         self.assertEqual(fail, False,
                          'Exception when calling "scourXmlFile" with empty options object')
@@ -91,7 +91,7 @@ class EmptyOptions(unittest.TestCase):
         try:
             start(options, input, output)
             fail = False
-        except:
+        except Exception:
             fail = True
         sys.stdout = stdout_temp
 
@@ -109,7 +109,7 @@ class InvalidOptions(unittest.TestCase):
         try:
             scourXmlFile('unittests/ids-to-strip.svg', options)
             fail = False
-        except:
+        except Exception:
             fail = True
         self.assertEqual(fail, False,
                          'Exception when calling Scour with invalid options')
