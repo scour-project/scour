@@ -1430,22 +1430,26 @@ def removeDuplicateGradients(doc):
             # for each element that referenced the gradient we are going to replace dup_id with master_id
             dup_id = dupGrad.getAttribute('id')
             funcIRI = re.compile('url\\([\'"]?#' + dup_id + '[\'"]?\\)')  # matches url(#a), url('#a') and url("#a")
-            for elem in referencedIDs[dup_id]:
-                # find out which attribute referenced the duplicate gradient
-                for attr in ['fill', 'stroke']:
-                    v = elem.getAttribute(attr)
-                    (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                    if n > 0:
-                        elem.setAttribute(attr, v_new)
-                if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
-                    elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
-                styles = _getStyle(elem)
-                for style in styles:
-                    v = styles[style]
-                    (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                    if n > 0:
-                        styles[style] = v_new
-                _setStyle(elem, styles)
+
+            # With --keep-unreferenced-defs, we can end up with
+            # unreferenced gradients.  See GH#156.
+            if dup_id in referencedIDs:
+                for elem in referencedIDs[dup_id]:
+                    # find out which attribute referenced the duplicate gradient
+                    for attr in ['fill', 'stroke']:
+                        v = elem.getAttribute(attr)
+                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
+                        if n > 0:
+                            elem.setAttribute(attr, v_new)
+                    if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
+                        elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
+                    styles = _getStyle(elem)
+                    for style in styles:
+                        v = styles[style]
+                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
+                        if n > 0:
+                            styles[style] = v_new
+                    _setStyle(elem, styles)
 
             # now that all referencing elements have been re-mapped to the master
             # it is safe to remove this gradient from the document
