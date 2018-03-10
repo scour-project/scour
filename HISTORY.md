@@ -82,7 +82,7 @@
 ## Version 0.29 (2014-07-26)
 
 * Add option `--keep-unreferenced-defs` to preserve elements in `<defs>` that are not referenced and would be removed otherwise. ([#2](https://github.com/scour-project/scour/issues/2))
-* Add option to ingore unknown cmd line opts.
+* Add option to ignore unknown cmd line opts.
 
 
 ## Version 0.28 (2014-01-12)
