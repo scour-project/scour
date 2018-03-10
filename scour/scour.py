@@ -57,7 +57,7 @@ import sys
 import time
 import xml.dom.minidom
 from xml.dom import Node, NotFoundErr
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
@@ -1355,18 +1355,50 @@ def collapseSinglyReferencedGradients(doc):
     return num
 
 
+def computeGradientBucketKey(gradType, grad):
+    # We use these attributes to split gradients into "small" buckets
+    # and then only look for identical gradients inside those buckets.
+    # Note; besides these we also group by gradient stops as some
+    # gradients only differs on gradient stops.  For that purpose, we
+    # use the attributes in gradStopBucketsAttr
+    gradBucketAttr = ['gradientUnits', 'x1', 'x2', 'spreadMethod']
+    gradStopBucketsAttr = ['offset']
+
+    # A linearGradient can never be a duplicate of a
+    # radialGradient (and vice versa)
+    subKeys = [gradType]
+    subKeys.extend(grad.getAttribute(a) for a in gradBucketAttr)
+    stops = grad.getElementsByTagName('stop')
+    if stops.length:
+        for i in range(stops.length):
+            stop = stops.item(i)
+            for attr in gradStopBucketsAttr:
+                stopKey = stop.getAttribute(attr)
+                subKeys.append(stopKey)
+
+    return " ".join(subKeys)
+
+
 def removeDuplicateGradients(doc):
     global _num_elements_removed
     num = 0
 
     gradientsToRemove = {}
     duplicateToMaster = {}
+    gradBuckets = defaultdict(list)
 
     for gradType in ['linearGradient', 'radialGradient']:
         grads = doc.getElementsByTagName(gradType)
         for grad in grads:
+            key = computeGradientBucketKey(gradType, grad)
+            gradBuckets[key].append(grad)
+
+    for gradType in ['linearGradient', 'radialGradient']:
+        grads = doc.getElementsByTagName(gradType)
+        for grad in grads:
+            key = computeGradientBucketKey(gradType, grad)
             # TODO: should slice grads from 'grad' here to optimize
-            for ograd in grads:
+            for ograd in gradBuckets[key]:
                 # do not compare gradient to itself
                 if grad == ograd:
                     continue
