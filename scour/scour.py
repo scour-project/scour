@@ -1375,7 +1375,7 @@ def computeGradientBucketKey(grad):
                 stopKey = stop.getAttribute(attr)
                 subKeys.append(stopKey)
 
-    # Use a raw ASCII "record seperator" control character as it is
+    # Use a raw ASCII "record separator" control character as it is
     # not likely to be used in any of these values (without having to
     # be escaped).
     return "\x1e".join(subKeys)
