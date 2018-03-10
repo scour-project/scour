@@ -57,7 +57,7 @@ import sys
 import time
 import xml.dom.minidom
 from xml.dom import Node, NotFoundErr
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
@@ -1355,6 +1355,32 @@ def collapseSinglyReferencedGradients(doc):
     return num
 
 
+def computeGradientBucketKey(grad):
+    # Compute a key (hashable opaque value; here a string) from each
+    # gradient such that "key(grad1) == key(grad2)" is the same as
+    # saying that grad1 is a duplicate of grad2.
+    gradBucketAttr = ['gradientUnits', 'spreadMethod', 'gradientTransform',
+                      'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'fx', 'fy', 'r']
+    gradStopBucketsAttr = ['offset', 'stop-color', 'stop-opacity', 'style']
+
+    # A linearGradient can never be a duplicate of a
+    # radialGradient (and vice versa)
+    subKeys = [grad.getAttribute(a) for a in gradBucketAttr]
+    subKeys.append(grad.getAttributeNS(NS['XLINK'], 'href'))
+    stops = grad.getElementsByTagName('stop')
+    if stops.length:
+        for i in range(stops.length):
+            stop = stops.item(i)
+            for attr in gradStopBucketsAttr:
+                stopKey = stop.getAttribute(attr)
+                subKeys.append(stopKey)
+
+    # Use a raw ASCII "record seperator" control character as it is
+    # not likely to be used in any of these values (without having to
+    # be escaped).
+    return "\x1e".join(subKeys)
+
+
 def removeDuplicateGradients(doc):
     global _num_elements_removed
     num = 0
@@ -1364,58 +1390,23 @@ def removeDuplicateGradients(doc):
 
     for gradType in ['linearGradient', 'radialGradient']:
         grads = doc.getElementsByTagName(gradType)
+        gradBuckets = defaultdict(list)
+
         for grad in grads:
-            # TODO: should slice grads from 'grad' here to optimize
-            for ograd in grads:
-                # do not compare gradient to itself
-                if grad == ograd:
-                    continue
+            key = computeGradientBucketKey(grad)
+            gradBuckets[key].append(grad)
 
-                # compare grad to ograd (all properties, then all stops)
-                # if attributes do not match, go to next gradient
-                someGradAttrsDoNotMatch = False
-                for attr in ['gradientUnits', 'spreadMethod', 'gradientTransform',
-                             'x1', 'y1', 'x2', 'y2', 'cx', 'cy', 'fx', 'fy', 'r']:
-                    if grad.getAttribute(attr) != ograd.getAttribute(attr):
-                        someGradAttrsDoNotMatch = True
-                        break
+        for bucket in six.itervalues(gradBuckets):
+            if len(bucket) < 2:
+                # The gradient must be unique if it is the only one in
+                # this bucket.
+                continue
+            master = bucket[0]
+            duplicates = bucket[1:]
 
-                if someGradAttrsDoNotMatch:
-                    continue
-
-                # compare xlink:href values too
-                if grad.getAttributeNS(NS['XLINK'], 'href') != ograd.getAttributeNS(NS['XLINK'], 'href'):
-                    continue
-
-                # all gradient properties match, now time to compare stops
-                stops = grad.getElementsByTagName('stop')
-                ostops = ograd.getElementsByTagName('stop')
-
-                if stops.length != ostops.length:
-                    continue
-
-                # now compare stops
-                stopsNotEqual = False
-                for i in range(stops.length):
-                    if stopsNotEqual:
-                        break
-                    stop = stops.item(i)
-                    ostop = ostops.item(i)
-                    for attr in ['offset', 'stop-color', 'stop-opacity', 'style']:
-                        if stop.getAttribute(attr) != ostop.getAttribute(attr):
-                            stopsNotEqual = True
-                            break
-                if stopsNotEqual:
-                    continue
-
-                # ograd is a duplicate of grad, we schedule it to be removed UNLESS
-                # ograd is ALREADY considered a 'master' element
-                if ograd not in gradientsToRemove:
-                    if ograd not in duplicateToMaster:
-                        if grad not in gradientsToRemove:
-                            gradientsToRemove[grad] = []
-                        gradientsToRemove[grad].append(ograd)
-                        duplicateToMaster[ograd] = grad
+            gradientsToRemove[master] = duplicates
+            for ograd in duplicates:
+                duplicateToMaster[ograd] = master
 
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
