@@ -74,11 +74,10 @@ VER = __version__
 COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
-# select the most precise walltime measurement function available on the platform
-if sys.platform.startswith('win'):
-    walltime = time.clock
-else:
-    walltime = time.time
+# the walltime measurement function, we will use for reporting
+# reporting how long it took to process a given SVG file.  For our
+# purposes, the time.time() function has sufficent accuracy.
+walltime = time.time
 
 
 NS = {'SVG':      'http://www.w3.org/2000/svg',
