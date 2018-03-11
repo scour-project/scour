@@ -2190,14 +2190,15 @@ def cleanPath(element, options):
             i = 0
             if cmd in ['m', 'l', 't']:
                 if cmd == 'm':
-                    # remove m0,0 segments
-                    if pathIndex > 0 and data[0] == data[i + 1] == 0:
-                        # 'm0,0 x,y' can be replaces with 'lx,y',
-                        # except the first m which is a required absolute moveto
-                        path[pathIndex] = ('l', data[2:])
-                        _num_path_segments_removed += 1
-                    else:  # else skip move coordinate
-                        i = 2
+                    # It might be tempting to rewrite "m0 0 ..." into
+                    # "l..." here.  However, this is an unsound
+                    # optimization in general as "m0 0 ... z" is
+                    # different from "l...z".
+                    #
+                    # To do such a rewrite, we need to understand the
+                    # full subpath, so for now just leave the first
+                    # two coordinates of "m" alone.
+                    i = 2
                 while i < len(data):
                     if data[i] == data[i + 1] == 0:
                         del data[i:i + 2]

@@ -2058,8 +2058,9 @@ class PathEmptyMove(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/path-empty-move.svg')
-        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100 200 100z')
-        self.assertEqual(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z')
+        # This path can actually be optimized to avoid the "m0 0z".
+        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100 200 100m0 0z')
+        self.assertEqual(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200m0 0 100 100z')
 
 
 class DefaultsRemovalToplevel(unittest.TestCase):
