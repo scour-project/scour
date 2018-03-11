@@ -1379,7 +1379,6 @@ def removeDuplicateGradients(doc):
     num = 0
 
     gradientsToRemove = {}
-    duplicateToMaster = {}
 
     for gradType in ['linearGradient', 'radialGradient']:
         grads = doc.getElementsByTagName(gradType)
@@ -1398,8 +1397,6 @@ def removeDuplicateGradients(doc):
             duplicates = bucket[1:]
 
             gradientsToRemove[master] = duplicates
-            for ograd in duplicates:
-                duplicateToMaster[ograd] = master
 
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
