@@ -1613,7 +1613,7 @@ def styleInheritedFromParent(node, style):
 
     # check styles first (they take precedence over presentation attributes)
     styles = _getStyle(parentNode)
-    if style in styles.keys():
+    if style in styles:
         value = styles[style]
         if not value == 'inherit':
             return value
@@ -1653,7 +1653,7 @@ def styleInheritedByChild(node, style, nodeIsChild=False):
             return False
         # check styles
         styles = _getStyle(node)
-        if (style in styles.keys()) and not (styles[style] == 'inherit'):
+        if (style in styles) and not (styles[style] == 'inherit'):
             return False
     else:
         # if the passed-in node does not have any children 'style' can obviously not be inherited
@@ -3222,7 +3222,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
         if name in attrName2Index:
             attrIndices.append(attrName2Index[name])
             del attrName2Index[name]
-    attrIndices += [attrName2Index[name] for name in sorted(attrName2Index.keys())]
+    attrIndices += [attrName2Index[name] for name in sorted(attrName2Index)]
     for index in attrIndices:
         attr = attrList.item(index)
 
