@@ -2181,10 +2181,11 @@ def cleanPath(element, options):
             x, y = startx, starty
             path[pathIndex] = ('z', data)
 
-    # remove empty segments
+    # remove empty segments and redundant commands
     # Reuse the data structure 'path' and the coordinate lists, even if we're
     # deleting items, because these deletions are relatively cheap.
     if not has_round_or_square_linecaps:
+        # remove empty path segments
         for pathIndex in range(len(path)):
             cmd, data = path[pathIndex]
             i = 0
@@ -2196,8 +2197,8 @@ def cleanPath(element, options):
                     # different from "l...z".
                     #
                     # To do such a rewrite, we need to understand the
-                    # full subpath, so for now just leave the first
-                    # two coordinates of "m" alone.
+                    # full subpath.  This logic happens after this
+                    # loop.
                     i = 2
                 while i < len(data):
                     if data[i] == data[i + 1] == 0:
@@ -2230,6 +2231,45 @@ def cleanPath(element, options):
                 oldLen = len(data)
                 path[pathIndex] = (cmd, [coord for coord in data if coord != 0])
                 _num_path_segments_removed += len(path[pathIndex][1]) - oldLen
+
+        # remove no-op commands
+        pathIndex = len(path)
+        subpath_needs_anchor = False
+        # NB: We can never rewrite the first m/M command (expect if it
+        # is the only command)
+        while pathIndex > 1:
+            pathIndex -= 1
+            cmd, data = path[pathIndex]
+            if cmd == 'z':
+                next_cmd, next_data = path[pathIndex - 1]
+                if next_cmd == 'm' and len(next_data) == 2:
+                    # mX Yz -> mX Y
+
+                    # note the len check on next_data as it is not
+                    # safe to rewrite "m0 0 1 1z" in general (it is a
+                    # question of where the "pen" ends - you can
+                    # continue a draw on the same subpath after a
+                    # "z").
+                    del path[pathIndex]
+                    _num_path_segments_removed += 1
+                else:
+                    # it is not safe to rewrite "m0 0 ..." to "l..."
+                    # because of this "z" command.
+                    subpath_needs_anchor = True
+            elif cmd == 'm':
+                if len(path) - 1 == pathIndex and len(data) == 2:
+                    # Ends with an empty move (but no line/draw
+                    # following it)
+                    del path[pathIndex]
+                    _num_path_segments_removed += 1
+                    continue
+                if subpath_needs_anchor:
+                    subpath_needs_anchor = False
+                elif data[0] == data[1] == 0:
+                    # unanchored, i.e. we can replace "m0 0 ..." with
+                    # "l..." as there is no "z" after it.
+                    path[pathIndex] = ('l', data[2:])
+                    _num_path_segments_removed += 1
 
     # fixup: Delete subcommands having no coordinates.
     path = [elem for elem in path if len(elem[1]) > 0 or elem[0] == 'z']
