@@ -2526,12 +2526,13 @@ class EmbedRasters(unittest.TestCase):
 
     def test_disable_embed_rasters(self):
         doc = scourXmlFile('unittests/raster-formats.svg',
-                           parse_args(['--disable-embed-rasters']))
+                           parse_args(['--disable-embed-rasters']),
+                           'unittests')
         self.assertEqual(doc.getElementById('png').getAttribute('xlink:href'), 'raster.png',
                          "Raster image embedded when '--disable-embed-rasters' was specified")
 
     def test_raster_formats(self):
-        doc = scourXmlFile('unittests/raster-formats.svg')
+        doc = scourXmlFile('unittests/raster-formats.svg', None, 'unittests')
         self.assertEqual(doc.getElementById('png').getAttribute('xlink:href'),
                          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAABAgMAAABmjvwnAAAAC'
                          'VBMVEUAAP//AAAA/wBmtfVOAAAACklEQVQI12NIAAAAYgBhGxZhsAAAAABJRU5ErkJggg==',
@@ -2549,7 +2550,7 @@ class EmbedRasters(unittest.TestCase):
                          "Raster image (JPG) not correctly embedded.")
 
     def test_raster_paths_local(self):
-        doc = scourXmlFile('unittests/raster-paths-local.svg')
+        doc = scourXmlFile('unittests/raster-paths-local.svg', None, 'unittests')
         images = doc.getElementsByTagName('image')
         for image in images:
             href = image.getAttribute('xlink:href')
@@ -2563,7 +2564,7 @@ class EmbedRasters(unittest.TestCase):
         # create a reference string by scouring the original file with relative links
         options = ScourOptions
         options.infilename = 'unittests/raster-formats.svg'
-        reference_svg = scourString(svg, options)
+        reference_svg = scourString(svg, options, 'unittests')
 
         # this will not always create formally valid paths but it'll check how robust our implementation is
         # (the third path is invalid for sure because file: needs three slashes according to URI spec)

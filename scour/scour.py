@@ -3017,7 +3017,7 @@ def removeComments(element):
     return num
 
 
-def embedRasters(element, options):
+def embedRasters(element, references_relative_to, options):
     import base64
     """
       Converts raster references to inline images.
@@ -3056,9 +3056,9 @@ def embedRasters(element, options):
             # relative local paths are relative to the input file, therefore temporarily change the working dir
             working_dir_old = None
             if parsed_href.scheme == 'file' and parsed_href.path[0] != '/':
-                if options.infilename:
+                if references_relative_to:
+                    working_dir_new = os.path.abspath(references_relative_to)
                     working_dir_old = os.getcwd()
-                    working_dir_new = os.path.abspath(os.path.dirname(options.infilename))
                     os.chdir(working_dir_new)
 
             # open/download the file
@@ -3308,7 +3308,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
-def scourString(in_string, options=None):
+def scourString(in_string, options=None, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
@@ -3549,7 +3549,7 @@ def scourString(in_string, options=None):
     # convert rasters references to base64-encoded strings
     if options.embed_rasters:
         for elem in doc.documentElement.getElementsByTagName('image'):
-            embedRasters(elem, options)
+            embedRasters(elem, references_relative_to, options)
 
     # properly size the SVG document (ideally width/height should be 100% with a viewBox)
     if options.enable_viewboxing:
@@ -3590,16 +3590,14 @@ def scourString(in_string, options=None):
 # used mostly by unit tests
 # input is a filename
 # returns the minidom doc representation of the SVG
-def scourXmlFile(filename, options=None):
+def scourXmlFile(filename, options=None, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
-    # we need to make sure infilename is set correctly (otherwise relative references in the SVG won't work)
-    options.ensure_value("infilename", filename)
 
     # open the file and scour it
     with open(filename, "rb") as f:
         in_string = f.read()
-    out_string = scourString(in_string, options)
+    out_string = scourString(in_string, options, references_relative_to)
 
     # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
@@ -3814,9 +3812,11 @@ def maybe_gziped_file(filename, mode="r"):
 
 
 def getInOut(options):
+    references_relative_to = None
     if options.infilename:
         infile = maybe_gziped_file(options.infilename, "rb")
         # GZ: could catch a raised IOError here and report
+        references_relative_to = os.path.dirname(options.infilename)
     else:
         # GZ: could sniff for gzip compression here
         #
@@ -3840,7 +3840,7 @@ def getInOut(options):
         # redirect informational output to stderr when SVG is output to stdout
         options.stdout = sys.stderr
 
-    return [infile, outfile]
+    return [infile, references_relative_to, outfile]
 
 
 def getReport():
@@ -3862,7 +3862,7 @@ def getReport():
     )
 
 
-def start(options, input, output):
+def start(options, input, output, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
@@ -3870,7 +3870,7 @@ def start(options, input, output):
 
     # do the work
     in_string = input.read()
-    out_string = scourString(in_string, options).encode("UTF-8")
+    out_string = scourString(in_string, options, references_relative_to).encode("UTF-8")
     output.write(out_string)
 
     # Close input and output files (but do not attempt to close stdin/stdout!)
@@ -3901,8 +3901,8 @@ def start(options, input, output):
 
 def run():
     options = parse_args()
-    (input, output) = getInOut(options)
-    start(options, input, output)
+    (input, input_relative_to, output) = getInOut(options)
+    start(options, input, output, input_relative_to)
 
 
 if __name__ == '__main__':
