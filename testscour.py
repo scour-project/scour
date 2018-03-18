@@ -2358,7 +2358,7 @@ class DoNotStripXmlSpaceAttribute(unittest.TestCase):
 
 class CommandLineUsage(unittest.TestCase):
 
-    USAGE_STRING = "Usage: scour [INPUT.SVG [OUTPUT.SVG]] [OPTIONS]"
+    USAGE_STRING = "Usage: scour [INPUT.SVG [[... INPUT.SVG] OUTPUT]] [OPTIONS]"
     MINIMAL_SVG = '<?xml version="1.0" encoding="UTF-8"?>\n' \
                   '<svg xmlns="http://www.w3.org/2000/svg"/>\n'
     TEMP_SVG_FILE = 'testscour_temp.svg'
