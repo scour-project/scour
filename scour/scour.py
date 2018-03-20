@@ -1134,6 +1134,75 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
     return num
 
 
+def mergeSiblingGroupsWithCommonAttributes(elem):
+    """
+    Merge two or more sibling <g> elements with the identical attributes.
+
+    This function acts recursively on the given element.
+    """
+
+    num = 0
+    i = elem.childNodes.length - 1
+    while i >= 0:
+        currentNode = elem.childNodes.item(i)
+        if currentNode.nodeType != Node.ELEMENT_NODE or currentNode.nodeName != 'g' or \
+           currentNode.namespaceURI != NS['SVG']:
+            i -= 1
+            continue
+        attributes = {a.nodeName: a.nodeValue for a in currentNode.attributes.values()}
+        runStart, runEnd = i, i
+        runElements = 1
+        while runStart > 0:
+            nextNode = elem.childNodes.item(runStart - 1)
+            if nextNode.nodeType == Node.ELEMENT_NODE:
+                if nextNode.nodeName != 'g' or nextNode.namespaceURI != NS['SVG']:
+                    break
+                nextAttributes = {a.nodeName: a.nodeValue for a in nextNode.attributes.values()}
+                hasNoMergeTags = (True for n in nextNode.childNodes
+                                  if n.nodeType == Node.ELEMENT_NODE
+                                  and n.nodeName in ('title', 'desc')
+                                  and n.namespaceURI == NS['SVG'])
+                if attributes != nextAttributes or any(hasNoMergeTags):
+                    break
+                else:
+                    runElements += 1
+                    runStart -= 1
+            else:
+                runStart -= 1
+
+        # Next loop will start from here
+        i = runStart - 1
+
+        if runElements < 2:
+            continue
+
+        # Find the <g> entry that starts the run (we might have run
+        # past it into a text node or a comment node.
+        while True:
+            node = elem.childNodes.item(runStart)
+            if node.nodeType == Node.ELEMENT_NODE and node.nodeName == 'g' and node.namespaceURI == NS['SVG']:
+                break
+            runStart += 1
+        primaryGroup = elem.childNodes.item(runStart)
+        runStart += 1
+        nodes = elem.childNodes[runStart:runEnd+1]
+        for node in nodes:
+            if node.nodeType == Node.ELEMENT_NODE and node.nodeName == 'g' and node.namespaceURI == NS['SVG']:
+                # Merge
+                primaryGroup.childNodes.extend(node.childNodes)
+                node.childNodes = []
+            else:
+                primaryGroup.childNodes.append(node)
+            elem.childNodes.remove(node)
+
+    # each child gets the same treatment, recursively
+    for childNode in elem.childNodes:
+        if childNode.nodeType == Node.ELEMENT_NODE:
+            num += mergeSiblingGroupsWithCommonAttributes(childNode)
+
+    return num
+
+
 def createGroupsForCommonAttributes(elem):
     """
     Creates <g> elements to contain runs of 3 or more
@@ -3658,6 +3727,8 @@ def scourString(in_string, options=None):
     while removeDuplicateGradients(doc) > 0:
         pass
 
+    if options.group_collapse:
+        _num_elements_removed += mergeSiblingGroupsWithCommonAttributes(doc.documentElement)
     # create <g> elements if there are runs of elements with the same attributes.
     # this MUST be before moveCommonAttributesToParentGroup.
     if options.group_create:

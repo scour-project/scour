@@ -2075,6 +2075,21 @@ class MustKeepGInSwitch2(unittest.TestCase):
                          'Erroneously removed a <g> in a <switch>')
 
 
+class GroupSiblingMerge(unittest.TestCase):
+
+    def test_sibling_merge(self):
+        doc = scourXmlFile('unittests/group-sibling-merge.svg',
+                           parse_args([]))
+        self.assertEqual(doc.getElementsByTagName('g').length, 5,
+                         'Merged sibling <g> tags with similar values')
+
+    def test_sibling_merge_disabled(self):
+        doc = scourXmlFile('unittests/group-sibling-merge.svg',
+                           parse_args(['--disable-group-collapsing']))
+        self.assertEqual(doc.getElementsByTagName('g').length, 8,
+                         'Sibling merging is disabled by --disable-group-collapsing')
+
+
 class GroupCreation(unittest.TestCase):
 
     def runTest(self):
