@@ -74,12 +74,6 @@ VER = __version__
 COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
-# the walltime measurement function, we will use for reporting
-# reporting how long it took to process a given SVG file.  For our
-# purposes, the time.time() function has sufficent accuracy.
-walltime = time.time
-
-
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
       'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
@@ -3865,7 +3859,7 @@ def start(options, input, output):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
-    start = walltime()
+    start = time.time()
 
     # do the work
     in_string = input.read()
@@ -3878,7 +3872,7 @@ def start(options, input, output):
     if not ((output is sys.stdout) or (hasattr(sys.stdout, 'buffer') and output is sys.stdout.buffer)):
         output.close()
 
-    end = walltime()
+    end = time.time()
 
     # run-time in ms
     duration = int(round((end - start) * 1000.))
