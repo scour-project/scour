@@ -45,8 +45,6 @@ from __future__ import absolute_import
 
 import re
 from decimal import Decimal, getcontext
-from functools import partial
-
 
 # Sentinel.
 
@@ -59,10 +57,18 @@ class _EOF(object):
 
 EOF = _EOF()
 
+# default tokens
+# (name, default-token, regex pattern)
 lexicon = [
-    ('float', r'[-+]?(?:(?:[0-9]*\.[0-9]+)|(?:[0-9]+\.?))(?:[Ee][-+]?[0-9]+)?'),
-    ('int', r'[-+]?[0-9]+'),
-    ('command', r'[AaCcHhLlMmQqSsTtVvZz]'),
+    ('float', True, r'[-+]?(?:(?:[0-9]*\.[0-9]+)|(?:[0-9]+\.?))(?:[Ee][-+]?[0-9]+)?'),
+    ('int', True, r'[-+]?[0-9]+'),
+    ('command', True, r'[AaCcHhLlMmQqSsTtVvZz]'),
+    # The "flag" token is defined as a single 0 or single 1.  We
+    # cannot parse this as a float or an int because those tokens
+    # might consume multiple digits (e.g. "int, 11" instead of "flag,
+    # 1" + "flag, 1") and the spec allows SVGs to omit the space after
+    # a flag here.
+    ('flag', False, r'[01]'),
 ]
 
 
@@ -80,22 +86,47 @@ class Lexer(object):
     def __init__(self, lexicon):
         self.lexicon = lexicon
         parts = []
-        for name, regex in lexicon:
-            parts.append('(?P<%s>%s)' % (name, regex))
+        for name, is_default, regex in lexicon:
+            if is_default:
+                parts.append('(?P<%s>%s)' % (name, regex))
+        self.all_token_names = [x for x, _, _ in lexicon]
+        self.single_token_rules = {x: re.compile('(?P<%s>%s)' % (x, y)) for x, _, y in lexicon}
         self.regex_string = '|'.join(parts)
         self.regex = re.compile(self.regex_string)
 
     def lex(self, text):
-        """ Yield (token_type, str_data) tokens.
+        """Coroutine that yields (token_type, str_data) tokens.
+
+        The parser can send a token name defined in the lexicon if the
+        default token rules are not useful.
 
         The last token will be (EOF, None) where EOF is the singleton object
         defined in this module.
+
         """
-        for match in self.regex.finditer(text):
-            for name, _ in self.lexicon:
-                m = match.group(name)
+        offset = 0
+        current_pattern = self.regex
+
+        while True:
+            match = current_pattern.search(text, offset)
+            if not match:
+                break
+            offset = match.end()
+            for name in self.all_token_names:
+                try:
+                    m = match.group(name)
+                except IndexError:
+                    # Thrown if "name" is defined in the pattern.
+                    # This happens when the parser requests a
+                    # non-default token as the default token names are
+                    # tried before non-default ones.
+                    continue
                 if m is not None:
-                    yield (name, m)
+                    pattern_request = (yield (name, m))
+                    if pattern_request is None:
+                        current_pattern = self.regex
+                    else:
+                        current_pattern = self.single_token_rules[pattern_request]
                     break
         yield (EOF, None)
 
@@ -155,8 +186,8 @@ class SVGPathParser(object):
         """ Parse a string of SVG <path> data.
         """
         gen = self.lexer.lex(text)
-        next_val_fn = partial(next, *(gen,))
-        token = next_val_fn()
+        next_val_fn = gen.send
+        token = next_val_fn(None)
         return self.rule_svg_path(next_val_fn, token)
 
     def rule_svg_path(self, next_val_fn, token):
@@ -171,12 +202,12 @@ class SVGPathParser(object):
 
     def rule_closepath(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         return (command, []), token
 
     def rule_moveto_or_lineto(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         coordinates = []
         while token[0] in self.number_tokens:
             pair, token = self.rule_coordinate_pair(next_val_fn, token)
@@ -185,7 +216,7 @@ class SVGPathParser(object):
 
     def rule_orthogonal_lineto(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         coordinates = []
         while token[0] in self.number_tokens:
             coord, token = self.rule_coordinate(next_val_fn, token)
@@ -194,7 +225,7 @@ class SVGPathParser(object):
 
     def rule_curveto3(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         coordinates = []
         while token[0] in self.number_tokens:
             pair1, token = self.rule_coordinate_pair(next_val_fn, token)
@@ -207,7 +238,7 @@ class SVGPathParser(object):
 
     def rule_curveto2(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         coordinates = []
         while token[0] in self.number_tokens:
             pair1, token = self.rule_coordinate_pair(next_val_fn, token)
@@ -218,7 +249,7 @@ class SVGPathParser(object):
 
     def rule_curveto1(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         coordinates = []
         while token[0] in self.number_tokens:
             pair1, token = self.rule_coordinate_pair(next_val_fn, token)
@@ -227,46 +258,46 @@ class SVGPathParser(object):
 
     def rule_elliptical_arc(self, next_val_fn, token):
         command = token[1]
-        token = next_val_fn()
+        token = next_val_fn(None)
         arguments = []
         while token[0] in self.number_tokens:
             rx = Decimal(token[1]) * 1
             if rx < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
-            token = next_val_fn()
+            token = next_val_fn(None)
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             ry = Decimal(token[1]) * 1
             if ry < Decimal("0.0"):
                 raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
 
-            token = next_val_fn()
+            token = next_val_fn(None)
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             axis_rotation = Decimal(token[1]) * 1
 
-            token = next_val_fn()
+            token = next_val_fn('flag')
             if token[1] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
             large_arc_flag = Decimal(token[1]) * 1
 
-            token = next_val_fn()
+            token = next_val_fn('flag')
             if token[1] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
             sweep_flag = Decimal(token[1]) * 1
 
-            token = next_val_fn()
+            token = next_val_fn(None)
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             x = Decimal(token[1]) * 1
 
-            token = next_val_fn()
+            token = next_val_fn(None)
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             y = Decimal(token[1]) * 1
 
-            token = next_val_fn()
+            token = next_val_fn(None)
             arguments.extend([rx, ry, axis_rotation, large_arc_flag, sweep_flag, x, y])
 
         return (command, arguments), token
@@ -275,7 +306,7 @@ class SVGPathParser(object):
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         x = getcontext().create_decimal(token[1])
-        token = next_val_fn()
+        token = next_val_fn(None)
         return x, token
 
     def rule_coordinate_pair(self, next_val_fn, token):
@@ -283,11 +314,11 @@ class SVGPathParser(object):
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         x = getcontext().create_decimal(token[1])
-        token = next_val_fn()
+        token = next_val_fn(None)
         if token[0] not in self.number_tokens:
             raise SyntaxError("expecting a number; got %r" % (token,))
         y = getcontext().create_decimal(token[1])
-        token = next_val_fn()
+        token = next_val_fn(None)
         return [x, y], token
 
 
