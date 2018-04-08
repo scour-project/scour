@@ -2582,18 +2582,17 @@ def controlPoints(cmd, data):
     """
        Checks if there are control points in the path data
 
-       Returns False if there aren't any
-       Returns a list of bools set to True for coordinates in the path data which are control points
+       Returns the indices of all values in the path data which are control points
     """
     cmd = cmd.lower()
     if cmd in ['c', 's', 'q']:
         indices = range(len(data))
         if cmd == 'c':  # c: (x1 y1 x2 y2 x y)+
-            return [(index % 6) < 4 for index in indices]
+            return [index for index in indices if (index % 6) < 4]
         elif cmd in ['s', 'q']:  # s: (x2 y2 x y)+   q: (x1 y1 x y)+
-            return [(index % 4) < 2 for index in indices]
+            return [index for index in indices if (index % 4) < 2]
 
-    return False
+    return []
 
 
 def flags(cmd, data):
@@ -2616,7 +2615,7 @@ def serializePath(pathObj, options):
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
     return ''.join([cmd + scourCoordinates(data, options,
-                                           reduce_precision=controlPoints(cmd, data),
+                                           control_points=controlPoints(cmd, data),
                                            flags=flags(cmd, data))
                     for cmd, data in pathObj])
 
@@ -2629,7 +2628,7 @@ def serializeTransform(transformObj):
                      for command, numbers in transformObj])
 
 
-def scourCoordinates(data, options, force_whitespace=False, reduce_precision=False, flags=[]):
+def scourCoordinates(data, options, force_whitespace=False, control_points=[], flags=[]):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2642,10 +2641,10 @@ def scourCoordinates(data, options, force_whitespace=False, reduce_precision=Fal
         c = 0
         previousCoord = ''
         for coord in data:
-            cp = reduce_precision[c] if isinstance(reduce_precision, list) else reduce_precision
+            is_control_point = c in control_points
             scouredCoord = scourUnitlessLength(coord,
                                                renderer_workaround=options.renderer_workaround,
-                                               reduce_precision=cp)
+                                               is_control_point=is_control_point)
             # don't output a space if this number starts with a dot (.) or minus sign (-); we only need a space if
             #   - this number starts with a digit
             #   - this number starts with a dot but the previous number had *no* dot or exponent
@@ -2690,7 +2689,7 @@ def scourLength(length):
     return scourUnitlessLength(length.value) + Unit.str(length.units)
 
 
-def scourUnitlessLength(length, renderer_workaround=False, reduce_precision=False):  # length is of a numeric type
+def scourUnitlessLength(length, renderer_workaround=False, is_control_point=False):  # length is of a numeric type
     """
     Scours the numeric part of a length only. Does not accept units.
 
@@ -2703,7 +2702,7 @@ def scourUnitlessLength(length, renderer_workaround=False, reduce_precision=Fals
 
     # reduce numeric precision
     # plus() corresponds to the unary prefix plus operator and applies context precision and rounding
-    if reduce_precision:
+    if is_control_point:
         length = scouringContextC.plus(length)
     else:
         length = scouringContext.plus(length)
