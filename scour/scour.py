@@ -2580,7 +2580,7 @@ def cleanPolyline(elem, options):
 
 def controlPoints(cmd, data):
     """
-       Checks if there are control points in the path
+       Checks if there are control points in the path data
 
        Returns False if there aren't any
        Returns a list of bools set to True for coordinates in the path data which are control points
@@ -2596,13 +2596,28 @@ def controlPoints(cmd, data):
     return False
 
 
+def flags(cmd, data):
+    """
+       Checks if there are flags in the path data
+
+       Returns the indices of all values in the path data which are flags
+    """
+    if cmd.lower() == 'a':  # a: (rx ry x-axis-rotation large-arc-flag sweep-flag x y)+
+        indices = range(len(data))
+        return [index for index in indices if (index % 7) in [3, 4]]
+
+    return []
+
+
 def serializePath(pathObj, options):
     """
        Reserializes the path data with some cleanups.
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options, reduce_precision=controlPoints(cmd, data))
+    return ''.join([cmd + scourCoordinates(data, options,
+                                           reduce_precision=controlPoints(cmd, data),
+                                           flags=flags(cmd, data))
                     for cmd, data in pathObj])
 
 
@@ -2614,7 +2629,7 @@ def serializeTransform(transformObj):
                      for command, numbers in transformObj])
 
 
-def scourCoordinates(data, options, force_whitespace=False, reduce_precision=False):
+def scourCoordinates(data, options, force_whitespace=False, reduce_precision=False, flags=[]):
     """
        Serializes coordinate data with some cleanups:
           - removes all trailing zeros after the decimal
@@ -2636,10 +2651,12 @@ def scourCoordinates(data, options, force_whitespace=False, reduce_precision=Fal
             #   - this number starts with a dot but the previous number had *no* dot or exponent
             #     i.e. '1.3 0.5' -> '1.3.5' or '1e3 0.5' -> '1e3.5' is fine but '123 0.5' -> '123.5' is obviously not
             #   - 'force_whitespace' is explicitly set to 'True'
-            if c > 0 and (force_whitespace
-                          or scouredCoord[0].isdigit()
-                          or (scouredCoord[0] == '.' and not ('.' in previousCoord or 'e' in previousCoord))
-                          ):
+            # we never need a space after flags (occuring in elliptical arcs), but librsvg struggles without it
+            if (c > 0
+                    and (force_whitespace
+                         or scouredCoord[0].isdigit()
+                         or (scouredCoord[0] == '.' and not ('.' in previousCoord or 'e' in previousCoord)))
+                    and ((c-1 not in flags) or options.renderer_workaround)):
                 newData.append(' ')
 
             # add the scoured coordinate to the path string

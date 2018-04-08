@@ -1101,6 +1101,24 @@ class ChangeQuadToShorthandInPath(unittest.TestCase):
                          'Did not change quadratic curves into shorthand curve segments in path')
 
 
+class BooleanFlagsInEllipticalPath(unittest.TestCase):
+
+    def test_omit_spaces(self):
+        doc = scourXmlFile('unittests/path-elliptical-flags.svg', parse_args(['--no-renderer-workaround']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths:
+            self.assertEqual(path.getAttribute('d'), 'm0 0a100 50 0 00100 50',
+                             'Did not ommit spaces after boolean flags in elliptical arg path command')
+
+    def test_output_spaces_with_renderer_workaround(self):
+        doc = scourXmlFile('unittests/path-elliptical-flags.svg', parse_args(['--renderer-workaround']))
+        paths = doc.getElementsByTagNameNS(SVGNS, 'path')
+        for path in paths:
+            self.assertEqual(path.getAttribute('d'), 'm0 0a100 50 0 0 0 100 50',
+                             'Did not output spaces after boolean flags in elliptical arg path command '
+                             'with renderer workaround')
+
+
 class DoNotOptimzePathIfLarger(unittest.TestCase):
 
     def runTest(self):

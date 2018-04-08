@@ -247,16 +247,24 @@ class SVGPathParser(object):
             axis_rotation = Decimal(token[1]) * 1
 
             token = next_val_fn()
-            if token[1] not in ('0', '1'):
+            if token[1][0] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
-            large_arc_flag = Decimal(token[1]) * 1
+            large_arc_flag = Decimal(token[1][0]) * 1
 
-            token = next_val_fn()
-            if token[1] not in ('0', '1'):
+            if len(token[1]) > 1:
+                token = list(token)
+                token[1] = token[1][1:]
+            else:
+                token = next_val_fn()
+            if token[1][0] not in ('0', '1'):
                 raise SyntaxError("expecting a boolean flag; got %r" % (token,))
-            sweep_flag = Decimal(token[1]) * 1
+            sweep_flag = Decimal(token[1][0]) * 1
 
-            token = next_val_fn()
+            if len(token[1]) > 1:
+                token = list(token)
+                token[1] = token[1][1:]
+            else:
+                token = next_val_fn()
             if token[0] not in self.number_tokens:
                 raise SyntaxError("expecting a number; got %r" % (token,))
             x = Decimal(token[1]) * 1
