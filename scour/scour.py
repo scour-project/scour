@@ -1876,6 +1876,20 @@ default_attributes = [
     DefaultAttribute('yChannelSelector', 'A', elements='feDisplacementMap')
 ]
 
+default_attributes_restricted_by_tag = defaultdict(list)
+default_attributes_unrestricted = []
+
+for attr in default_attributes:
+    if attr.elements is None:
+        # Applies to all tags
+        default_attributes_unrestricted.append(attr)
+        continue
+    if type(attr.elements) is str:
+        default_attributes_restricted_by_tag[attr.elements].append(attr)
+    else:
+        for tag in attr.elements:
+            default_attributes_restricted_by_tag[tag].append(attr)
+
 
 def taint(taintedSet, taintedAttribute):
     u"""Adds an attribute to a set of attributes.
