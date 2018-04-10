@@ -1900,9 +1900,6 @@ def removeDefaultAttributeValue(node, attribute):
     if not node.hasAttribute(attribute.name):
         return 0
 
-    if (attribute.elements is not None) and (node.nodeName not in attribute.elements):
-        return 0
-
     # differentiate between text and numeric values
     if isinstance(attribute.value, str):
         if node.getAttribute(attribute.name) == attribute.value:
@@ -1931,9 +1928,17 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
     if node.nodeType != Node.ELEMENT_NODE:
         return 0
 
-    # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
-    for attribute in default_attributes:
+    # Remove all default attributes.  The remoteDefaultAttributeValue
+    # function deals with "if/when" we are allowed to remove the
+    # attribute as long as we supply it only with attributes that are
+    # applicable for this given node.  That part is handled by using
+    # default_attributes_unrestricted and
+    # default_attributes_restricted_by_tag
+    for attribute in default_attributes_unrestricted:
         num += removeDefaultAttributeValue(node, attribute)
+    if node.nodeName in default_attributes_restricted_by_tag:
+        for attribute in default_attributes_restricted_by_tag[node.nodeName]:
+            num += removeDefaultAttributeValue(node, attribute)
 
     # Summarily get rid of default properties
     attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
