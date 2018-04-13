@@ -690,19 +690,16 @@ def removeUnreferencedElements(doc, keepDefs):
     return num
 
 
-def shortenIDs(doc, prefix, unprotectedElements=None):
+def shortenIDs(doc, prefix, options):
     """
     Shortens ID names used in the document. ID names referenced the most often are assigned the
     shortest ID names.
-    If the list unprotectedElements is provided, only IDs from this list will be shortened.
 
     Returns the number of bytes saved by shortening ID names in the document.
     """
     num = 0
 
     identifiedElements = findElementsWithId(doc.documentElement)
-    if unprotectedElements is None:
-        unprotectedElements = identifiedElements
     referencedIDs = findReferencedElements(doc.documentElement)
 
     # Make idList (list of idnames) sorted by reference count
@@ -710,24 +707,28 @@ def shortenIDs(doc, prefix, unprotectedElements=None):
     # First check that there's actually a defining element for the current ID name.
     # (Cyn: I've seen documents with #id references but no element with that ID!)
     idList = [(len(referencedIDs[rid]), rid) for rid in referencedIDs
-              if rid in unprotectedElements]
+              if rid in identifiedElements]
     idList.sort(reverse=True)
     idList = [rid for count, rid in idList]
 
     # Add unreferenced IDs to end of idList in arbitrary order
-    idList.extend([rid for rid in unprotectedElements if rid not in idList])
+    idList.extend([rid for rid in identifiedElements if rid not in idList])
+    # Ensure we do not reuse a protected ID by accident
+    protectedIDs = _protectedIDs(identifiedElements, options)
 
     curIdNum = 1
 
     for rid in idList:
         curId = intToID(curIdNum, prefix)
-        # First make sure that *this* element isn't already using
-        # the ID name we want to give it.
+
+        # Skip ahead if the new ID is in use and protected.
+        while curId in protectedIDs:
+            curIdNum += 1
+            curId = intToID(curIdNum, prefix)
+
+        # Now check if we found a new ID (we can happen to choose the same
+        # ID.  More likely on a rerun)
         if curId != rid:
-            # Then, skip ahead if the new ID is already in identifiedElement.
-            while curId in identifiedElements:
-                curIdNum += 1
-                curId = intToID(curIdNum, prefix)
             # Then go rename it.
             num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
         curIdNum += 1
@@ -755,7 +756,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
     Changes the ID name from idFrom to idTo, on the declaring element
     as well as all references in the document doc.
 
-    Updates identifiedElements and referencedIDs.
+    Updates identifiedElements, but not referencedIDs.
     Does not handle the case where idTo is already the ID name
     of another element in doc.
 
@@ -822,34 +823,44 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
                     node.setAttribute(attr, newValue)
                     num += len(oldValue) - len(newValue)
 
-        del referencedIDs[idFrom]
-        referencedIDs[idTo] = referringNodes
+        # We deliberately leave referencedIDs alone to enable us to bulk update
+        # IDs where two nodes swap IDs.  (GH#186)
+        # del referencedIDs[idFrom]
+        # referencedIDs[idTo] = referringNodes
 
     return num
+
+
+def _protectedIDs(seenIDs, options):
+    """Return a list of protected IDs out of the seenIDs"""
+    protectedIDs = []
+    if options.protect_ids_prefix or options.protect_ids_noninkscape or options.protect_ids_list:
+        protect_ids_prefixes = []
+        protect_ids_list = []
+        if options.protect_ids_list:
+            protect_ids_list = options.protect_ids_list.split(",")
+        if options.protect_ids_prefix:
+            protect_ids_prefixes = options.protect_ids_prefix.split(",")
+        for id in seenIDs:
+            protected = False
+            if options.protect_ids_noninkscape and not id[-1].isdigit():
+                protected = True
+            elif protect_ids_list and id in protect_ids_list:
+                protected = True
+            elif protect_ids_prefixes:
+                if any(id.startswith(prefix) for prefix in protect_ids_prefixes):
+                    protected = True
+            if protected:
+                protectedIDs.append(id)
+    return protectedIDs
 
 
 def unprotected_ids(doc, options):
     u"""Returns a list of unprotected IDs within the document doc."""
     identifiedElements = findElementsWithId(doc.documentElement)
-    if not (options.protect_ids_noninkscape or
-            options.protect_ids_list or
-            options.protect_ids_prefix):
-        return identifiedElements
-    if options.protect_ids_list:
-        protect_ids_list = options.protect_ids_list.split(",")
-    if options.protect_ids_prefix:
-        protect_ids_prefixes = options.protect_ids_prefix.split(",")
-    for id in list(identifiedElements):
-        protected = False
-        if options.protect_ids_noninkscape and not id[-1].isdigit():
-            protected = True
-        if options.protect_ids_list and id in protect_ids_list:
-            protected = True
-        if options.protect_ids_prefix:
-            for prefix in protect_ids_prefixes:
-                if id.startswith(prefix):
-                    protected = True
-        if protected:
+    protectedIDs = _protectedIDs(identifiedElements, options)
+    if protectedIDs:
+        for id in protectedIDs:
             del identifiedElements[id]
     return identifiedElements
 
@@ -3527,7 +3538,7 @@ def scourString(in_string, options=None):
 
     # shorten ID names as much as possible
     if options.shorten_ids:
-        _num_bytes_saved_in_ids += shortenIDs(doc, options.shorten_ids_prefix, unprotected_ids(doc, options))
+        _num_bytes_saved_in_ids += shortenIDs(doc, options.shorten_ids_prefix, options)
 
     # scour lengths (including coordinates)
     for type in ['svg', 'image', 'rect', 'circle', 'ellipse', 'line',
