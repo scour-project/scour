@@ -714,7 +714,7 @@ def shortenIDs(doc, prefix, options):
     # Add unreferenced IDs to end of idList in arbitrary order
     idList.extend([rid for rid in identifiedElements if rid not in idList])
     # Ensure we do not reuse a protected ID by accident
-    protectedIDs = _protectedIDs(identifiedElements, options)
+    protectedIDs = protected_ids(identifiedElements, options)
 
     curIdNum = 1
 
@@ -831,7 +831,7 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
     return num
 
 
-def _protectedIDs(seenIDs, options):
+def protected_ids(seenIDs, options):
     """Return a list of protected IDs out of the seenIDs"""
     protectedIDs = []
     if options.protect_ids_prefix or options.protect_ids_noninkscape or options.protect_ids_list:
@@ -858,7 +858,7 @@ def _protectedIDs(seenIDs, options):
 def unprotected_ids(doc, options):
     u"""Returns a list of unprotected IDs within the document doc."""
     identifiedElements = findElementsWithId(doc.documentElement)
-    protectedIDs = _protectedIDs(identifiedElements, options)
+    protectedIDs = protected_ids(identifiedElements, options)
     if protectedIDs:
         for id in protectedIDs:
             del identifiedElements[id]
