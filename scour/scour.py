@@ -700,6 +700,10 @@ def shortenIDs(doc, prefix, options):
     num = 0
 
     identifiedElements = findElementsWithId(doc.documentElement)
+    # This map contains maps the (original) ID to the nodes referencing it.
+    # At the end of this function, it will no longer be valid and while we
+    # could keep it up to date, it will complicate the code for no gain
+    # (as we do not reuse the data structure beyond this function).
     referencedIDs = findReferencedElements(doc.documentElement)
 
     # Make idList (list of idnames) sorted by reference count
@@ -734,7 +738,7 @@ def shortenIDs(doc, prefix, options):
         # (e.g. remapping "c" to "a" is not going to win us anything)
         if len(curId) != len(rid):
             # Then go rename it.
-            num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
+            num += renameID(doc, rid, curId, identifiedElements, referencedIDs.get(rid))
         elif curId < rid:
             # If we skip reassigning an ID because it has the same length
             # (E.g. skipping "c" -> "a"), then we have to mark the "future"
@@ -765,14 +769,12 @@ def intToID(idnum, prefix):
     return prefix + rid
 
 
-def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
+def renameID(doc, idFrom, idTo, identifiedElements, referringNodes):
     """
     Changes the ID name from idFrom to idTo, on the declaring element
-    as well as all references in the document doc.
+    as well as all nodes in referringNodes.
 
-    Updates identifiedElements, but not referencedIDs.
-    Does not handle the case where idTo is already the ID name
-    of another element in doc.
+    Updates identifiedElements.
 
     Returns the number of bytes saved by this replacement.
     """
@@ -786,7 +788,6 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
     num += len(idFrom) - len(idTo)
 
     # Update references to renamed node
-    referringNodes = referencedIDs.get(idFrom)
     if referringNodes is not None:
 
         # Look for the idFrom ID name in each of the referencing elements,
@@ -836,11 +837,6 @@ def renameID(doc, idFrom, idTo, identifiedElements, referencedIDs):
                     newValue = newValue.replace('url("#' + idFrom + '")', 'url(#' + idTo + ')')
                     node.setAttribute(attr, newValue)
                     num += len(oldValue) - len(newValue)
-
-        # We deliberately leave referencedIDs alone to enable us to bulk update
-        # IDs where two nodes swap IDs.  (GH#186)
-        # del referencedIDs[idFrom]
-        # referencedIDs[idTo] = referringNodes
 
     return num
 
