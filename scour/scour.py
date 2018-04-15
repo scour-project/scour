@@ -738,7 +738,7 @@ def shortenIDs(doc, prefix, options):
         # (e.g. remapping "c" to "a" is not going to win us anything)
         if len(curId) != len(rid):
             # Then go rename it.
-            num += renameID(doc, rid, curId, identifiedElements, referencedIDs.get(rid))
+            num += renameID(rid, curId, identifiedElements, referencedIDs.get(rid))
         elif curId < rid:
             # If we skip reassigning an ID because it has the same length
             # (E.g. skipping "c" -> "a"), then we have to mark the "future"
@@ -769,7 +769,7 @@ def intToID(idnum, prefix):
     return prefix + rid
 
 
-def renameID(doc, idFrom, idTo, identifiedElements, referringNodes):
+def renameID(idFrom, idTo, identifiedElements, referringNodes):
     """
     Changes the ID name from idFrom to idTo, on the declaring element
     as well as all nodes in referringNodes.
