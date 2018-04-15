@@ -1866,19 +1866,16 @@ default_attributes = [
     DefaultAttribute('yChannelSelector', 'A', elements=['feDisplacementMap'])
 ]
 
-default_attributes_restricted_by_tag = defaultdict(list)
-default_attributes_unrestricted = []
-
-for attr in default_attributes:
-    if attr.elements is None:
-        # Applies to all tags
-        default_attributes_unrestricted.append(attr)
-        continue
-    if type(attr.elements) is str:
-        default_attributes_restricted_by_tag[attr.elements].append(attr)
+# split to increase lookup performance
+default_attributes_universal = []  # list containing attributes valid for all elements
+default_attributes_per_element = defaultdict(list)  # dict containing lists of attributes valid for individual elements
+for default_attribute in default_attributes:
+    if default_attribute.elements is None:
+        default_attributes_universal.append(default_attribute)
     else:
-        for tag in attr.elements:
-            default_attributes_restricted_by_tag[tag].append(attr)
+        for element in default_attribute.elements:
+            default_attributes_per_element[element].append(default_attribute)
+print(len(default_attributes_universal))
 
 
 def taint(taintedSet, taintedAttribute):
@@ -1896,6 +1893,8 @@ def taint(taintedSet, taintedAttribute):
 def removeDefaultAttributeValue(node, attribute):
     """
     Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
+    
+    Warning: Does NOT check if the attribute is actually valid for the passed element type for increased preformance!
     """
     if not node.hasAttribute(attribute.name):
         return 0
@@ -1928,16 +1927,15 @@ def removeDefaultAttributeValues(node, options, tainted=set()):
     if node.nodeType != Node.ELEMENT_NODE:
         return 0
 
-    # Remove all default attributes.  The remoteDefaultAttributeValue
-    # function deals with "if/when" we are allowed to remove the
-    # attribute as long as we supply it only with attributes that are
-    # applicable for this given node.  That part is handled by using
-    # default_attributes_unrestricted and
-    # default_attributes_restricted_by_tag
-    for attribute in default_attributes_unrestricted:
+    # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
+    #
+    # For increased performance do not iterate the whole list for each element but run only on valid subsets
+    # - 'default_attributes_universal' (attributes valid for all elements)
+    # - 'default_attributes_per_element' (attributes specific to one specific element type)
+    for attribute in default_attributes_universal:
         num += removeDefaultAttributeValue(node, attribute)
-    if node.nodeName in default_attributes_restricted_by_tag:
-        for attribute in default_attributes_restricted_by_tag[node.nodeName]:
+    if node.nodeName in default_attributes_per_element:
+        for attribute in default_attributes_per_element[node.nodeName]:
             num += removeDefaultAttributeValue(node, attribute)
 
     # Summarily get rid of default properties
