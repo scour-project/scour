@@ -715,22 +715,36 @@ def shortenIDs(doc, prefix, options):
     idList.extend([rid for rid in identifiedElements if rid not in idList])
     # Ensure we do not reuse a protected ID by accident
     protectedIDs = protected_ids(identifiedElements, options)
+    # IDs that we have used "ahead of time".  Happens if we are about to
+    # rename an ID and there is no length difference between the new and
+    # the old ID.
+    consumedIDs = set()
 
     curIdNum = 1
 
     for rid in idList:
         curId = intToID(curIdNum, prefix)
 
-        # Skip ahead if the new ID is in use and protected.
-        while curId in protectedIDs:
+        # Skip ahead if the new ID has already been used or is protected.
+        while curId in protectedIDs or curId in consumedIDs:
             curIdNum += 1
             curId = intToID(curIdNum, prefix)
 
-        # Now check if we found a new ID (we can happen to choose the same
-        # ID.  More likely on a rerun)
-        if curId != rid:
+        # Avoid checking the ID if it will not affect the size of the document
+        # (e.g. remapping "c" to "a" is not going to win us anything)
+        if len(curId) != len(rid):
             # Then go rename it.
             num += renameID(doc, rid, curId, identifiedElements, referencedIDs)
+        elif curId < rid:
+            # If we skip reassigning an ID because it has the same length
+            # (E.g. skipping "c" -> "a"), then we have to mark the "future"
+            # ID as taken ("c" in the example).
+            # The "strictly less than" in the condition is to ensure that we
+            # properly update curIdNum in the corner case where curId == rid.
+            consumedIDs.add(rid)
+            # Use continue here without updating curIdNum to avoid losing
+            # the current ID.
+            continue
         curIdNum += 1
 
     return num
