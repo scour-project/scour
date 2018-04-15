@@ -1827,7 +1827,7 @@ default_attributes = [
     DefaultAttribute('cy', 50, Unit.PCT, elements=['radialGradient']),
     DefaultAttribute('cy', 0.5, Unit.NONE, elements=['radialGradient'],
                      conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
-    DefaultAttribute('spreadMethod', 'pad'),
+    DefaultAttribute('spreadMethod', 'pad', elements=['linearGradient', 'radialGradient']),
 
     # filter effects
     DefaultAttribute('amplitude', 1, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
@@ -1867,6 +1867,7 @@ default_attributes = [
 ]
 
 # split to increase lookup performance
+# TODO: 'default_attributes_universal' is actually empty right now - will we ever need it?
 default_attributes_universal = []  # list containing attributes valid for all elements
 default_attributes_per_element = defaultdict(list)  # dict containing lists of attributes valid for individual elements
 for default_attribute in default_attributes:
@@ -1875,7 +1876,6 @@ for default_attribute in default_attributes:
     else:
         for element in default_attribute.elements:
             default_attributes_per_element[element].append(default_attribute)
-print(len(default_attributes_universal))
 
 
 def taint(taintedSet, taintedAttribute):
@@ -1893,7 +1893,7 @@ def taint(taintedSet, taintedAttribute):
 def removeDefaultAttributeValue(node, attribute):
     """
     Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
-    
+
     Warning: Does NOT check if the attribute is actually valid for the passed element type for increased preformance!
     """
     if not node.hasAttribute(attribute.name):
