@@ -2,10 +2,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <rect id="a" width="80" height="50" fill="red"/>
-  <rect id="b" width="80" height="50" fill="blue"/>
+  <rect id="long_id" width="80" height="50" fill="blue"/>
  </defs>
  <use xlink:href="#a"/>
- <use xlink:href="#b"/>
- <use xlink:href="#b"/>
+ <use xlink:href="#long_id"/>
+ <use xlink:href="#long_id"/>
 </svg>
 

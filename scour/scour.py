@@ -719,39 +719,89 @@ def shortenIDs(doc, prefix, options):
     idList.extend([rid for rid in identifiedElements if rid not in idList])
     # Ensure we do not reuse a protected ID by accident
     protectedIDs = protected_ids(identifiedElements, options)
-    # IDs that we have used "ahead of time".  Happens if we are about to
-    # rename an ID and there is no length difference between the new and
-    # the old ID.
+    # IDs that have been allocated and should not be remapped.
     consumedIDs = set()
+
+    # List of IDs that need to be assigned a new ID.  The list is ordered
+    # such that earlier entries will be assigned a shorter ID than those
+    # later in the list.  IDs in this list *can* obtain an ID that is
+    # longer than they already are.
+    need_new_id = []
+
+    id_allocations = list(compute_id_lengths(len(idList) + 1))
+    # Reverse so we can use it as a stack and still work from "shortest to
+    # longest" ID.
+    id_allocations.reverse()
+
+    # Here we loop over all current IDs (that we /might/ want to remap)
+    # and group them into two.  1) The IDs that already have a perfect
+    # length (these are added to consumedIDs) and 2) the IDs that need
+    # to change length (these are appended to need_new_id).
+    optimal_id_length, id_use_limit = 0, 0
+    for current_id in idList:
+        # If we are out of IDs of the current length, then move on
+        # to the next length
+        if id_use_limit < 1:
+            optimal_id_length, id_use_limit = id_allocations.pop()
+        # Reserve an ID from this length
+        id_use_limit -= 1
+        # We check for strictly equal to optimal length because our ID
+        # remapping may have to assign one node a longer ID because
+        # another node needs a shorter ID.
+        if len(current_id) == optimal_id_length:
+            # This rid is already of optimal length - lets just keep it.
+            consumedIDs.add(current_id)
+        else:
+            # Needs a new (possibly longer) ID.
+            need_new_id.append(current_id)
 
     curIdNum = 1
 
-    for rid in idList:
-        curId = intToID(curIdNum, prefix)
+    for old_id in need_new_id:
+        new_id = intToID(curIdNum, prefix)
 
         # Skip ahead if the new ID has already been used or is protected.
-        while curId in protectedIDs or curId in consumedIDs:
+        while new_id in protectedIDs or new_id in consumedIDs:
             curIdNum += 1
-            curId = intToID(curIdNum, prefix)
+            new_id = intToID(curIdNum, prefix)
 
-        # Avoid checking the ID if it will not affect the size of the document
-        # (e.g. remapping "c" to "a" is not going to win us anything)
-        if len(curId) != len(rid):
-            # Then go rename it.
-            num += renameID(rid, curId, identifiedElements, referencedIDs.get(rid))
-        elif curId < rid:
-            # If we skip reassigning an ID because it has the same length
-            # (E.g. skipping "c" -> "a"), then we have to mark the "future"
-            # ID as taken ("c" in the example).
-            # The "strictly less than" in the condition is to ensure that we
-            # properly update curIdNum in the corner case where curId == rid.
-            consumedIDs.add(rid)
-            # Use continue here without updating curIdNum to avoid losing
-            # the current ID.
-            continue
+        # Now that we have found the first available ID, do the remap.
+        num += renameID(old_id, new_id, identifiedElements, referencedIDs.get(old_id))
         curIdNum += 1
 
     return num
+
+
+def compute_id_lengths(highest):
+    """Compute how many IDs are available of a given size
+
+    Example:
+        >>> lengths = list(compute_id_lengths(512))
+        >>> lengths
+        [(1, 26), (2, 676)]
+        >>> total_limit = sum(x[1] for x in lengths)
+        >>> total_limit
+        702
+        >>> intToID(total_limit, '')
+        'zz'
+
+    Which tells us that we got 26 IDs of length 1 and up to 676 IDs of length two
+    if we need to allocate 512 IDs.
+
+    :param highest: Highest ID that need to be allocated
+    :return: An iterator that returns tuples of (id-length, use-limit).  The
+     use-limit applies only to the given id-length (i.e. it is excluding IDs
+     of shorter length).  Note that the sum of the use-limit values is always
+     equal to or greater than the highest param.
+    """
+    step = 26
+    id_length = 0
+    use_limit = 1
+    while highest:
+        id_length += 1
+        use_limit *= step
+        yield (id_length, use_limit)
+        highest = int((highest - 1) / step)
 
 
 def intToID(idnum, prefix):
