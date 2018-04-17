@@ -1570,6 +1570,16 @@ class RemoveDefaultGradFYValue(unittest.TestCase):
                          'fy matching cy not removed')
 
 
+class RemoveDefaultAttributeOrderSVGLengthCrash(unittest.TestCase):
+
+    # Triggered a crash in v0.36
+    def runTest(self):
+        try:
+            scourXmlFile('unittests/remove-default-attr-order.svg')
+        except AttributeError:
+            self.fail("Processing the order attribute triggered an AttributeError ")
+
+
 class CDATAInXml(unittest.TestCase):
 
     def runTest(self):

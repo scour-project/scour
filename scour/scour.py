@@ -1848,7 +1848,12 @@ default_attributes = [
     DefaultAttribute('offset', 0, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('operator', 'over', elements=['feComposite']),
     DefaultAttribute('operator', 'erode', elements=['feMorphology']),
-    DefaultAttribute('order', 3, elements=['feConvolveMatrix']),
+    # We pretend order is a string (because handling it as an
+    # SVGLength will cause issues when order is two integers).  Note
+    # that order must be exactly one or two integers (no units or
+    # fancy numbers), so working with it a string will generally just
+    # work.
+    DefaultAttribute('order', '3', elements=['feConvolveMatrix']),
     DefaultAttribute('pointsAtX', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtY', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtZ', 0, elements=['feSpotLight']),
