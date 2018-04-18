@@ -3042,7 +3042,7 @@ def removeComments(element):
     return num
 
 
-def embedRasters(element, options):
+def embedRasters(element, references_relative_to, options):
     import base64
     """
       Converts raster references to inline images.
@@ -3081,9 +3081,9 @@ def embedRasters(element, options):
             # relative local paths are relative to the input file, therefore temporarily change the working dir
             working_dir_old = None
             if parsed_href.scheme == 'file' and parsed_href.path[0] != '/':
-                if options.infilename:
+                if references_relative_to:
+                    working_dir_new = os.path.abspath(references_relative_to)
                     working_dir_old = os.getcwd()
-                    working_dir_new = os.path.abspath(os.path.dirname(options.infilename))
                     os.chdir(working_dir_new)
 
             # open/download the file
@@ -3333,7 +3333,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
 # this is the main method
 # input is a string representation of the input XML
 # returns a string representation of the output XML
-def scourString(in_string, options=None):
+def scourString(in_string, options=None, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
@@ -3574,7 +3574,7 @@ def scourString(in_string, options=None):
     # convert rasters references to base64-encoded strings
     if options.embed_rasters:
         for elem in doc.documentElement.getElementsByTagName('image'):
-            embedRasters(elem, options)
+            embedRasters(elem, references_relative_to, options)
 
     # properly size the SVG document (ideally width/height should be 100% with a viewBox)
     if options.enable_viewboxing:
@@ -3615,16 +3615,14 @@ def scourString(in_string, options=None):
 # used mostly by unit tests
 # input is a filename
 # returns the minidom doc representation of the SVG
-def scourXmlFile(filename, options=None):
+def scourXmlFile(filename, options=None, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
-    # we need to make sure infilename is set correctly (otherwise relative references in the SVG won't work)
-    options.ensure_value("infilename", filename)
 
     # open the file and scour it
     with open(filename, "rb") as f:
         in_string = f.read()
-    out_string = scourString(in_string, options)
+    out_string = scourString(in_string, options, references_relative_to)
 
     # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
@@ -3657,10 +3655,12 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
 # GZ: would prefer this to be in a function or class scope, but tests etc need
 #     access to the defaults anyway
 _options_parser = optparse.OptionParser(
-    usage="%prog [INPUT.SVG [OUTPUT.SVG]] [OPTIONS]",
+    usage="%prog [INPUT.SVG [[... INPUT.SVG] OUTPUT]] [OPTIONS]",
     description=("If the input/output files are not specified, stdin/stdout are used. "
                  "If the input/output files are specified with a svgz extension, "
-                 "then compressed SVG is assumed."),
+                 "then compressed SVG is assumed.  Multiple input files can be specified "
+                 "when output is a directory.  The ouput files will be the basename of "
+                 "the input files."),
     formatter=HeaderedFormatter(max_help_position=33),
     version=VER)
 
@@ -3675,11 +3675,11 @@ _options_parser.add_option("-v", "--verbose",
                            action="store_true", dest="verbose", default=False,
                            help="verbose output (statistics, etc.)")
 _options_parser.add_option("-i",
-                           action="store", dest="infilename", metavar="INPUT.SVG",
-                           help="alternative way to specify input filename")
+                           action="append", dest="infilenames", metavar="INPUT.SVG",
+                           help="alternative way to specify input filenames")
 _options_parser.add_option("-o",
-                           action="store", dest="outfilename", metavar="OUTPUT.SVG",
-                           help="alternative way to specify output filename")
+                           action="store", dest="outfilename", metavar="OUTPUT",
+                           help="alternative way to specify output (either a file or a directory)")
 
 _option_group_optimization = optparse.OptionGroup(_options_parser, "Optimization")
 _option_group_optimization.add_option("--set-precision",
@@ -3793,10 +3793,11 @@ def parse_args(args=None, ignore_additional_args=False):
     options, rargs = _options_parser.parse_args(args)
 
     if rargs:
-        if not options.infilename:
-            options.infilename = rargs.pop(0)
-        if not options.outfilename and rargs:
-            options.outfilename = rargs.pop(0)
+        if not options.outfilename and len(rargs) > 1:
+            options.outfilename = rargs.pop()
+        if not options.infilenames:
+            options.infilenames = rargs
+            rargs = []
         if not ignore_additional_args and rargs:
             _options_parser.error("Additional arguments not handled: %r, see --help" % rargs)
     if options.digits < 1:
@@ -3809,8 +3810,15 @@ def parse_args(args=None, ignore_additional_args=False):
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
         _options_parser.error("Value for --nindent should be positive (or zero), see --help")
-    if options.infilename and options.outfilename and options.infilename == options.outfilename:
-        _options_parser.error("Input filename is the same as output filename")
+    if options.infilenames:
+        if len(options.infilenames) > 1:
+            if not options.outfilename or not os.path.isdir(options.outfilename):
+                _options_parser.error("Multiple input files requires an directory as output (-o)")
+        elif len(options.infilenames) == 0 and options.outfilename and options.infilenames[0] == options.outfilename:
+            _options_parser.error("Input filename is the same as output filename")
+    else:
+        if options.outfilename and os.path.isdir(options.outfilename):
+            _options_parser.error("Cannot use a directory as output when input is stdin")
 
     return options
 
@@ -3838,10 +3846,12 @@ def maybe_gziped_file(filename, mode="r"):
     return open(filename, mode)
 
 
-def getInOut(options):
-    if options.infilename:
-        infile = maybe_gziped_file(options.infilename, "rb")
+def getInOut(input_file, options):
+    references_relative_to = None
+    if input_file is not None:
+        infile = maybe_gziped_file(input_file, "rb")
         # GZ: could catch a raised IOError here and report
+        references_relative_to = os.path.dirname(input_file)
     else:
         # GZ: could sniff for gzip compression here
         #
@@ -3855,7 +3865,11 @@ def getInOut(options):
             _options_parser.error("No input file specified, see --help for detailed usage information")
 
     if options.outfilename:
-        outfile = maybe_gziped_file(options.outfilename, "wb")
+        dest = options.outfilename
+        if os.path.isdir(dest):
+            assert input_file is not None
+            dest = os.path.join(dest, os.path.basename(input_file))
+        outfile = maybe_gziped_file(dest, "wb")
     else:
         # open the binary buffer of stdout as the output is already encoded
         try:
@@ -3865,7 +3879,7 @@ def getInOut(options):
         # redirect informational output to stderr when SVG is output to stdout
         options.stdout = sys.stderr
 
-    return [infile, outfile]
+    return [infile, references_relative_to, outfile]
 
 
 def getReport():
@@ -3887,7 +3901,7 @@ def getReport():
     )
 
 
-def start(options, input, output):
+def start(options, input, output, references_relative_to=None):
     # sanitize options (take missing attributes from defaults, discard unknown attributes)
     options = sanitizeOptions(options)
 
@@ -3895,7 +3909,7 @@ def start(options, input, output):
 
     # do the work
     in_string = input.read()
-    out_string = scourString(in_string, options).encode("UTF-8")
+    out_string = scourString(in_string, options, references_relative_to).encode("UTF-8")
     output.write(out_string)
 
     # Close input and output files (but do not attempt to close stdin/stdout!)
@@ -3926,8 +3940,14 @@ def start(options, input, output):
 
 def run():
     options = parse_args()
-    (input, output) = getInOut(options)
-    start(options, input, output)
+    input_files = options.infilenames if options.infilenames is not None else []
+    if input_files and input_files[0] is not None:
+        for filename in input_files:
+            (input, input_relative_to, output) = getInOut(filename, options)
+            start(options, input, output, input_relative_to)
+    else:
+        (input, input_relative_to, output) = getInOut(None, options)
+        start(options, input, output, input_relative_to)
 
 
 if __name__ == '__main__':
