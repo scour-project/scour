@@ -2304,6 +2304,17 @@ class TransformIdentityTranslate(unittest.TestCase):
                          'Transform containing identity translation not removed')
 
 
+class TransformIdentityScale(unittest.TestCase):
+
+    def runTest(self):
+        try:
+            doc = scourXmlFile('unittests/transform-scale-is-identity.svg')
+        except IndexError:
+            self.fail("scour failed to handled scale(1) [See GH#190]")
+        self.assertEqual(doc.getElementsByTagName('line')[0].getAttribute('scale'), '',
+                         'Transform containing identity translation not removed')
+
+
 class DuplicateGradientsUpdateStyle(unittest.TestCase):
 
     def runTest(self):

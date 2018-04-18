@@ -2966,7 +2966,9 @@ def optimizeTransform(transform):
                 # y1 * uniformscalefactor2
                 prevArgs[1] *= currArgs[0]
             del transform[i]
-            if prevArgs[0] == prevArgs[1] == 1:
+            # if prevArgs is [1] or [1, 1], then it is effectively an
+            # identity matrix and can be removed.
+            if prevArgs[0] == 1 and (len(prevArgs) == 1 or prevArgs[1] == 1):
                 # Identity scale!
                 i -= 1
                 del transform[i]
