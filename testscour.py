@@ -1577,7 +1577,17 @@ class RemoveDefaultAttributeOrderSVGLengthCrash(unittest.TestCase):
         try:
             scourXmlFile('unittests/remove-default-attr-order.svg')
         except AttributeError:
-            self.fail("Processing the order attribute triggered an AttributeError ")
+            self.fail("Processing the order attribute triggered an AttributeError")
+
+
+class RemoveDefaultAttributeStdDeviationSVGLengthCrash(unittest.TestCase):
+
+    # Triggered a crash in v0.36
+    def runTest(self):
+        try:
+            scourXmlFile('unittests/remove-default-attr-std-deviation.svg')
+        except AttributeError:
+            self.fail("Processing the order attribute triggered an AttributeError")
 
 
 class CDATAInXml(unittest.TestCase):

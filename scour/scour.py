@@ -1862,7 +1862,8 @@ default_attributes = [
     DefaultAttribute('seed', 0, elements=['feTurbulence']),
     DefaultAttribute('specularConstant', 1, elements=['feSpecularLighting']),
     DefaultAttribute('specularExponent', 1, elements=['feSpecularLighting', 'feSpotLight']),
-    DefaultAttribute('stdDeviation', 0, elements=['feGaussianBlur']),
+    # Pretend it is a string (for the same reasons as we do with "order")
+    DefaultAttribute('stdDeviation', '0', elements=['feGaussianBlur']),
     DefaultAttribute('stitchTiles', 'noStitch', elements=['feTurbulence']),
     DefaultAttribute('surfaceScale', 1, elements=['feDiffuseLighting', 'feSpecularLighting']),
     DefaultAttribute('type', 'matrix', elements=['feColorMatrix']),

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+  <defs>
+    <filter id="filter" filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">
+      <feGaussianBlur stdDeviation="0 0" x="10" y="10" dx="20" dy="20" />
+    </filter>
+  </defs>
+  <!-- Use the filter (otherwise, scour discards it before it trips over it) -->
+  <image id="png" x="10" y="30" width="150" height="50" xlink:href="raster.png"
+         filter="url(#filter)"/>
+</svg>
