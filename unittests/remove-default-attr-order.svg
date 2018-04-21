@@ -2,7 +2,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
   <defs>
     <filter id="filter" filterUnits="objectBoundingBox" x="0%" y="0%" width="100%" height="100%">
-      <feConvolveMatrix order="3 1" kernelMatrix="0.3333 0.3333 0.3333" edgeMode="none"/>
+      <feConvolveMatrix order="3 1" kernelMatrix="0.3333 0.3333 0.3333" kernelUnitLength="3 1" edgeMode="none"/>
     </filter>
   </defs>
   <!-- Use the filter (otherwise, scour discards it before it trips over it) -->
