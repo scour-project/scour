@@ -2072,12 +2072,25 @@ class StyleToAttr(unittest.TestCase):
         self.assertEqual(line.getAttribute('marker-end'), 'url(#m)')
 
 
-class PathEmptyMove(unittest.TestCase):
+class PathCommandRewrites(unittest.TestCase):
 
     def runTest(self):
-        doc = scourXmlFile('unittests/path-empty-move.svg')
-        self.assertEqual(doc.getElementsByTagName('path')[0].getAttribute('d'), 'm100 100 200 100z')
-        self.assertEqual(doc.getElementsByTagName('path')[1].getAttribute('d'), 'm100 100v200l100 100z')
+        doc = scourXmlFile('unittests/path-command-rewrites.svg')
+        paths = doc.getElementsByTagName('path')
+        expected_paths = [
+            ('m100 100 200 100', "Trailing m0 0z not removed"),
+            ('m100 100v200m0 0 100 100z', "Mangled m0 0 100 100"),
+            ("m100 100v200m0 0 2-1-2 1z", "Should have removed empty m0 0"),
+            ("m100 100v200l3-5-5 3m0 0 2-1-2 1z", "Rewrite m0 0 3-5-5 3 ... -> l3-5-5 3 ..."),
+            ("m100 100v200m0 0 3-5-5 3zm0 0 2-1-2 1z", "No rewrite of m0 0 3-5-5 3z"),
+        ]
+        self.assertEqual(len(paths), len(expected_paths), "len(actual_paths) != len(expected_paths)")
+        for i in range(len(paths)):
+            actual_path = paths[i].getAttribute('d')
+            expected_path, message = expected_paths[i]
+            self.assertEqual(actual_path,
+                             expected_path,
+                             '%s: "%s" != "%s"' % (message, actual_path, expected_path))
 
 
 class DefaultsRemovalToplevel(unittest.TestCase):
