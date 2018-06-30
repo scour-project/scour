@@ -1830,9 +1830,12 @@ default_attributes = [
     DefaultAttribute('spreadMethod', 'pad', elements=['linearGradient', 'radialGradient']),
 
     # filter effects
+    #   TODO: Some numerical attributes allow an optional second value ("number-optional-number")
+    #         and are currently handled as strings to avoid an exception in 'SVGLength', see
+    #         https://github.com/scour-project/scour/pull/192
     DefaultAttribute('amplitude', 1, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('azimuth', 0, elements=['feDistantLight']),
-    DefaultAttribute('baseFrequency', 0, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+    DefaultAttribute('baseFrequency', '0', elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('bias', 1, elements=['feConvolveMatrix']),
     DefaultAttribute('diffuseConstant', 1, elements=['feDiffuseLighting']),
     DefaultAttribute('edgeMode', 'duplicate', elements=['feConvolveMatrix']),
@@ -1848,16 +1851,17 @@ default_attributes = [
     DefaultAttribute('offset', 0, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('operator', 'over', elements=['feComposite']),
     DefaultAttribute('operator', 'erode', elements=['feMorphology']),
-    DefaultAttribute('order', 3, elements=['feConvolveMatrix']),
+    DefaultAttribute('order', '3', elements=['feConvolveMatrix']),
     DefaultAttribute('pointsAtX', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtY', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtZ', 0, elements=['feSpotLight']),
     DefaultAttribute('preserveAlpha', 'false', elements=['feConvolveMatrix']),
+    DefaultAttribute('radius', '0', elements=['feMorphology']),
     DefaultAttribute('scale', 0, elements=['feDisplacementMap']),
     DefaultAttribute('seed', 0, elements=['feTurbulence']),
     DefaultAttribute('specularConstant', 1, elements=['feSpecularLighting']),
     DefaultAttribute('specularExponent', 1, elements=['feSpecularLighting', 'feSpotLight']),
-    DefaultAttribute('stdDeviation', 0, elements=['feGaussianBlur']),
+    DefaultAttribute('stdDeviation', '0', elements=['feGaussianBlur']),
     DefaultAttribute('stitchTiles', 'noStitch', elements=['feTurbulence']),
     DefaultAttribute('surfaceScale', 1, elements=['feDiffuseLighting', 'feSpecularLighting']),
     DefaultAttribute('type', 'matrix', elements=['feColorMatrix']),
