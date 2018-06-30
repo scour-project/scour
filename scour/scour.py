@@ -1830,9 +1830,12 @@ default_attributes = [
     DefaultAttribute('spreadMethod', 'pad', elements=['linearGradient', 'radialGradient']),
 
     # filter effects
+    #   TODO: Some numerical attributes allow an optional second value ("number-optional-number")
+    #         and are currently handled as strings to avoid an exception in 'SVGLength', see
+    #         https://github.com/scour-project/scour/pull/192
     DefaultAttribute('amplitude', 1, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('azimuth', 0, elements=['feDistantLight']),
-    DefaultAttribute('baseFrequency', 0, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
+    DefaultAttribute('baseFrequency', '0', elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('bias', 1, elements=['feConvolveMatrix']),
     DefaultAttribute('diffuseConstant', 1, elements=['feDiffuseLighting']),
     DefaultAttribute('edgeMode', 'duplicate', elements=['feConvolveMatrix']),
@@ -1848,21 +1851,16 @@ default_attributes = [
     DefaultAttribute('offset', 0, elements=['feFuncA', 'feFuncB', 'feFuncG', 'feFuncR']),
     DefaultAttribute('operator', 'over', elements=['feComposite']),
     DefaultAttribute('operator', 'erode', elements=['feMorphology']),
-    # We pretend order is a string (because handling it as an
-    # SVGLength will cause issues when order is two integers).  Note
-    # that order must be exactly one or two integers (no units or
-    # fancy numbers), so working with it a string will generally just
-    # work.
     DefaultAttribute('order', '3', elements=['feConvolveMatrix']),
     DefaultAttribute('pointsAtX', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtY', 0, elements=['feSpotLight']),
     DefaultAttribute('pointsAtZ', 0, elements=['feSpotLight']),
     DefaultAttribute('preserveAlpha', 'false', elements=['feConvolveMatrix']),
+    DefaultAttribute('radius', '0', elements=['feMorphology']),
     DefaultAttribute('scale', 0, elements=['feDisplacementMap']),
     DefaultAttribute('seed', 0, elements=['feTurbulence']),
     DefaultAttribute('specularConstant', 1, elements=['feSpecularLighting']),
     DefaultAttribute('specularExponent', 1, elements=['feSpecularLighting', 'feSpotLight']),
-    # Pretend it is a string (for the same reasons as we do with "order")
     DefaultAttribute('stdDeviation', '0', elements=['feGaussianBlur']),
     DefaultAttribute('stitchTiles', 'noStitch', elements=['feTurbulence']),
     DefaultAttribute('surfaceScale', 1, elements=['feDiffuseLighting', 'feSpecularLighting']),
