@@ -3341,19 +3341,30 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
         for child in element.childNodes:
             # element node
             if child.nodeType == Node.ELEMENT_NODE:
-                if preserveWhitespace:
+                # do not indent inside text content elements as in SVG there's a difference between
+                #    "text1\ntext2" and
+                #    "text1\n text2"
+                # see https://www.w3.org/TR/SVG/text.html#WhiteSpace
+                if preserveWhitespace or element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
                     outParts.append(serializeXML(child, options, 0, preserveWhitespace))
                 else:
                     outParts.extend([newline, serializeXML(child, options, indent_depth + 1, preserveWhitespace)])
                     onNewLine = True
             # text node
             elif child.nodeType == Node.TEXT_NODE:
-                # trim it only in the case of not being a child of an element
-                # where whitespace might be important
-                if preserveWhitespace:
-                    outParts.append(makeWellFormed(child.nodeValue))
-                else:
-                    outParts.append(makeWellFormed(child.nodeValue.strip()))
+                text_content = child.nodeValue
+                if not preserveWhitespace:
+                    # strip / consolidate whitespace according to spec, see
+                    #    https://www.w3.org/TR/SVG/text.html#WhiteSpace
+                    # As a workaround for inconsistent handling of renderers keep newlines if they were in the original
+                    if element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
+                        text_content = text_content.replace('\t', ' ')
+                        text_content = text_content.strip(' ')
+                        while '  ' in text_content:
+                            text_content = text_content.replace('  ', ' ')
+                    else:
+                        text_content = text_content.strip()
+                outParts.append(makeWellFormed(text_content))
             # CDATA node
             elif child.nodeType == Node.CDATA_SECTION_NODE:
                 outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])
