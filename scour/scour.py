@@ -3849,7 +3849,7 @@ def parse_args(args=None, ignore_additional_args=False):
     if options.cdigits > options.digits:
         options.cdigits = -1
         print("WARNING: The value for '--set-c-precision' should be lower than the value for '--set-precision'. "
-              "Number of significant digits for control points reset to defsault value, see --help", file=sys.stderr)
+              "Number of significant digits for control points reset to default value, see --help", file=sys.stderr)
     if options.indent_type not in ['tab', 'space', 'none']:
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
