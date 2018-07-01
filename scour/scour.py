@@ -3359,7 +3359,10 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                     # As a workaround for inconsistent handling of renderers keep newlines if they were in the original
                     if element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
                         text_content = text_content.replace('\t', ' ')
-                        text_content = text_content.strip(' ')
+                        if child == element.firstChild:
+                            text_content = text_content.lstrip()
+                        elif child == element.lastChild:
+                            text_content = text_content.rstrip()
                         while '  ' in text_content:
                             text_content = text_content.replace('  ', ' ')
                     else:
