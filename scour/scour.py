@@ -3334,8 +3334,6 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
     children = element.childNodes
     if children.length == 0:
         outParts.append('/>')
-        if indent_depth > 0:
-            outParts.append(newline)
     else:
         outParts.append('>')
 
@@ -3361,16 +3359,15 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                 outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])
             # Comment node
             elif child.nodeType == Node.COMMENT_NODE:
-                outParts.extend(['<!--', child.nodeValue, '-->'])
+                outParts.extend([newline, indent_type * (indent_depth+1), '<!--', child.nodeValue, '-->'])
             # TODO: entities, processing instructions, what else?
             else:  # ignore the rest
                 pass
 
         if onNewLine:
+            outParts.append(newline)
             outParts.append(indent_type * indent_depth)
         outParts.extend(['</', element.nodeName, '>'])
-        if indent_depth > 0:
-            outParts.append(newline)
 
     return "".join(outParts)
 
@@ -3632,13 +3629,6 @@ def scourString(in_string, options=None):
 #  out_string = doc.documentElement.toprettyxml(' ')
     out_string = serializeXML(doc.documentElement, options) + '\n'
 
-    # now strip out empty lines
-    lines = []
-    # Get rid of empty lines
-    for line in out_string.splitlines(True):
-        if line.strip():
-            lines.append(line)
-
     # return the string with its XML prolog and surrounding comments
     if options.strip_xml_prolog is False:
         total_output = '<?xml version="1.0" encoding="UTF-8"'
@@ -3650,7 +3640,7 @@ def scourString(in_string, options=None):
 
     for child in doc.childNodes:
         if child.nodeType == Node.ELEMENT_NODE:
-            total_output += "".join(lines)
+            total_output += out_string
         else:  # doctypes, entities, comments
             total_output += child.toxml() + '\n'
 
