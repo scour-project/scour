@@ -3356,8 +3356,8 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                 if not preserveWhitespace:
                     # strip / consolidate whitespace according to spec, see
                     #    https://www.w3.org/TR/SVG/text.html#WhiteSpace
-                    # As a workaround for inconsistent handling of renderers keep newlines if they were in the original
                     if element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
+                        text_content = text_content.replace('\n', '')
                         text_content = text_content.replace('\t', ' ')
                         if child == element.firstChild:
                             text_content = text_content.lstrip()
