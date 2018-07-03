@@ -3334,8 +3334,6 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
     children = element.childNodes
     if children.length == 0:
         outParts.append('/>')
-        if indent_depth > 0:
-            outParts.append(newline)
     else:
         outParts.append('>')
 
@@ -3343,34 +3341,47 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
         for child in element.childNodes:
             # element node
             if child.nodeType == Node.ELEMENT_NODE:
-                if preserveWhitespace:
+                # do not indent inside text content elements as in SVG there's a difference between
+                #    "text1\ntext2" and
+                #    "text1\n text2"
+                # see https://www.w3.org/TR/SVG/text.html#WhiteSpace
+                if preserveWhitespace or element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
                     outParts.append(serializeXML(child, options, 0, preserveWhitespace))
                 else:
                     outParts.extend([newline, serializeXML(child, options, indent_depth + 1, preserveWhitespace)])
                     onNewLine = True
             # text node
             elif child.nodeType == Node.TEXT_NODE:
-                # trim it only in the case of not being a child of an element
-                # where whitespace might be important
-                if preserveWhitespace:
-                    outParts.append(makeWellFormed(child.nodeValue))
-                else:
-                    outParts.append(makeWellFormed(child.nodeValue.strip()))
+                text_content = child.nodeValue
+                if not preserveWhitespace:
+                    # strip / consolidate whitespace according to spec, see
+                    #    https://www.w3.org/TR/SVG/text.html#WhiteSpace
+                    if element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
+                        text_content = text_content.replace('\n', '')
+                        text_content = text_content.replace('\t', ' ')
+                        if child == element.firstChild:
+                            text_content = text_content.lstrip()
+                        elif child == element.lastChild:
+                            text_content = text_content.rstrip()
+                        while '  ' in text_content:
+                            text_content = text_content.replace('  ', ' ')
+                    else:
+                        text_content = text_content.strip()
+                outParts.append(makeWellFormed(text_content))
             # CDATA node
             elif child.nodeType == Node.CDATA_SECTION_NODE:
                 outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])
             # Comment node
             elif child.nodeType == Node.COMMENT_NODE:
-                outParts.extend(['<!--', child.nodeValue, '-->'])
+                outParts.extend([newline, indent_type * (indent_depth+1), '<!--', child.nodeValue, '-->'])
             # TODO: entities, processing instructions, what else?
             else:  # ignore the rest
                 pass
 
         if onNewLine:
+            outParts.append(newline)
             outParts.append(indent_type * indent_depth)
         outParts.extend(['</', element.nodeName, '>'])
-        if indent_depth > 0:
-            outParts.append(newline)
 
     return "".join(outParts)
 
@@ -3632,13 +3643,6 @@ def scourString(in_string, options=None):
 #  out_string = doc.documentElement.toprettyxml(' ')
     out_string = serializeXML(doc.documentElement, options) + '\n'
 
-    # now strip out empty lines
-    lines = []
-    # Get rid of empty lines
-    for line in out_string.splitlines(True):
-        if line.strip():
-            lines.append(line)
-
     # return the string with its XML prolog and surrounding comments
     if options.strip_xml_prolog is False:
         total_output = '<?xml version="1.0" encoding="UTF-8"'
@@ -3650,7 +3654,7 @@ def scourString(in_string, options=None):
 
     for child in doc.childNodes:
         if child.nodeType == Node.ELEMENT_NODE:
-            total_output += "".join(lines)
+            total_output += out_string
         else:  # doctypes, entities, comments
             total_output += child.toxml() + '\n'
 
