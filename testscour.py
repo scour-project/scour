@@ -1744,34 +1744,83 @@ class DoNotRemoveGradientsWhenReferencedInStyleCss(unittest.TestCase):
                          'Gradients removed when referenced in CSS')
 
 
-class DoNotPrettyPrintWhenWhitespacePreserved(unittest.TestCase):
+class Whitespace(unittest.TestCase):
 
-    def runTest(self):
-        with open('unittests/whitespace-important.svg') as f:
-            s = scourString(f.read()).splitlines()
-        c = '''<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg">
- <text xml:space="preserve">This is some <tspan font-style="italic">messed-up</tspan> markup</text>
-</svg>
-'''.splitlines()
-        for i in range(4):
-            self.assertEqual(s[i], c[i],
-                             'Whitespace not preserved for line ' + str(i))
+    def setUp(self):
+        self.doc = scourXmlFile('unittests/whitespace.svg')
 
+    def test_basic(self):
+        text = self.doc.getElementById('txt_a1')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Multiple spaces not stripped from text element')
+        text = self.doc.getElementById('txt_a2')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Tab not replaced with space in text element')
+        text = self.doc.getElementById('txt_a3')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Multiple spaces not stripped from text element with xml:space="default"')
+        text = self.doc.getElementById('txt_a4')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Tab not replaced with space in text element with xml:space="default"')
+        text = self.doc.getElementById('txt_a5')
+        self.assertIn('text1    text2', text.toxml(),
+                      'Multiple spaces not preserved in text element with xml:space="preserve"')
+        text = self.doc.getElementById('txt_a6')
+        self.assertIn('text1\ttext2', text.toxml(),
+                      'Tab not preserved in text element with xml:space="preserve"')
 
-class DoNotPrettyPrintWhenNestedWhitespacePreserved(unittest.TestCase):
+    def test_newlines(self):
+        text = self.doc.getElementById('txt_b1')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Newline not replaced with space in text element')
+        text = self.doc.getElementById('txt_b2')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Newline not replaced with space in text element with xml:space="default"')
+        text = self.doc.getElementById('txt_b3')
+        self.assertIn('text1\n       text2', text.toxml(),
+                      'Newline not preserved in text element with xml:space="preserve"')
 
-    def runTest(self):
-        with open('unittests/whitespace-nested.svg') as f:
-            s = scourString(f.read()).splitlines()
-        c = '''<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg">
- <text xml:space="preserve"><tspan font-style="italic">Use <tspan font-style="bold">bold</tspan> text</tspan></text>
-</svg>
-'''.splitlines()
-        for i in range(4):
-            self.assertEqual(s[i], c[i],
-                             'Whitespace not preserved when nested for line ' + str(i))
+    def test_inheritance(self):
+        text = self.doc.getElementById('txt_c1')
+        self.assertIn('text1    text2', text.toxml(),
+                      '<tspan> does not inherit xml:space="preserve" of parent text element')
+        text = self.doc.getElementById('txt_c2')
+        self.assertIn('text1 text2', text.toxml(),
+                      'xml:space="default" of <tspan> does not overwrite xml:space="preserve" of parent text element')
+        text = self.doc.getElementById('txt_c3')
+        self.assertIn('text1    text2', text.toxml(),
+                      'xml:space="preserve" of <tspan> does not overwrite xml:space="default" of parent text element')
+        text = self.doc.getElementById('txt_c4')
+        self.assertIn('text1    text2', text.toxml(),
+                      '<text> does not inherit xml:space="preserve" of parent group')
+        text = self.doc.getElementById('txt_c5')
+        self.assertIn('text1 text2', text.toxml(),
+                      'xml:space="default" of text element does not overwrite xml:space="preserve" of parent group')
+        text = self.doc.getElementById('txt_c6')
+        self.assertIn('text1    text2', text.toxml(),
+                      'xml:space="preserve" of text element does not overwrite xml:space="default" of parent group')
+
+    def test_important_whitespace(self):
+        text = self.doc.getElementById('txt_d1')
+        self.assertIn('text1 text2', text.toxml(),
+                      'Newline with whitespace collapsed in text element')
+        text = self.doc.getElementById('txt_d2')
+        self.assertIn('text1 <tspan>tspan1</tspan> text2', text.toxml(),
+                      'Whitespace stripped from the middle of a text element')
+        text = self.doc.getElementById('txt_d3')
+        self.assertIn('text1 <tspan>tspan1 <tspan>tspan2</tspan> text2</tspan>', text.toxml(),
+                      'Whitespace stripped from the middle of a text element')
+
+    def test_incorrect_whitespace(self):
+        text = self.doc.getElementById('txt_e1')
+        self.assertIn('text1text2', text.toxml(),
+                      'Whitespace introduced in text element with newline')
+        text = self.doc.getElementById('txt_e2')
+        self.assertIn('text1<tspan>tspan</tspan>text2', text.toxml(),
+                      'Whitespace introduced in text element with <tspan>')
+        text = self.doc.getElementById('txt_e3')
+        self.assertIn('text1<tspan>tspan</tspan>text2', text.toxml(),
+                      'Whitespace introduced in text element with <tspan> and newlines')
 
 
 class GetAttrPrefixRight(unittest.TestCase):
@@ -1807,10 +1856,10 @@ class HandleEmptyStyleElement(unittest.TestCase):
 class EnsureLineEndings(unittest.TestCase):
 
     def runTest(self):
-        with open('unittests/whitespace-important.svg') as f:
+        with open('unittests/newlines.svg') as f:
             s = scourString(f.read())
-        self.assertEqual(len(s.splitlines()), 4,
-                         'Did not output line ending character correctly')
+        self.assertEqual(len(s.splitlines()), 24,
+                         'Did handle reading or outputting line ending characters correctly')
 
 
 class XmlEntities(unittest.TestCase):

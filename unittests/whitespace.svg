@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+ <!-- basic tests -->
+ <text id="txt_a1">text1    text2</text> <!-- multiple spaces -->
+ <text id="txt_a2">text1	text2</text> <!-- tab -->
+ <text id="txt_a3" xml:space="default">text1    text2</text> <!-- multiple spaces -->
+ <text id="txt_a4" xml:space="default">text1	text2</text> <!-- tab -->
+ <text id="txt_a5" xml:space="preserve">text1    text2</text> <!-- multiple spaces -->
+ <text id="txt_a6" xml:space="preserve">text1	text2</text> <!-- tab -->
+
+ <!-- newlines -->
+ <text id="txt_b1">text1
+       text2</text>
+ <text id="txt_b2" xml:space="default">text1
+       text2</text>
+ <text id="txt_b3" xml:space="preserve">text1
+       text2</text>
+
+ <!-- inheritance -->
+ <text id="txt_c1" xml:space="preserve"><tspan>text1    text2</tspan></text>
+ <text id="txt_c2" xml:space="preserve"><tspan xml:space="default">text1    text2</tspan></text>
+ <text id="txt_c3" xml:space="default"><tspan xml:space="preserve">text1    text2</tspan></text>
+ <g xml:space="preserve"><text id="txt_c4">text1    text2</text></g>
+ <g xml:space="preserve"><text id="txt_c5" xml:space="default">text1    text2</text></g>
+ <g xml:space="default"><text id="txt_c6" xml:space="preserve">text1    text2</text></g>
+
+ <!-- important whitespace that must not be stripped -->
+ <text id="txt_d1">text1
+ text2</text>
+ <text id="txt_d2">text1 <tspan>tspan1</tspan> text2</text>
+ <text id="txt_d3">text1 <tspan>tspan1 <tspan>tspan2</tspan> text2</tspan></text>
+ 
+ <!-- whitespace must not be introduced -->
+ <text id="txt_e1">text1
+text2</text>
+ <text id="txt_e2">text1<tspan>tspan</tspan>text2</text>
+ <text id="txt_e3">text1
+<tspan>tspan</tspan>
+text2</text>
+</svg>

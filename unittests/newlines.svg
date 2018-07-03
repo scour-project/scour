@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+	
+
+<svg xmlns="http://www.w3.org/2000/svg"
+
+>
+
+
+
+     <!-- this file has pretty messed up formatting -->       <rect width="100" height="100"/>	
+  <rect width="100" height="100"/>
+  <rect width="100" height="100"/>
+  
+  
+ 	
+  
+  
+  <rect width="100" height="100"/>
+                 <rect width="100" height="100"/>	
+  <rect width="100" height="100"/>            
+  
+  
+  
+  
+  
+  
+  <!-- we have mixed newline
+  characters, carriage returns  and both of them
+  as well as tabs 	   		and spaces        
+  -->
+  
+  <rect width="100" height="100"/><rect width="100" height="100"/>   <rect width="100" height="100"/>
+  
+  <rect width="100" height="100"/><rect width="100" height="100"/>   <rect width="100" height="100"/>
+  
+	
+  
+		
+  
+  <rect width="100" height="100"/>		  	<rect width="100" height="100"/>
+  
+  
+</svg>
+
+
+
+
+
+<!-- OMG, really? -->
