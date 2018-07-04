@@ -1,7 +1,19 @@
 # Release Notes for Scour
 
+## Version 0.37 (2018-07-04)
+* Fix escaping of quotes in attribute values. ([#152](https://github.com/scour-project/scour/pull/152))
+* A lot of performance improvements making processing significantly faster in many cases. ([#167](https://github.com/scour-project/scour/pull/167), [#169](https://github.com/scour-project/scour/pull/169), [#171](https://github.com/scour-project/scour/pull/171), [#185](https://github.com/scour-project/scour/pull/185))
+* Fix exception when removing duplicated gradients while `--keep-unreferenced-defs` is used ([#173](https://github.com/scour-project/scour/pull/173))
+* Remove some illegal optimizations of `m0 0` sub-path commands ([#178](https://github.com/scour-project/scour/pull/178))
+* Fix and improve handling of boolean flags in elliptical arc path commands ([#183](https://github.com/scour-project/scour/pull/183))
+* Fix exception when shorthand transform `scale(1)` with single number is used ([#191](https://github.com/scour-project/scour/pull/191))
+* Fix exception when using two-number forms of the filter attributes `baseFrequency`, `order`, `radius` and `stdDeviation` ([#192](https://github.com/scour-project/scour/pull/192))
+* Improve whitespace handling in text nodes fixing an issue where scouring added spaces in error and reducing file size in many cases ([#199](https://github.com/scour-project/scour/pull/199))
+* Drop official support for Python 3.3. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 3.3 and should find/fix any compatibility issues pull requests are welcome, though.)
+
+
 ## Version 0.36 (2017-08-06)
-* Fix embedding of raster images which was broken in most cases and did not work at all in Python 3. ([#120](https://github.com/scour-project/scour/issues/62))
+* Fix embedding of raster images which was broken in most cases and did not work at all in Python 3. ([#120](https://github.com/scour-project/scour/issues/120))
 * Some minor fixes for statistics output.
 * Greatly improve the algorithm to reduce numeric precision.
   * Precision was not properly reduced for some numbers.
@@ -14,7 +26,7 @@
   * Attempt to collapse lineto `l` commands into a preceding moveto `m` command (these are then called "implicit lineto commands")
   * Do not collapse straight path segments in paths that have intermediate markers. ([#145](https://github.com/scour-project/scour/issues/145))
   * Preserve empty path segments if they have `stroke-linecap` set to `round` or `square`. They render no visible line but a tiny dot or square.
-  
+
 
 ## Version 0.35 (2016-09-14)
 
