@@ -1338,8 +1338,16 @@ def collapseSinglyReferencedGradients(doc):
                             if refElem.getAttribute(attr) == '' and not elem.getAttribute(attr) == '':
                                 refElem.setAttributeNS(None, attr, elem.getAttribute(attr))
 
-                    # now remove the xlink:href from refElem
-                    refElem.removeAttributeNS(NS['XLINK'], 'href')
+                    target_href = elem.getAttributeNS(NS['XLINK'], 'href')
+                    if target_href:
+                        # If the elem node had an xlink:href, then the
+                        # refElem have to point to it as well to
+                        # perserve the semantics of the image.
+                        refElem.setAttributeNS(NS['XLINK'], 'href', target_href)
+                    else:
+                        # The elem node had no xlink:href reference,
+                        # so we can simply remove the attribute.
+                        refElem.removeAttributeNS(NS['XLINK'], 'href')
 
                     # now delete elem
                     elem.parentNode.removeChild(elem)
