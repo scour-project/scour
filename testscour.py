@@ -1401,6 +1401,20 @@ class RemoveDuplicateRadialGradients(unittest.TestCase):
                          'Duplicate radial gradient not removed')
 
 
+class RemoveDuplicateRadialGradientsEnsureMasterHasID(unittest.TestCase):
+
+    def runTest(self):
+        svgdoc = scourXmlFile('unittests/remove-duplicate-gradients-master-without-id.svg')
+        lingrads = svgdoc.getElementsByTagNameNS(SVGNS, 'linearGradient')
+        rect = svgdoc.getElementById('r1')
+        self.assertEqual(1, lingrads.length,
+                         'Duplicate linearGradient not removed')
+        self.assertEqual(lingrads[0].getAttribute("id"), "g1",
+                         "linearGradient has a proper ID")
+        self.assertNotEqual(rect.getAttribute("fill"), "url(#)",
+                            "linearGradient has a proper ID")
+
+
 class RereferenceForRadialGradient(unittest.TestCase):
 
     def runTest(self):
