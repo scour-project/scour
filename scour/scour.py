@@ -1395,6 +1395,19 @@ def removeDuplicateGradients(doc):
                 continue
             master = bucket[0]
             duplicates = bucket[1:]
+            master_id = master.getAttribute('id')
+            if not master_id:
+                # If our selected "master" copy does not have an ID,
+                # then replace it with one that does (assuming any of
+                # them has one).  This avoids broken images like we
+                # saw in GH#203
+                for i in range(len(duplicates)):
+                    dup = duplicates[i]
+                    dup_id = dup.getAttribute('id')
+                    if dup_id:
+                        duplicates[i] = master
+                        master = dup
+                        break
 
             gradientsToRemove[master] = duplicates
 
