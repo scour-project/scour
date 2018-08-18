@@ -891,6 +891,20 @@ class DoNotCollapseMultiplyReferencedGradients(unittest.TestCase):
                             'Multiply-referenced linear gradient collapsed')
 
 
+class PreserveXLinkHrefWhenCollapsingReferencedGradients(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/collapse-gradients-preserve-xlink-href.svg')
+        g1 = doc.getElementById("g1")
+        g2 = doc.getElementById("g2")
+        g3 = doc.getElementById("g3")
+        self.assertTrue(g1, 'g1 is still present')
+        self.assertTrue(g2 is None, 'g2 was removed')
+        self.assertTrue(g3, 'g3 is still present')
+        self.assertEqual(g3.getAttributeNS('http://www.w3.org/1999/xlink', 'href'), '#g1',
+                         'g3 has a xlink:href to g1')
+
+
 class RemoveTrailingZerosFromPath(unittest.TestCase):
 
     def runTest(self):
