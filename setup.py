@@ -71,6 +71,7 @@ setup(
         'console_scripts': [
            'scour = scour.scour:run'
         ]},
+    data_files=[('share/man/man1', ['scour.1'])],
     classifiers=["License :: OSI Approved :: Apache Software License",
                  "Development Status :: 5 - Production/Stable",
                  "Environment :: Console",

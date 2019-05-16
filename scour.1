@@ -1,0 +1,203 @@
+.TH SCOUR 1 "" "" ""
+.SH NAME
+scour \- SVG optimizer/cleaner
+.SH SYNOPSIS
+.B scour
+[\fIinput.svg\fR [\fIoutput.svg\fR]] [\fIoptions\fR]
+.SH DESCRIPTION
+.B Scour
+is an SVG optimizer/cleaner that reduces the size of scalable vector graphics
+by optimizing structure and removing unnecessary data written in Python.
+
+It can be used to create streamlined vector graphics suitable for web
+deployment, publishing/sharing or further processing.
+
+The goal of
+.B Scour
+is to output a file that renderes identically at a fraction of the size by
+removing a lot of redundant information created by most SVG editors.
+Optimization options are typically lossless but can be tweaked for more
+agressive cleaning.
+
+.SH OPTIONS
+.TP
+.B --version
+Show program's version number and exit
+.TP
+.BR -h ,\  --help
+Show a help message and exit
+.TP
+.BR -q ,\  --quiet
+Suppress non-error output
+.TP
+.BR  -v ,\  --verbose
+Verbose output (statistics, etc.)
+.TP
+.B -i \fIinput.svg
+Alternative way to specify input filename
+.TP
+.B -o \fIoutput.svg
+Alternative way to specify output filename
+
+.SH Optimization options
+.TP
+.BR --set-precision [=\fINUM\fR]
+Set number of significant digits (default is 5).
+.TP
+.BR --set-c-precision [=\fINUM\fR]
+Set number of significant digits for control points default is taken from
+.BR --set-precision .
+.TP
+.B --disable-simplify-colors
+Won't convert colors to
+.I #RRGGBB
+format.
+.TP
+.B --disable-style-to-xml
+Won't convert styles into XML attributes.
+.TP
+.B --disable-group-collapsing
+Won't collapse
+.I <g>
+elements.
+.TP
+.B --create-groups
+Create
+.I <g>
+elements for runs of elements with identical attributes.
+.TP
+.B --keep-editor-data
+Won't remove Inkscape, Sodipodi, Adobe Illustrator or Sketch elements and attributes.
+.TP
+.B --keep-unreferenced-defs
+Won't remove elements within the defs container that are unreferenced.
+.TP
+.B --renderer-workaround
+Work around various renderer bugs (currently only librsvg), on by default.
+.TP
+.B --no-renderer-workaround
+Do not work around various renderer bugs (currently only librsvg).
+
+.SH SVG document options
+.TP
+.B --strip-xml-prolog
+Won't output the XML prolog
+.RI ( <?xml\ ?> )
+.TP
+.B --remove-titles
+Remove
+.I <title>
+elements.
+.TP
+.B --remove-descriptions
+Remove
+.I <desc>
+elements.
+.TP
+.B --remove-metadata
+Remove
+.I <metadata>
+elements (which may contain license/author information etc.).
+.TP
+.B --remove-descriptive-elements
+Remove
+.IR <title> ,
+.I <desc>
+and
+.I <metadata>
+elements.
+.TP
+.B --enable-comment-stripping
+Remove all comments
+.RI ( <!--\ --> ).
+.TP
+.B --disable-embed-rasters
+Won't embed rasters as base64-encoded data.
+.TP
+.B --enable-viewboxing
+Changes document width/height to 100%/100% and creates viewbox coordinates.
+
+.SH Output formatting options
+.TP
+.BR --indent [=\fITYPE\fR]
+Sets the indentation of the output:
+.IR none ,
+.IR space ,
+.I tab
+(default:
+.IR space ).
+.TP
+.BR --nindent [=\fINUM\fR]
+Depth of the indentation, i.e. number of spaces/tabs (default: 1).
+.TP
+.B --no-line-breaks
+Do not create line breaks in output (also disables indentation; might be overridden by
+.IR xml:space="preserve" ).
+.TP
+.B --strip-xml-space
+Strip the
+.I xml:space="preserve"
+attribute from the root SVG element.
+
+.SH ID attribute options
+.TP
+.B --enable-id-stripping
+Remove all unreferenced IDs.
+.TP
+.B --shorten-ids
+Shorten all IDs to the least number of letters possible.
+.TP
+.BR --shorten-ids-prefix =\fIPREFIX
+Add custom prefix to shortened IDs.
+.TP
+.B --protect-ids-noninkscape
+Don't remove IDs not ending with a digit.
+.TP
+.BR --protect-ids-list =\fIID\fR[,\fIID\fR[,...]]
+Don't remove IDs given in this comma-separated list.
+.TP
+.BR --protect-ids-prefix \fR=PREFIX
+Don't remove IDs starting with the given prefix.
+
+.SH SVG compatibility checks
+.TP
+.B --error-on-flowtext
+Exit with error if the input SVG uses non-standard flowing text (only warn by default).
+
+.SH USAGE
+.LP
+Standard invocation:
+.RS
+.nf
+scour -i input.svg -o output.svg
+.fi
+.RE
+.LP
+Better (for older versions of Internet Explorer):
+.RS
+.nf
+scour -i input.svg -o output.svg --enable-viewboxing
+.fi
+.RE
+.LP
+Maximum scrubbing:
+.RS
+.nf
+scour -i input.svg -o output.svg --enable-viewboxing --enable-id-stripping \\
+  --enable-comment-stripping --shorten-ids --indent=none
+.fi
+.RE
+.LP
+Maximum scrubbing and a compressed SVGZ file:
+.RS
+.nf
+scour -i input.svg -o output.svgz --enable-viewboxing --enable-id-stripping \\
+  --enable-comment-stripping --shorten-ids --indent=none
+.fi
+.RE
+
+.SH AUTHOR
+Scour was originally developed by Jeff "codedread" Schiller and Louis Simard in in 2010 and is now maintained by Tobias "oberstet" Oberstein and Eduard "Ede_123" Braun.
+
+.SH ACKNOWLEDGEMENTS
+Manpage converted by Ondřej Kuzník for the Scour project as part of the Rugby LUG documentation month.
