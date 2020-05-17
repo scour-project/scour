@@ -1143,6 +1143,78 @@ def moveCommonAttributesToParentGroup(elem, referencedElements):
     return num
 
 
+def mergeSingleChildGroupIntoParent(elem):
+    """
+    Merge <g X></g Y>...</g></g> into <g X Y>...</g>
+
+    Optimize the pattern:
+
+        <g a="1" c="4"><g a="2" b="3">...</g>/</g>
+
+    into
+
+        <g a="2" b="3" c="4">...</g>
+
+    This is only possible when:
+
+     * The parent has exactly one <g>-child node (ignoring whitespace)
+     * The child node is mergeable (per :func:`g_tag_is_unmergeable`)
+
+    Note that this function overlaps to some extend with `removeNestedGroups`.
+    However, `removeNestedGroups` work entirely on empty <g> and can completely
+    remove empty `<g>` tags.  This works on any <g> tag containing <g> tags
+    (regardless of their attributes) and as such this function can never
+    completely eliminate all <g>-tags (but it does deal with attributes).
+
+    This function acts recursively on the given element.
+    """
+    num = 0
+
+    # Depth first - fix child notes first
+    for childNode in elem.childNodes:
+        if childNode.nodeType == Node.ELEMENT_NODE:
+            num += mergeSingleChildGroupIntoParent(childNode)
+
+    # The elem node must be a <g> tag for this to be relevant.
+    if elem.nodeType != Node.ELEMENT_NODE or elem.nodeName != 'g' or \
+       elem.namespaceURI != NS['SVG']:
+        return num
+
+    if g_tag_is_unmergeable(elem):
+        # elem itself is protected, then leave it alone.
+        return num
+
+    g_node_idx = None
+    for idx, node in enumerate(elem.childNodes):
+        if node.nodeType == Node.TEXT_NODE and not node.nodeValue.strip():
+            # whitespace-only node; ignore
+            continue
+        if node.nodeType != Node.ELEMENT_NODE or node.nodeName != 'g' or \
+           node.namespaceURI != NS['SVG']:
+            # The elem node has something other than <g> tag; then this
+            # optimization does not apply
+            return num
+        if g_tag_is_unmergeable(node) or g_node_idx is not None:
+            # The elem node has two or more <g> tags or the <g> node it has
+            # is unmergeable; then this optimization does not apply
+            return num
+        g_node_idx = idx
+
+    # We got a optimization candidate
+    g_node = elem.childNodes[g_node_idx]
+    elem.childNodes.remove(g_node)
+
+    elem.childNodes[g_node_idx:g_node_idx] = g_node.childNodes
+    g_node.childNodes = []
+
+    for a in g_node.attributes.values():
+        elem.setAttribute(a.nodeName, a.nodeValue)
+
+    num += 1
+
+    return num
+
+
 def mergeSiblingGroupsWithCommonAttributes(elem):
     """
     Merge two or more sibling <g> elements with the identical attributes.
@@ -3754,6 +3826,7 @@ def scourString(in_string, options=None):
     # Collapse groups LAST, because we've created groups. If done before
     # moveAttributesToParentGroup, empty <g>'s may remain.
     if options.group_collapse:
+        _num_elements_removed += mergeSingleChildGroupIntoParent(doc.documentElement)
         while removeNestedGroups(doc.documentElement) > 0:
             pass
 

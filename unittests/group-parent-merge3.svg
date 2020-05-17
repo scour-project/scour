@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg  PUBLIC '-//W3C//DTD SVG 1.1//EN'  'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+ <g font-family="Liberation Sans,Arial,Helvetica,sans-serif">
+  <g text-anchor="middle">
+   <g font-weight="400">
+    <g id="foo" font-size="24">
+     <text x="50" y="30">Text1</text>
+     <text x="50" y="55">Text2</text>
+     <text x="50" y="80">Text3</text>
+    </g>
+   </g>
+  </g>
+ </g>
+</svg>

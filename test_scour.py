@@ -2075,6 +2075,104 @@ class MustKeepGInSwitch2(unittest.TestCase):
                          'Erroneously removed a <g> in a <switch>')
 
 
+class GroupParentMerge(unittest.TestCase):
+
+    def test_parent_merge(self):
+        doc = scourXmlFile('unittests/group-parent-merge.svg',
+                           parse_args([]))
+        g_tags = doc.getElementsByTagName('g')
+        attrs = {
+            'font-family': 'Liberation Sans,Arial,Helvetica,sans-serif',
+            'text-anchor': 'middle',
+            'font-weight': '400',
+            'font-size': '24',
+        }
+        self.assertEqual(g_tags.length, 1,
+                         'Inline single-child node <g> tags into parent <g>-tags')
+
+        g_tag = g_tags[0]
+        for attr_name, attr_value in attrs.items():
+
+            self.assertEqual(g_tag.getAttribute(attr_name), attr_value,
+                             'Parent now has inherited attributes of obsolete <g>-tags')
+
+    def test_parent_merge_disabled(self):
+        doc = scourXmlFile('unittests/group-parent-merge.svg',
+                           parse_args(['--disable-group-collapsing']))
+        g_tags = doc.getElementsByTagName('g')
+        attrs = {
+            'font-family': 'Liberation Sans,Arial,Helvetica,sans-serif',
+            'text-anchor': '',
+            'font-weight': '',
+            'font-size': '',
+        }
+        self.assertEqual(g_tags.length, 4,
+                         'Inline single-child node <g> tags into parent <g>-tags')
+
+        # There should be exactly one <g> tag in the top of the document
+        # Note that the order returned by getElementsByTagName is not specified
+        # so we do not rely on its return value
+        g_tags = [g for g in doc.documentElement.childNodes if g.nodeName == 'g']
+        self.assertEqual(len(g_tags), 1,
+                         'Optimization must not move the <g> up to the root')
+        g_tag = g_tags[0]
+        for attr_name, attr_value in attrs.items():
+            self.assertEqual(g_tag.getAttribute(attr_name), attr_value,
+                             'Parent now has inherited attributes of obsolete <g>-tags')
+
+    def test_parent_merge2(self):
+        doc = scourXmlFile('unittests/group-parent-merge2.svg',
+                           parse_args([]))
+        attrs = {
+            'font-family': 'Liberation Sans,Arial,Helvetica,sans-serif',
+            'text-anchor': 'middle',
+            'font-weight': '400',
+            'font-size': '',  # The top-level g-node cannot have gotten this.
+        }
+        # There is one inner <g> that cannot be optimized, so there must be 2
+        # <g> tags in total
+        self.assertEqual(doc.getElementsByTagName('g').length, 2,
+                         'Inline single-child node <g> tags into parent <g>-tags')
+
+        # There should be exactly one <g> tag in the top of the document
+        # Note that the order returned by getElementsByTagName is not specified
+        # so we do not rely on its return value
+        g_tags = [g for g in doc.documentElement.childNodes if g.nodeName == 'g']
+        self.assertEqual(len(g_tags), 1,
+                         'Optimization must not move the <g> up to the root')
+        g_tag = g_tags[0]
+        for attr_name, attr_value in attrs.items():
+            self.assertEqual(g_tag.getAttribute(attr_name), attr_value,
+                             'Parent now has inherited attributes of obsolete <g>-tags')
+
+    def test_parent_merge3(self):
+        doc = scourXmlFile('unittests/group-parent-merge3.svg',
+                           parse_args(['--protect-ids-list=foo']))
+        attrs = {
+            'font-family': 'Liberation Sans,Arial,Helvetica,sans-serif',
+            'text-anchor': 'middle',
+            'font-weight': '400',
+            'font-size': '',  # The top-level g-node cannot have gotten this.
+        }
+        # There is one inner <g> that cannot be optimized, so there must be 2
+        # <g> tags in total
+        self.assertEqual(doc.getElementsByTagName('g').length, 2,
+                         'Inline single-child node <g> tags into parent <g>-tags')
+
+        self.assertIsNotNone(doc.getElementById('foo'), 'The inner <g> was left untouched')
+
+        # There should be exactly one <g> tag in the top of the document
+        # Note that the order returned by getElementsByTagName is not specified
+        # so we do not rely on its return value
+        g_tags = [g for g in doc.documentElement.childNodes if g.nodeName == 'g']
+        self.assertEqual(len(g_tags), 1,
+                         'Optimization must not move the <g> up to the root')
+        g_tag = g_tags[0]
+        for attr_name, attr_value in attrs.items():
+            self.assertEqual(g_tag.getAttribute(attr_name), attr_value,
+                             'Parent now has inherited attributes of obsolete <g>-tags')
+
+
 class GroupSiblingMerge(unittest.TestCase):
 
     def test_sibling_merge(self):
