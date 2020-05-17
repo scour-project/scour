@@ -1014,6 +1014,15 @@ def removeDescriptiveElements(doc, options):
     return num
 
 
+def g_tag_is_unmergeable(node):
+    """Check if a <g> tag can be merged or not
+
+    <g> tags with a title or descriptions should generally be left alone.
+    """
+    return any(True for n in node.childNodes if n.nodeType == Node.ELEMENT_NODE
+               and n.nodeName in ('title', 'desc') and n.namespaceURI == NS['SVG'])
+
+
 def removeNestedGroups(node):
     """
     This walks further and further down the tree, removing groups
@@ -1030,11 +1039,7 @@ def removeNestedGroups(node):
         for child in node.childNodes:
             if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
                 # only collapse group if it does not have a title or desc as a direct descendant,
-                for grandchild in child.childNodes:
-                    if grandchild.nodeType == Node.ELEMENT_NODE and grandchild.namespaceURI == NS['SVG'] and \
-                            grandchild.nodeName in ['title', 'desc']:
-                        break
-                else:
+                if not g_tag_is_unmergeable(child):
                     groupsToRemove.append(child)
 
     for g in groupsToRemove:
@@ -1158,11 +1163,7 @@ def mergeSiblingGroupsWithCommonAttributes(elem):
                 if nextNode.nodeName != 'g' or nextNode.namespaceURI != NS['SVG']:
                     break
                 nextAttributes = {a.nodeName: a.nodeValue for a in nextNode.attributes.values()}
-                hasNoMergeTags = (True for n in nextNode.childNodes
-                                  if n.nodeType == Node.ELEMENT_NODE
-                                  and n.nodeName in ('title', 'desc')
-                                  and n.namespaceURI == NS['SVG'])
-                if attributes != nextAttributes or any(hasNoMergeTags):
+                if attributes != nextAttributes or g_tag_is_unmergeable(nextNode):
                     break
                 else:
                     runElements += 1
