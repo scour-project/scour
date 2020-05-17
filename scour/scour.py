@@ -3354,6 +3354,10 @@ def chooseQuoteCharacter(str):
     return (quote, hasEmbeddedQuote)
 
 
+TEXT_CONTENT_ELEMENTS = ['text', 'tspan', 'tref', 'textPath', 'altGlyph',
+                         'flowDiv', 'flowPara', 'flowSpan', 'flowTref', 'flowLine']
+
+
 # hand-rolled serialization function that has the following benefits:
 # - pretty printing
 # - somewhat judicious use of whitespace
@@ -3437,7 +3441,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                 #    "text1\ntext2" and
                 #    "text1\n text2"
                 # see https://www.w3.org/TR/SVG/text.html#WhiteSpace
-                if preserveWhitespace or element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
+                if preserveWhitespace or element.nodeName in TEXT_CONTENT_ELEMENTS:
                     outParts.append(serializeXML(child, options, 0, preserveWhitespace))
                 else:
                     outParts.extend([newline, serializeXML(child, options, indent_depth + 1, preserveWhitespace)])
@@ -3448,7 +3452,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                 if not preserveWhitespace:
                     # strip / consolidate whitespace according to spec, see
                     #    https://www.w3.org/TR/SVG/text.html#WhiteSpace
-                    if element.nodeName in ['text', 'tspan', 'tref', 'textPath', 'altGlyph']:
+                    if element.nodeName in TEXT_CONTENT_ELEMENTS:
                         text_content = text_content.replace('\n', '')
                         text_content = text_content.replace('\t', ' ')
                         if child == element.firstChild:
