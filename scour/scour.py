@@ -1017,8 +1017,12 @@ def removeDescriptiveElements(doc, options):
 def g_tag_is_unmergeable(node):
     """Check if a <g> tag can be merged or not
 
-    <g> tags with a title or descriptions should generally be left alone.
+    Generally, there are two types of <g> tags that should be left alone:
+     * <g> tags with a title or descriptions
+     * <g> tags that has an ID
     """
+    if node.getAttribute('id') != '':
+        return True
     return any(True for n in node.childNodes if n.nodeType == Node.ELEMENT_NODE
                and n.nodeName in ('title', 'desc') and n.namespaceURI == NS['SVG'])
 
