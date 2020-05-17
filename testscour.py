@@ -2045,6 +2045,19 @@ class ShortenIDsOption(unittest.TestCase):
                          'Did not update reference to shortened ID')
 
 
+class ShortenIDsStableOutput(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/shorten-ids-stable-output.svg',
+                           parse_args(['--shorten-ids']))
+        use_tags = doc.getElementsByTagName('use')
+        hrefs_ordered = [x.getAttributeNS('http://www.w3.org/1999/xlink', 'href')
+                         for x in use_tags]
+        expected = ['#a', '#b', '#b']
+        self.assertEquals(hrefs_ordered, expected,
+                          '--shorten-ids pointlessly reassigned ids')
+
+
 class MustKeepGInSwitch(unittest.TestCase):
 
     def runTest(self):
