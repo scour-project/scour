@@ -22,7 +22,7 @@ check: test flake8
 
 
 test:
-	python testscour.py
+	python test_scour.py
 
 test_version:
 	PYTHONPATH=. python -m scour.scour --version
@@ -34,6 +34,6 @@ flake8:
 	flake8 --max-line-length=119
 
 coverage:
-	coverage run --source=scour testscour.py
+	coverage run --source=scour test_scour.py
 	coverage html
 	coverage report

@@ -2774,7 +2774,7 @@ class ViewBox(unittest.TestCase):
 # TODO: write tests for --keep-editor-data
 
 if __name__ == '__main__':
-    testcss = __import__('testcss')
+    testcss = __import__('test_css')
     scour = __import__('__main__')
     suite = unittest.TestSuite(list(map(unittest.defaultTestLoader.loadTestsFromModule, [testcss, scour])))
     unittest.main(defaultTest="suite")

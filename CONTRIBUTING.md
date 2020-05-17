@@ -23,7 +23,7 @@ In order to check functionality of Scour and prevent any regressions in existing
 make test
 ```
 
-These tests are run automatically on all PRs using [TravisCI](https://travis-ci.org/scour-project/scour) and have to pass at all times! When you add new functionality you should always include suitable tests with your PR (see [`testscour.py`](https://github.com/scour-project/scour/blob/master/testscour.py)).
+These tests are run automatically on all PRs using [TravisCI](https://travis-ci.org/scour-project/scour) and have to pass at all times! When you add new functionality you should always include suitable tests with your PR (see [`test_scour.py`](https://github.com/scour-project/scour/blob/master/test_scour.py)).
 
 ### Coverage
 
