@@ -2054,8 +2054,8 @@ class ShortenIDsStableOutput(unittest.TestCase):
         hrefs_ordered = [x.getAttributeNS('http://www.w3.org/1999/xlink', 'href')
                          for x in use_tags]
         expected = ['#a', '#b', '#b']
-        self.assertEquals(hrefs_ordered, expected,
-                          '--shorten-ids pointlessly reassigned ids')
+        self.assertEqual(hrefs_ordered, expected,
+                         '--shorten-ids pointlessly reassigned ids')
 
 
 class MustKeepGInSwitch(unittest.TestCase):
