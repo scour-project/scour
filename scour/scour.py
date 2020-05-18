@@ -556,7 +556,7 @@ def findReferencedElements(node, ids=None):
     Returns IDs of all referenced elements
     - node is the node at which to start the search.
     - returns a map which has the id as key and
-      each value is is a list of nodes
+      each value is is a set of nodes
 
     Currently looks at 'xlink:href' and all attributes in 'referencingProps'
     """
@@ -586,9 +586,9 @@ def findReferencedElements(node, ids=None):
         # we remove the hash mark from the beginning of the id
         id = href[1:]
         if id in ids:
-            ids[id].append(node)
+            ids[id].add(node)
         else:
-            ids[id] = [node]
+            ids[id] = {node}
 
     # now get all style properties and the fill, stroke, filter attributes
     styles = node.getAttribute('style').split(';')
@@ -619,9 +619,9 @@ def findReferencingProperty(node, prop, val, ids):
         if len(val) >= 7 and val[0:5] == 'url(#':
             id = val[5:val.find(')')]
             if id in ids:
-                ids[id].append(node)
+                ids[id].add(node)
             else:
-                ids[id] = [node]
+                ids[id] = {node}
         # if the url has a quote in it, we need to compensate
         elif len(val) >= 8:
             id = None
@@ -633,9 +633,9 @@ def findReferencingProperty(node, prop, val, ids):
                 id = val[6:val.find("')")]
             if id is not None:
                 if id in ids:
-                    ids[id].append(node)
+                    ids[id].add(node)
                 else:
-                    ids[id] = [node]
+                    ids[id] = {node}
 
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
@@ -1457,7 +1457,7 @@ def collapseSinglyReferencedGradients(doc):
                 elem.namespaceURI == NS['SVG']
             ):
                 # found a gradient that is referenced by only 1 other element
-                refElem = nodes[0]
+                refElem = nodes.pop()
                 if refElem.nodeType == Node.ELEMENT_NODE and refElem.nodeName in ['linearGradient', 'radialGradient'] \
                         and refElem.namespaceURI == NS['SVG']:
                     # elem is a gradient referenced by only one other gradient (refElem)
