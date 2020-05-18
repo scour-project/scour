@@ -674,6 +674,16 @@ def removeUnreferencedElements(doc, keepDefs):
     identifiedElements = findElementsWithId(doc.documentElement)
     referencedIDs = findReferencedElements(doc.documentElement)
 
+    if not keepDefs:
+        # Remove most unreferenced elements inside defs
+        defs = doc.documentElement.getElementsByTagName('defs')
+        for aDef in defs:
+            elemsToRemove = removeUnusedDefs(doc, aDef, referencedIDs=referencedIDs)
+            for elem in elemsToRemove:
+                elem.parentNode.removeChild(elem)
+                _num_elements_removed += 1
+                num += 1
+
     for id in identifiedElements:
         if id not in referencedIDs:
             goner = identifiedElements[id]
@@ -684,15 +694,6 @@ def removeUnreferencedElements(doc, keepDefs):
                 num += 1
                 _num_elements_removed += 1
 
-    if not keepDefs:
-        # Remove most unreferenced elements inside defs
-        defs = doc.documentElement.getElementsByTagName('defs')
-        for aDef in defs:
-            elemsToRemove = removeUnusedDefs(doc, aDef)
-            for elem in elemsToRemove:
-                elem.parentNode.removeChild(elem)
-                _num_elements_removed += 1
-                num += 1
     return num
 
 
