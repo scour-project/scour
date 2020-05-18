@@ -1610,9 +1610,12 @@ def removeDuplicateGradients(doc):
 
 def _getStyle(node):
     u"""Returns the style attribute of a node as a dictionary."""
-    if node.nodeType == Node.ELEMENT_NODE and len(node.getAttribute('style')) > 0:
+    if node.nodeType != Node.ELEMENT_NODE:
+        return {}
+    style_attribute = node.getAttribute('style')
+    if style_attribute:
         styleMap = {}
-        rawStyles = node.getAttribute('style').split(';')
+        rawStyles = style_attribute.split(';')
         for style in rawStyles:
             propval = style.split(':')
             if len(propval) == 2:
