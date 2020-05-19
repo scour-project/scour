@@ -1536,7 +1536,7 @@ def removeDuplicateGradients(doc):
     global _num_elements_removed
     num = 0
 
-    gradientsToRemove = {}
+    gradients_to_remove = []
 
     for gradType in ['linearGradient', 'radialGradient']:
         grads = doc.getElementsByTagName(gradType)
@@ -1553,34 +1553,34 @@ def removeDuplicateGradients(doc):
                 continue
             master = bucket[0]
             duplicates = bucket[1:]
+            duplicates_ids = [d.getAttribute('id') for d in duplicates]
             master_id = master.getAttribute('id')
             if not master_id:
                 # If our selected "master" copy does not have an ID,
                 # then replace it with one that does (assuming any of
                 # them has one).  This avoids broken images like we
                 # saw in GH#203
-                for i in range(len(duplicates)):
-                    dup = duplicates[i]
-                    dup_id = dup.getAttribute('id')
+                for i in range(len(duplicates_ids)):
+                    dup_id = duplicates_ids[i]
                     if dup_id:
+                        # We do not bother updating the master field
+                        # as it is not used any more.
+                        master_id = duplicates_ids[i]
                         duplicates[i] = master
-                        master = dup
+                        # Clear the old id to avoid a redundant remapping
+                        duplicates_ids[i] = ""
                         break
 
-            gradientsToRemove[master] = duplicates
+            gradients_to_remove.append((master_id, duplicates_ids, duplicates))
 
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
-    for masterGrad in gradientsToRemove:
-        master_id = masterGrad.getAttribute('id')
-        for dupGrad in gradientsToRemove[masterGrad]:
+    for master_id, duplicates_ids, duplicates in gradients_to_remove:
+        for dup_id, dupGrad in zip(duplicates_ids, duplicates):
             # if the duplicate gradient no longer has a parent that means it was
             # already re-mapped to another master gradient
             if not dupGrad.parentNode:
                 continue
-
-            # for each element that referenced the gradient we are going to replace dup_id with master_id
-            dup_id = dupGrad.getAttribute('id')
 
             # With --keep-unreferenced-defs, we can end up with
             # unreferenced gradients.  See GH#156.
