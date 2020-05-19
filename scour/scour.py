@@ -74,6 +74,12 @@ VER = __version__
 COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
+XML_ENTS_NO_QUOTES = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
+XML_ENTS_ESCAPE_APOS = XML_ENTS_NO_QUOTES.copy()
+XML_ENTS_ESCAPE_APOS["'"] = '&apos;'
+XML_ENTS_ESCAPE_QUOT = XML_ENTS_NO_QUOTES.copy()
+XML_ENTS_ESCAPE_QUOT['"'] = '&quot;'
+
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
       'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
@@ -3404,23 +3410,23 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
         remapNamespacePrefix(child, oldprefix, newprefix)
 
 
-def makeWellFormed(str, quote=''):
-    xml_ents = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
-    if quote:
-        xml_ents[quote] = '&apos;' if (quote == "'") else "&quot;"
-    return ''.join(xml_ents[c] if c in xml_ents else c for c in str)
+def make_well_formed(text, quote_dict=None):
+    if quote_dict is None:
+        quote_dict = XML_ENTS_NO_QUOTES
+    return ''.join(quote_dict[c] if c in quote_dict else c for c in text)
 
 
-def chooseQuoteCharacter(str):
-    quotCount = str.count('"')
-    aposCount = str.count("'")
-    if quotCount > aposCount:
-        quote = "'"
-        hasEmbeddedQuote = aposCount
-    else:
+def choose_quote_character(value):
+    quot_count = value.count('"')
+    if quot_count == 0 or quot_count <= value.count("'"):
+        # Fewest "-symbols (if there are 0, we pick this to avoid spending
+        # time counting the '-symbols as it won't matter)
         quote = '"'
-        hasEmbeddedQuote = quotCount
-    return (quote, hasEmbeddedQuote)
+        xml_ent = XML_ENTS_ESCAPE_QUOT
+    else:
+        quote = "'"
+        xml_ent = XML_ENTS_ESCAPE_APOS
+    return quote, xml_ent
 
 
 TEXT_CONTENT_ELEMENTS = ['text', 'tspan', 'tref', 'textPath', 'altGlyph',
@@ -3472,8 +3478,8 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
         attr = attrList.item(index)
 
         attrValue = attr.nodeValue
-        (quote, hasEmbeddedQuote) = chooseQuoteCharacter(attrValue)
-        attrValue = makeWellFormed(attrValue, quote if hasEmbeddedQuote else '')
+        quote, xml_ent = choose_quote_character(attrValue)
+        attrValue = make_well_formed(attrValue, xml_ent)
 
         if attr.nodeName == 'style':
             # sort declarations
@@ -3532,7 +3538,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                             text_content = text_content.replace('  ', ' ')
                     else:
                         text_content = text_content.strip()
-                outParts.append(makeWellFormed(text_content))
+                outParts.append(make_well_formed(text_content))
             # CDATA node
             elif child.nodeType == Node.CDATA_SECTION_NODE:
                 outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])

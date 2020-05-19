@@ -30,7 +30,8 @@ import unittest
 import six
 from six.moves import map, range
 
-from scour.scour import makeWellFormed, parse_args, scourString, scourXmlFile, start, run
+from scour.scour import (make_well_formed, parse_args, scourString, scourXmlFile, start, run,
+                         XML_ENTS_ESCAPE_APOS, XML_ENTS_ESCAPE_QUOT)
 from scour.svg_regex import svg_parser
 from scour import __version__
 
@@ -1893,26 +1894,26 @@ class EnsureLineEndings(unittest.TestCase):
 class XmlEntities(unittest.TestCase):
 
     def runTest(self):
-        self.assertEqual(makeWellFormed('<>&'), '&lt;&gt;&amp;',
+        self.assertEqual(make_well_formed('<>&'), '&lt;&gt;&amp;',
                          'Incorrectly translated unquoted XML entities')
-        self.assertEqual(makeWellFormed('<>&', "'"), '&lt;&gt;&amp;',
+        self.assertEqual(make_well_formed('<>&', XML_ENTS_ESCAPE_APOS), '&lt;&gt;&amp;',
                          'Incorrectly translated single-quoted XML entities')
-        self.assertEqual(makeWellFormed('<>&', '"'), '&lt;&gt;&amp;',
+        self.assertEqual(make_well_formed('<>&', XML_ENTS_ESCAPE_QUOT), '&lt;&gt;&amp;',
                          'Incorrectly translated double-quoted XML entities')
 
-        self.assertEqual(makeWellFormed("'"), "'",
+        self.assertEqual(make_well_formed("'"), "'",
                          'Incorrectly translated unquoted single quote')
-        self.assertEqual(makeWellFormed('"'), '"',
+        self.assertEqual(make_well_formed('"'), '"',
                          'Incorrectly translated unquoted double quote')
 
-        self.assertEqual(makeWellFormed("'", '"'), "'",
+        self.assertEqual(make_well_formed("'", XML_ENTS_ESCAPE_QUOT), "'",
                          'Incorrectly translated double-quoted single quote')
-        self.assertEqual(makeWellFormed('"', "'"), '"',
+        self.assertEqual(make_well_formed('"', XML_ENTS_ESCAPE_APOS), '"',
                          'Incorrectly translated single-quoted double quote')
 
-        self.assertEqual(makeWellFormed("'", "'"), '&apos;',
+        self.assertEqual(make_well_formed("'", XML_ENTS_ESCAPE_APOS), '&apos;',
                          'Incorrectly translated single-quoted single quote')
-        self.assertEqual(makeWellFormed('"', '"'), '&quot;',
+        self.assertEqual(make_well_formed('"', XML_ENTS_ESCAPE_QUOT), '&quot;',
                          'Incorrectly translated double-quoted double quote')
 
 
