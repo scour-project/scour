@@ -975,7 +975,6 @@ def removeNamespacedAttributes(node, namespaces):
 
 
 def removeNamespacedElements(node, namespaces):
-    global _num_elements_removed
     num = 0
     if node.nodeType == Node.ELEMENT_NODE:
         # remove all namespace'd child nodes from this element
@@ -985,9 +984,8 @@ def removeNamespacedElements(node, namespaces):
             if child is not None and child.namespaceURI in namespaces:
                 childrenToRemove.append(child)
         for child in childrenToRemove:
-            num += 1
-            _num_elements_removed += 1
             node.removeChild(child)
+        num += len(childrenToRemove)
 
         # now recurse for children
         for child in node.childNodes:
@@ -3652,8 +3650,8 @@ def scourString(in_string, options=None):
     # on the first pass, so we do it multiple times
     # does it have to do with removal of children affecting the childlist?
     if options.keep_editor_data is False:
-        while removeNamespacedElements(doc.documentElement, unwanted_ns) > 0:
-            pass
+        _num_elements_removed += removeNamespacedElements(doc.documentElement,
+                                                          unwanted_ns)
         _num_attributes_removed += removeNamespacedAttributes(doc.documentElement,
                                                               unwanted_ns)
 
