@@ -955,7 +955,6 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 
 
 def removeNamespacedAttributes(node, namespaces):
-    global _num_attributes_removed
     num = 0
     if node.nodeType == Node.ELEMENT_NODE:
         # remove all namespace'd attributes from this element
@@ -966,9 +965,8 @@ def removeNamespacedAttributes(node, namespaces):
             if attr is not None and attr.namespaceURI in namespaces:
                 attrsToRemove.append(attr.nodeName)
         for attrName in attrsToRemove:
-            num += 1
-            _num_attributes_removed += 1
             node.removeAttribute(attrName)
+        num += len(attrsToRemove)
 
         # now recurse for children
         for child in node.childNodes:
@@ -3656,8 +3654,8 @@ def scourString(in_string, options=None):
     if options.keep_editor_data is False:
         while removeNamespacedElements(doc.documentElement, unwanted_ns) > 0:
             pass
-        while removeNamespacedAttributes(doc.documentElement, unwanted_ns) > 0:
-            pass
+        _num_attributes_removed += removeNamespacedAttributes(doc.documentElement,
+                                                              unwanted_ns)
 
         # remove the xmlns: declarations now
         xmlnsDeclsToRemove = []
