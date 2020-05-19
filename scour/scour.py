@@ -562,7 +562,7 @@ def findReferencedElements(node, ids=None):
         # one stretch of text, please! (we could use node.normalize(), but
         # this actually modifies the node, and we don't want to keep
         # whitespace around if there's any)
-        stylesheet = "".join([child.nodeValue for child in node.childNodes])
+        stylesheet = "".join(child.nodeValue for child in node.childNodes)
         if stylesheet != '':
             cssRules = parseCssString(stylesheet)
             for rule in cssRules:
@@ -853,7 +853,7 @@ def renameID(idFrom, idTo, identifiedElements, referringNodes):
                     # there's a CDATASection node surrounded by whitespace
                     # nodes
                     # (node.normalize() will NOT work here, it only acts on Text nodes)
-                    oldValue = "".join([child.nodeValue for child in node.childNodes])
+                    oldValue = "".join(child.nodeValue for child in node.childNodes)
                     # not going to reparse the whole thing
                     newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
                     newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
@@ -1617,7 +1617,7 @@ def _getStyle(node):
 
 def _setStyle(node, styleMap):
     u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
-    fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in styleMap])
+    fixedStyle = ';'.join(prop + ':' + styleMap[prop] for prop in styleMap)
     if fixedStyle != '':
         node.setAttribute('style', fixedStyle)
     elif node.getAttribute('style'):
@@ -2837,18 +2837,18 @@ def serializePath(pathObj, options):
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options,
-                                           control_points=controlPoints(cmd, data),
-                                           flags=flags(cmd, data))
-                    for cmd, data in pathObj])
+    return ''.join(cmd + scourCoordinates(data, options,
+                                          control_points=controlPoints(cmd, data),
+                                          flags=flags(cmd, data))
+                   for cmd, data in pathObj)
 
 
 def serializeTransform(transformObj):
     """
        Reserializes the transform data with some cleanups.
     """
-    return ' '.join([command + '(' + ' '.join([scourUnitlessLength(number) for number in numbers]) + ')'
-                     for command, numbers in transformObj])
+    return ' '.join(command + '(' + ' '.join(scourUnitlessLength(number) for number in numbers) + ')'
+                    for command, numbers in transformObj)
 
 
 def scourCoordinates(data, options, force_whitespace=False, control_points=[], flags=[]):
@@ -3408,7 +3408,7 @@ def makeWellFormed(str, quote=''):
     xml_ents = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
     if quote:
         xml_ents[quote] = '&apos;' if (quote == "'") else "&quot;"
-    return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
+    return ''.join(xml_ents[c] if c in xml_ents else c for c in str)
 
 
 def chooseQuoteCharacter(str):
@@ -3477,7 +3477,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
 
         if attr.nodeName == 'style':
             # sort declarations
-            attrValue = ';'.join([p for p in sorted(attrValue.split(';'))])
+            attrValue = ';'.join(sorted(attrValue.split(';')))
 
         outParts.append(' ')
         # preserve xmlns: if it is a namespace prefix declaration
