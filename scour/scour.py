@@ -1576,6 +1576,7 @@ def removeDuplicateGradients(doc):
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
     for master_id, duplicates_ids, duplicates in gradients_to_remove:
+        funcIRI = None
         for dup_id, dupGrad in zip(duplicates_ids, duplicates):
             # if the duplicate gradient no longer has a parent that means it was
             # already re-mapped to another master gradient
@@ -1585,7 +1586,10 @@ def removeDuplicateGradients(doc):
             # With --keep-unreferenced-defs, we can end up with
             # unreferenced gradients.  See GH#156.
             if dup_id in referencedIDs:
-                funcIRI = re.compile('url\\([\'"]?#' + dup_id + '[\'"]?\\)')  # matches url(#a), url('#a') and url("#a")
+                if funcIRI is None:
+                    # matches url(#<ANY_DUP_ID>), url('#<ANY_DUP_ID>') and url("#<ANY_DUP_ID>")
+                    dup_id_regex = "|".join(duplicates_ids)
+                    funcIRI = re.compile('url\\([\'"]?#(?:' + dup_id_regex + ')[\'"]?\\)')
                 for elem in referencedIDs[dup_id]:
                     # find out which attribute referenced the duplicate gradient
                     for attr in ['fill', 'stroke']:
