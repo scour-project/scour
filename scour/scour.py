@@ -1615,10 +1615,32 @@ def dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids):
         # it is safe to remove this gradient from the document
         dup_grad.parentNode.removeChild(dup_grad)
 
+    # If the gradients have an ID, we update referenced_ids to match the newly remapped IDs.
+    # This enable us to avoid calling findReferencedElements once per loop, which is helpful as it is
+    # one of the slowest functions in scour.
+    if master_id:
+        try:
+            master_references = referenced_ids[master_id]
+        except KeyError:
+            master_references = set()
+
+        for dup_id in duplicates_ids:
+            references = referenced_ids.pop(dup_id, None)
+            if references is None:
+                continue
+            master_references.update(references)
+
+        # Only necessary but needed if the master gradient did
+        # not have any references originally
+        referenced_ids[master_id] = master_references
+
 
 def removeDuplicateGradients(doc):
     prev_num = -1
     num = 0
+
+    # get a collection of all elements that are referenced and their referencing elements
+    referenced_ids = findReferencedElements(doc.documentElement)
 
     while prev_num != num:
         prev_num = num
@@ -1626,8 +1648,6 @@ def removeDuplicateGradients(doc):
         linear_gradients = doc.getElementsByTagName('linearGradient')
         radial_gradients = doc.getElementsByTagName('radialGradient')
 
-        # get a collection of all elements that are referenced and their referencing elements
-        referenced_ids = findReferencedElements(doc.documentElement)
         for master_id, duplicates_ids, duplicates in detect_duplicate_gradients(linear_gradients, radial_gradients):
             dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids)
             num += len(duplicates)
