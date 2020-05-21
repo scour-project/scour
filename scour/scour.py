@@ -1617,18 +1617,21 @@ def dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids):
 
 
 def removeDuplicateGradients(doc):
-    global _num_elements_removed
+    prev_num = -1
     num = 0
 
-    linear_gradients = doc.getElementsByTagName('linearGradient')
-    radial_gradients = doc.getElementsByTagName('radialGradient')
+    while prev_num != num:
+        prev_num = num
 
-    # get a collection of all elements that are referenced and their referencing elements
-    referencedIDs = findReferencedElements(doc.documentElement)
-    for master_id, duplicates_ids, duplicates in detect_duplicate_gradients(linear_gradients, radial_gradients):
-        dedup_gradient(master_id, duplicates_ids, duplicates, referencedIDs)
-        _num_elements_removed += len(duplicates)
-        num += len(duplicates)
+        linear_gradients = doc.getElementsByTagName('linearGradient')
+        radial_gradients = doc.getElementsByTagName('radialGradient')
+
+        # get a collection of all elements that are referenced and their referencing elements
+        referenced_ids = findReferencedElements(doc.documentElement)
+        for master_id, duplicates_ids, duplicates in detect_duplicate_gradients(linear_gradients, radial_gradients):
+            dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids)
+            num += len(duplicates)
+
     return num
 
 
@@ -3775,8 +3778,7 @@ def scourString(in_string, options=None):
         pass
 
     # remove duplicate gradients
-    while removeDuplicateGradients(doc) > 0:
-        pass
+    _num_elements_removed += removeDuplicateGradients(doc)
 
     if options.group_collapse:
         _num_elements_removed += mergeSiblingGroupsWithCommonAttributes(doc.documentElement)
