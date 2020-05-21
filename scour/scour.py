@@ -3433,6 +3433,42 @@ TEXT_CONTENT_ELEMENTS = ['text', 'tspan', 'tref', 'textPath', 'altGlyph',
                          'flowDiv', 'flowPara', 'flowSpan', 'flowTref', 'flowLine']
 
 
+KNOWN_ATTRS = [
+        # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
+        # (but should be kept intuitively ordered)
+        'id', 'xml:id', 'class',
+        'transform',
+        'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
+        'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
+        'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
+        'd', 'points',
+    ] + sorted(svgAttributes) + [
+        'style',
+    ]
+
+KNOWN_ATTRS_ORDER_BY_NAME = defaultdict(lambda: len(KNOWN_ATTRS),
+                                        {name: order for order, name in enumerate(KNOWN_ATTRS)})
+
+
+# use custom order for known attributes and alphabetical order for the rest
+def _attribute_sort_key_function(attribute):
+    name = attribute.name
+    order_value = KNOWN_ATTRS_ORDER_BY_NAME[name]
+    return order_value, name
+
+
+def attributes_ordered_for_output(element):
+    if not element.hasAttributes():
+        return []
+    attribute = element.attributes
+    # The .item(i) call is painfully slow (bpo#40689). Therefore we ensure we
+    # call it at most once per attribute.
+    # - it would be many times faster to use `attribute.values()` but sadly
+    #   that is an "experimental" interface.
+    return sorted((attribute.item(i) for i in range(attribute.length)),
+                  key=_attribute_sort_key_function)
+
+
 # hand-rolled serialization function that has the following benefits:
 # - pretty printing
 # - somewhat judicious use of whitespace
@@ -3453,30 +3489,8 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
     outParts.extend([(indent_type * indent_depth), '<', element.nodeName])
 
     # now serialize the other attributes
-    known_attr = [
-        # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
-        # (but should be kept inuitively ordered)
-        'id', 'xml:id', 'class',
-        'transform',
-        'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
-        'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
-        'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
-        'd', 'points',
-    ] + sorted(svgAttributes) + [
-        'style',
-    ]
-    attrList = element.attributes
-    attrName2Index = dict([(attrList.item(i).nodeName, i) for i in range(attrList.length)])
-    # use custom order for known attributes and alphabetical order for the rest
-    attrIndices = []
-    for name in known_attr:
-        if name in attrName2Index:
-            attrIndices.append(attrName2Index[name])
-            del attrName2Index[name]
-    attrIndices += [attrName2Index[name] for name in sorted(attrName2Index)]
-    for index in attrIndices:
-        attr = attrList.item(index)
-
+    attrs = attributes_ordered_for_output(element)
+    for attr in attrs:
         attrValue = attr.nodeValue
         quote, xml_ent = choose_quote_character(attrValue)
         attrValue = make_well_formed(attrValue, xml_ent)
