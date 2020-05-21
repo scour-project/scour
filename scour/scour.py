@@ -1532,21 +1532,26 @@ def computeGradientBucketKey(grad):
     return "\x1e".join(subKeys)
 
 
-def removeDuplicateGradients(doc):
-    global _num_elements_removed
-    num = 0
+def detect_duplicate_gradients(*grad_lists):
+    """Detects duplicate gradients from each iterable/generator given as argument
 
-    gradients_to_remove = []
-
-    for gradType in ['linearGradient', 'radialGradient']:
-        grads = doc.getElementsByTagName(gradType)
-        gradBuckets = defaultdict(list)
+    Yields (master, master_id, duplicates_id, duplicates) tuples where:
+      * master_id: The ID attribute of the master element.  This will always be non-empty
+        and not None as long at least one of the gradients have a valid ID.
+      * duplicates_id: List of ID attributes of the duplicate gradients elements (can be
+        empty where the gradient had no ID attribute)
+      * duplicates: List of elements that are duplicates of the `master` element.  Will
+        never include the `master` element.  Has the same order as `duplicates_id` - i.e.
+        `duplicates[X].getAttribute("id") == duplicates_id[X]`.
+    """
+    for grads in grad_lists:
+        grad_buckets = defaultdict(list)
 
         for grad in grads:
             key = computeGradientBucketKey(grad)
-            gradBuckets[key].append(grad)
+            grad_buckets[key].append(grad)
 
-        for bucket in six.itervalues(gradBuckets):
+        for bucket in six.itervalues(grad_buckets):
             if len(bucket) < 2:
                 # The gradient must be unique if it is the only one in
                 # this bucket.
@@ -1571,47 +1576,59 @@ def removeDuplicateGradients(doc):
                         duplicates_ids[i] = ""
                         break
 
-            gradients_to_remove.append((master_id, duplicates_ids, duplicates))
+            yield master_id, duplicates_ids, duplicates
+
+
+def dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids):
+    func_iri = None
+    for dup_id, dup_grad in zip(duplicates_ids, duplicates):
+        # if the duplicate gradient no longer has a parent that means it was
+        # already re-mapped to another master gradient
+        if not dup_grad.parentNode:
+            continue
+
+        # With --keep-unreferenced-defs, we can end up with
+        # unreferenced gradients.  See GH#156.
+        if dup_id in referenced_ids:
+            if func_iri is None:
+                # matches url(#<ANY_DUP_ID>), url('#<ANY_DUP_ID>') and url("#<ANY_DUP_ID>")
+                dup_id_regex = "|".join(duplicates_ids)
+                func_iri = re.compile('url\\([\'"]?#(?:' + dup_id_regex + ')[\'"]?\\)')
+            for elem in referenced_ids[dup_id]:
+                # find out which attribute referenced the duplicate gradient
+                for attr in ['fill', 'stroke']:
+                    v = elem.getAttribute(attr)
+                    (v_new, n) = func_iri.subn('url(#' + master_id + ')', v)
+                    if n > 0:
+                        elem.setAttribute(attr, v_new)
+                if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
+                    elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
+                styles = _getStyle(elem)
+                for style in styles:
+                    v = styles[style]
+                    (v_new, n) = func_iri.subn('url(#' + master_id + ')', v)
+                    if n > 0:
+                        styles[style] = v_new
+                _setStyle(elem, styles)
+
+        # now that all referencing elements have been re-mapped to the master
+        # it is safe to remove this gradient from the document
+        dup_grad.parentNode.removeChild(dup_grad)
+
+
+def removeDuplicateGradients(doc):
+    global _num_elements_removed
+    num = 0
+
+    linear_gradients = doc.getElementsByTagName('linearGradient')
+    radial_gradients = doc.getElementsByTagName('radialGradient')
 
     # get a collection of all elements that are referenced and their referencing elements
     referencedIDs = findReferencedElements(doc.documentElement)
-    for master_id, duplicates_ids, duplicates in gradients_to_remove:
-        funcIRI = None
-        for dup_id, dupGrad in zip(duplicates_ids, duplicates):
-            # if the duplicate gradient no longer has a parent that means it was
-            # already re-mapped to another master gradient
-            if not dupGrad.parentNode:
-                continue
-
-            # With --keep-unreferenced-defs, we can end up with
-            # unreferenced gradients.  See GH#156.
-            if dup_id in referencedIDs:
-                if funcIRI is None:
-                    # matches url(#<ANY_DUP_ID>), url('#<ANY_DUP_ID>') and url("#<ANY_DUP_ID>")
-                    dup_id_regex = "|".join(duplicates_ids)
-                    funcIRI = re.compile('url\\([\'"]?#(?:' + dup_id_regex + ')[\'"]?\\)')
-                for elem in referencedIDs[dup_id]:
-                    # find out which attribute referenced the duplicate gradient
-                    for attr in ['fill', 'stroke']:
-                        v = elem.getAttribute(attr)
-                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                        if n > 0:
-                            elem.setAttribute(attr, v_new)
-                    if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
-                        elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
-                    styles = _getStyle(elem)
-                    for style in styles:
-                        v = styles[style]
-                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                        if n > 0:
-                            styles[style] = v_new
-                    _setStyle(elem, styles)
-
-            # now that all referencing elements have been re-mapped to the master
-            # it is safe to remove this gradient from the document
-            dupGrad.parentNode.removeChild(dupGrad)
-            _num_elements_removed += 1
-            num += 1
+    for master_id, duplicates_ids, duplicates in detect_duplicate_gradients(linear_gradients, radial_gradients):
+        dedup_gradient(master_id, duplicates_ids, duplicates, referencedIDs)
+        _num_elements_removed += len(duplicates)
+        num += len(duplicates)
     return num
 
 
