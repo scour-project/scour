@@ -3413,6 +3413,11 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
 def make_well_formed(text, quote_dict=None):
     if quote_dict is None:
         quote_dict = XML_ENTS_NO_QUOTES
+    if not any(c in text for c in quote_dict):
+        # The quote-able characters are quite rare in SVG (they mostly only
+        # occur in text elements in practice).  Therefore it make sense to
+        # optimize for this common case
+        return text
     return ''.join(quote_dict[c] if c in quote_dict else c for c in text)
 
 
