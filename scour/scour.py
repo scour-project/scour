@@ -647,8 +647,12 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
     keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
     for elem in defElem.childNodes:
         # only look at it if an element and not referenced anywhere else
-        if elem.nodeType == Node.ELEMENT_NODE and (elem.getAttribute('id') == '' or
-                                                   elem.getAttribute('id') not in referencedIDs):
+        if elem.nodeType != Node.ELEMENT_NODE:
+            continue
+
+        elem_id = elem.getAttribute('id')
+
+        if elem_id == '' or elem_id not in referencedIDs:
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
