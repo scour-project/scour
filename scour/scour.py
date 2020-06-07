@@ -2205,7 +2205,7 @@ def convertColors(element):
             newBytes = len(newColorValue)
             if oldBytes > newBytes:
                 styles[attr] = newColorValue
-                numBytes += (oldBytes - len(element.getAttribute(attr)))
+                numBytes += (oldBytes - newBytes)
     _setStyle(element, styles)
 
     # now recurse for our child elements
