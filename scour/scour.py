@@ -74,6 +74,12 @@ VER = __version__
 COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
+XML_ENTS_NO_QUOTES = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
+XML_ENTS_ESCAPE_APOS = XML_ENTS_NO_QUOTES.copy()
+XML_ENTS_ESCAPE_APOS["'"] = '&apos;'
+XML_ENTS_ESCAPE_QUOT = XML_ENTS_NO_QUOTES.copy()
+XML_ENTS_ESCAPE_QUOT['"'] = '&quot;'
+
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
       'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
@@ -562,7 +568,7 @@ def findReferencedElements(node, ids=None):
         # one stretch of text, please! (we could use node.normalize(), but
         # this actually modifies the node, and we don't want to keep
         # whitespace around if there's any)
-        stylesheet = "".join([child.nodeValue for child in node.childNodes])
+        stylesheet = "".join(child.nodeValue for child in node.childNodes)
         if stylesheet != '':
             cssRules = parseCssString(stylesheet)
             for rule in cssRules:
@@ -853,7 +859,7 @@ def renameID(idFrom, idTo, identifiedElements, referringNodes):
                     # there's a CDATASection node surrounded by whitespace
                     # nodes
                     # (node.normalize() will NOT work here, it only acts on Text nodes)
-                    oldValue = "".join([child.nodeValue for child in node.childNodes])
+                    oldValue = "".join(child.nodeValue for child in node.childNodes)
                     # not going to reparse the whole thing
                     newValue = oldValue.replace('url(#' + idFrom + ')', 'url(#' + idTo + ')')
                     newValue = newValue.replace("url(#'" + idFrom + "')", 'url(#' + idTo + ')')
@@ -1617,7 +1623,7 @@ def _getStyle(node):
 
 def _setStyle(node, styleMap):
     u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
-    fixedStyle = ';'.join([prop + ':' + styleMap[prop] for prop in styleMap])
+    fixedStyle = ';'.join(prop + ':' + styleMap[prop] for prop in styleMap)
     if fixedStyle != '':
         node.setAttribute('style', fixedStyle)
     elif node.getAttribute('style'):
@@ -2837,18 +2843,18 @@ def serializePath(pathObj, options):
     """
     # elliptical arc commands must have comma/wsp separating the coordinates
     # this fixes an issue outlined in Fix https://bugs.launchpad.net/scour/+bug/412754
-    return ''.join([cmd + scourCoordinates(data, options,
-                                           control_points=controlPoints(cmd, data),
-                                           flags=flags(cmd, data))
-                    for cmd, data in pathObj])
+    return ''.join(cmd + scourCoordinates(data, options,
+                                          control_points=controlPoints(cmd, data),
+                                          flags=flags(cmd, data))
+                   for cmd, data in pathObj)
 
 
 def serializeTransform(transformObj):
     """
        Reserializes the transform data with some cleanups.
     """
-    return ' '.join([command + '(' + ' '.join([scourUnitlessLength(number) for number in numbers]) + ')'
-                     for command, numbers in transformObj])
+    return ' '.join(command + '(' + ' '.join(scourUnitlessLength(number) for number in numbers) + ')'
+                    for command, numbers in transformObj)
 
 
 def scourCoordinates(data, options, force_whitespace=False, control_points=[], flags=[]):
@@ -3404,27 +3410,68 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
         remapNamespacePrefix(child, oldprefix, newprefix)
 
 
-def makeWellFormed(str, quote=''):
-    xml_ents = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
-    if quote:
-        xml_ents[quote] = '&apos;' if (quote == "'") else "&quot;"
-    return ''.join([xml_ents[c] if c in xml_ents else c for c in str])
+def make_well_formed(text, quote_dict=None):
+    if quote_dict is None:
+        quote_dict = XML_ENTS_NO_QUOTES
+    if not any(c in text for c in quote_dict):
+        # The quote-able characters are quite rare in SVG (they mostly only
+        # occur in text elements in practice).  Therefore it make sense to
+        # optimize for this common case
+        return text
+    return ''.join(quote_dict[c] if c in quote_dict else c for c in text)
 
 
-def chooseQuoteCharacter(str):
-    quotCount = str.count('"')
-    aposCount = str.count("'")
-    if quotCount > aposCount:
-        quote = "'"
-        hasEmbeddedQuote = aposCount
-    else:
+def choose_quote_character(value):
+    quot_count = value.count('"')
+    if quot_count == 0 or quot_count <= value.count("'"):
+        # Fewest "-symbols (if there are 0, we pick this to avoid spending
+        # time counting the '-symbols as it won't matter)
         quote = '"'
-        hasEmbeddedQuote = quotCount
-    return (quote, hasEmbeddedQuote)
+        xml_ent = XML_ENTS_ESCAPE_QUOT
+    else:
+        quote = "'"
+        xml_ent = XML_ENTS_ESCAPE_APOS
+    return quote, xml_ent
 
 
 TEXT_CONTENT_ELEMENTS = ['text', 'tspan', 'tref', 'textPath', 'altGlyph',
                          'flowDiv', 'flowPara', 'flowSpan', 'flowTref', 'flowLine']
+
+
+KNOWN_ATTRS = [
+        # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
+        # (but should be kept intuitively ordered)
+        'id', 'xml:id', 'class',
+        'transform',
+        'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
+        'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
+        'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
+        'd', 'points',
+    ] + sorted(svgAttributes) + [
+        'style',
+    ]
+
+KNOWN_ATTRS_ORDER_BY_NAME = defaultdict(lambda: len(KNOWN_ATTRS),
+                                        {name: order for order, name in enumerate(KNOWN_ATTRS)})
+
+
+# use custom order for known attributes and alphabetical order for the rest
+def _attribute_sort_key_function(attribute):
+    name = attribute.name
+    order_value = KNOWN_ATTRS_ORDER_BY_NAME[name]
+    return order_value, name
+
+
+def attributes_ordered_for_output(element):
+    if not element.hasAttributes():
+        return []
+    attribute = element.attributes
+    # The .item(i) call is painfully slow (bpo#40689). Therefore we ensure we
+    # call it at most once per attribute.
+    # - it would be many times faster to use `attribute.values()` but sadly
+    #   that is an "experimental" interface.
+    return sorted((attribute.item(i) for i in range(attribute.length)),
+                  key=_attribute_sort_key_function)
 
 
 # hand-rolled serialization function that has the following benefits:
@@ -3447,37 +3494,15 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
     outParts.extend([(indent_type * indent_depth), '<', element.nodeName])
 
     # now serialize the other attributes
-    known_attr = [
-        # TODO: Maybe update with full list from https://www.w3.org/TR/SVG/attindex.html
-        # (but should be kept inuitively ordered)
-        'id', 'xml:id', 'class',
-        'transform',
-        'x', 'y', 'z', 'width', 'height', 'x1', 'x2', 'y1', 'y2',
-        'dx', 'dy', 'rotate', 'startOffset', 'method', 'spacing',
-        'cx', 'cy', 'r', 'rx', 'ry', 'fx', 'fy',
-        'd', 'points',
-    ] + sorted(svgAttributes) + [
-        'style',
-    ]
-    attrList = element.attributes
-    attrName2Index = dict([(attrList.item(i).nodeName, i) for i in range(attrList.length)])
-    # use custom order for known attributes and alphabetical order for the rest
-    attrIndices = []
-    for name in known_attr:
-        if name in attrName2Index:
-            attrIndices.append(attrName2Index[name])
-            del attrName2Index[name]
-    attrIndices += [attrName2Index[name] for name in sorted(attrName2Index)]
-    for index in attrIndices:
-        attr = attrList.item(index)
-
+    attrs = attributes_ordered_for_output(element)
+    for attr in attrs:
         attrValue = attr.nodeValue
-        (quote, hasEmbeddedQuote) = chooseQuoteCharacter(attrValue)
-        attrValue = makeWellFormed(attrValue, quote if hasEmbeddedQuote else '')
+        quote, xml_ent = choose_quote_character(attrValue)
+        attrValue = make_well_formed(attrValue, xml_ent)
 
         if attr.nodeName == 'style':
             # sort declarations
-            attrValue = ';'.join([p for p in sorted(attrValue.split(';'))])
+            attrValue = ';'.join(sorted(attrValue.split(';')))
 
         outParts.append(' ')
         # preserve xmlns: if it is a namespace prefix declaration
@@ -3532,7 +3557,7 @@ def serializeXML(element, options, indent_depth=0, preserveWhitespace=False):
                             text_content = text_content.replace('  ', ' ')
                     else:
                         text_content = text_content.strip()
-                outParts.append(makeWellFormed(text_content))
+                outParts.append(make_well_formed(text_content))
             # CDATA node
             elif child.nodeType == Node.CDATA_SECTION_NODE:
                 outParts.extend(['<![CDATA[', child.nodeValue, ']]>'])
