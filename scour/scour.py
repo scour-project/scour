@@ -3649,9 +3649,7 @@ def scourString(in_string, options=None):
     # remove descriptive elements
     removeDescriptiveElements(doc, options)
 
-    # for whatever reason this does not always remove all inkscape/sodipodi attributes/elements
-    # on the first pass, so we do it multiple times
-    # does it have to do with removal of children affecting the childlist?
+    # remove unneeded namespaced elements/attributes added by common editors
     if options.keep_editor_data is False:
         _num_elements_removed += removeNamespacedElements(doc.documentElement,
                                                           unwanted_ns)
