@@ -80,6 +80,9 @@ XML_ENTS_ESCAPE_APOS["'"] = '&apos;'
 XML_ENTS_ESCAPE_QUOT = XML_ENTS_NO_QUOTES.copy()
 XML_ENTS_ESCAPE_QUOT['"'] = '&quot;'
 
+# Used to split values where "x y" or "x,y" or a mix of the two is allowed
+RE_COMMA_WSP = re.compile(r"\s*[\s,]\s*")
+
 NS = {'SVG':      'http://www.w3.org/2000/svg',
       'XLINK':    'http://www.w3.org/1999/xlink',
       'SODIPODI': 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd',
@@ -647,8 +650,12 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
     keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
     for elem in defElem.childNodes:
         # only look at it if an element and not referenced anywhere else
-        if elem.nodeType == Node.ELEMENT_NODE and (elem.getAttribute('id') == '' or
-                                                   elem.getAttribute('id') not in referencedIDs):
+        if elem.nodeType != Node.ELEMENT_NODE:
+            continue
+
+        elem_id = elem.getAttribute('id')
+
+        if elem_id == '' or elem_id not in referencedIDs:
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
@@ -674,6 +681,16 @@ def removeUnreferencedElements(doc, keepDefs):
     identifiedElements = findElementsWithId(doc.documentElement)
     referencedIDs = findReferencedElements(doc.documentElement)
 
+    if not keepDefs:
+        # Remove most unreferenced elements inside defs
+        defs = doc.documentElement.getElementsByTagName('defs')
+        for aDef in defs:
+            elemsToRemove = removeUnusedDefs(doc, aDef, referencedIDs=referencedIDs)
+            for elem in elemsToRemove:
+                elem.parentNode.removeChild(elem)
+                _num_elements_removed += 1
+                num += 1
+
     for id in identifiedElements:
         if id not in referencedIDs:
             goner = identifiedElements[id]
@@ -684,15 +701,6 @@ def removeUnreferencedElements(doc, keepDefs):
                 num += 1
                 _num_elements_removed += 1
 
-    if not keepDefs:
-        # Remove most unreferenced elements inside defs
-        defs = doc.documentElement.getElementsByTagName('defs')
-        for aDef in defs:
-            elemsToRemove = removeUnusedDefs(doc, aDef)
-            for elem in elemsToRemove:
-                elem.parentNode.removeChild(elem)
-                _num_elements_removed += 1
-                num += 1
     return num
 
 
@@ -950,7 +958,6 @@ def removeUnreferencedIDs(referencedIDs, identifiedElements):
 
 
 def removeNamespacedAttributes(node, namespaces):
-    global _num_attributes_removed
     num = 0
     if node.nodeType == Node.ELEMENT_NODE:
         # remove all namespace'd attributes from this element
@@ -961,9 +968,8 @@ def removeNamespacedAttributes(node, namespaces):
             if attr is not None and attr.namespaceURI in namespaces:
                 attrsToRemove.append(attr.nodeName)
         for attrName in attrsToRemove:
-            num += 1
-            _num_attributes_removed += 1
             node.removeAttribute(attrName)
+        num += len(attrsToRemove)
 
         # now recurse for children
         for child in node.childNodes:
@@ -972,7 +978,6 @@ def removeNamespacedAttributes(node, namespaces):
 
 
 def removeNamespacedElements(node, namespaces):
-    global _num_elements_removed
     num = 0
     if node.nodeType == Node.ELEMENT_NODE:
         # remove all namespace'd child nodes from this element
@@ -982,9 +987,8 @@ def removeNamespacedElements(node, namespaces):
             if child is not None and child.namespaceURI in namespaces:
                 childrenToRemove.append(child)
         for child in childrenToRemove:
-            num += 1
-            _num_elements_removed += 1
             node.removeChild(child)
+        num += len(childrenToRemove)
 
         # now recurse for children
         for child in node.childNodes:
@@ -1609,9 +1613,12 @@ def removeDuplicateGradients(doc):
 
 def _getStyle(node):
     u"""Returns the style attribute of a node as a dictionary."""
-    if node.nodeType == Node.ELEMENT_NODE and len(node.getAttribute('style')) > 0:
+    if node.nodeType != Node.ELEMENT_NODE:
+        return {}
+    style_attribute = node.getAttribute('style')
+    if style_attribute:
         styleMap = {}
-        rawStyles = node.getAttribute('style').split(';')
+        rawStyles = style_attribute.split(';')
         for style in rawStyles:
             propval = style.split(':')
             if len(propval) == 2:
@@ -2734,7 +2741,7 @@ def parseListOfPoints(s):
     # coordinate-pair = coordinate comma-or-wsp coordinate
     # coordinate = sign? integer
     # comma-wsp: (wsp+ comma? wsp*) | (comma wsp*)
-    ws_nums = re.split(r"\s*[\s,]\s*", s.strip())
+    ws_nums = RE_COMMA_WSP.split(s.strip())
     nums = []
 
     # also, if 100-100 is found, split it into two also
@@ -3347,7 +3354,7 @@ def properlySizeDoc(docElement, options):
     # else we have a statically sized image and we should try to remedy that
 
     # parse viewBox attribute
-    vbSep = re.split('[, ]+', docElement.getAttribute('viewBox'))
+    vbSep = RE_COMMA_WSP.split(docElement.getAttribute('viewBox'))
     # if we have a valid viewBox we need to check it
     vbWidth, vbHeight = 0, 0
     if len(vbSep) == 4:
@@ -3646,10 +3653,10 @@ def scourString(in_string, options=None):
     # on the first pass, so we do it multiple times
     # does it have to do with removal of children affecting the childlist?
     if options.keep_editor_data is False:
-        while removeNamespacedElements(doc.documentElement, unwanted_ns) > 0:
-            pass
-        while removeNamespacedAttributes(doc.documentElement, unwanted_ns) > 0:
-            pass
+        _num_elements_removed += removeNamespacedElements(doc.documentElement,
+                                                          unwanted_ns)
+        _num_attributes_removed += removeNamespacedAttributes(doc.documentElement,
+                                                              unwanted_ns)
 
         # remove the xmlns: declarations now
         xmlnsDeclsToRemove = []
@@ -3806,7 +3813,7 @@ def scourString(in_string, options=None):
                     elem.setAttribute(attr, scourLength(elem.getAttribute(attr)))
     viewBox = doc.documentElement.getAttribute('viewBox')
     if viewBox:
-        lengths = re.split('[, ]+', viewBox)
+        lengths = RE_COMMA_WSP.split(viewBox)
         lengths = [scourUnitlessLength(length) for length in lengths]
         doc.documentElement.setAttribute('viewBox', ' '.join(lengths))
 
