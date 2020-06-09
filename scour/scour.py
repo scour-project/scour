@@ -556,7 +556,7 @@ def findReferencedElements(node, ids=None):
     Returns IDs of all referenced elements
     - node is the node at which to start the search.
     - returns a map which has the id as key and
-      each value is is a list of nodes
+      each value is is a set of nodes
 
     Currently looks at 'xlink:href' and all attributes in 'referencingProps'
     """
@@ -586,9 +586,9 @@ def findReferencedElements(node, ids=None):
         # we remove the hash mark from the beginning of the id
         id = href[1:]
         if id in ids:
-            ids[id].append(node)
+            ids[id].add(node)
         else:
-            ids[id] = [node]
+            ids[id] = {node}
 
     # now get all style properties and the fill, stroke, filter attributes
     styles = node.getAttribute('style').split(';')
@@ -619,9 +619,9 @@ def findReferencingProperty(node, prop, val, ids):
         if len(val) >= 7 and val[0:5] == 'url(#':
             id = val[5:val.find(')')]
             if id in ids:
-                ids[id].append(node)
+                ids[id].add(node)
             else:
-                ids[id] = [node]
+                ids[id] = {node}
         # if the url has a quote in it, we need to compensate
         elif len(val) >= 8:
             id = None
@@ -633,9 +633,9 @@ def findReferencingProperty(node, prop, val, ids):
                 id = val[6:val.find("')")]
             if id is not None:
                 if id in ids:
-                    ids[id].append(node)
+                    ids[id].add(node)
                 else:
-                    ids[id] = [node]
+                    ids[id] = {node}
 
 
 def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
@@ -1457,7 +1457,7 @@ def collapseSinglyReferencedGradients(doc):
                 elem.namespaceURI == NS['SVG']
             ):
                 # found a gradient that is referenced by only 1 other element
-                refElem = nodes[0]
+                refElem = nodes.pop()
                 if refElem.nodeType == Node.ELEMENT_NODE and refElem.nodeName in ['linearGradient', 'radialGradient'] \
                         and refElem.namespaceURI == NS['SVG']:
                     # elem is a gradient referenced by only one other gradient (refElem)
@@ -1532,82 +1532,126 @@ def computeGradientBucketKey(grad):
     return "\x1e".join(subKeys)
 
 
-def removeDuplicateGradients(doc):
-    global _num_elements_removed
-    num = 0
+def detect_duplicate_gradients(*grad_lists):
+    """Detects duplicate gradients from each iterable/generator given as argument
 
-    gradientsToRemove = {}
-
-    for gradType in ['linearGradient', 'radialGradient']:
-        grads = doc.getElementsByTagName(gradType)
-        gradBuckets = defaultdict(list)
+    Yields (master, master_id, duplicates_id, duplicates) tuples where:
+      * master_id: The ID attribute of the master element.  This will always be non-empty
+        and not None as long at least one of the gradients have a valid ID.
+      * duplicates_id: List of ID attributes of the duplicate gradients elements (can be
+        empty where the gradient had no ID attribute)
+      * duplicates: List of elements that are duplicates of the `master` element.  Will
+        never include the `master` element.  Has the same order as `duplicates_id` - i.e.
+        `duplicates[X].getAttribute("id") == duplicates_id[X]`.
+    """
+    for grads in grad_lists:
+        grad_buckets = defaultdict(list)
 
         for grad in grads:
             key = computeGradientBucketKey(grad)
-            gradBuckets[key].append(grad)
+            grad_buckets[key].append(grad)
 
-        for bucket in six.itervalues(gradBuckets):
+        for bucket in six.itervalues(grad_buckets):
             if len(bucket) < 2:
                 # The gradient must be unique if it is the only one in
                 # this bucket.
                 continue
             master = bucket[0]
             duplicates = bucket[1:]
+            duplicates_ids = [d.getAttribute('id') for d in duplicates]
             master_id = master.getAttribute('id')
             if not master_id:
                 # If our selected "master" copy does not have an ID,
                 # then replace it with one that does (assuming any of
                 # them has one).  This avoids broken images like we
                 # saw in GH#203
-                for i in range(len(duplicates)):
-                    dup = duplicates[i]
-                    dup_id = dup.getAttribute('id')
+                for i in range(len(duplicates_ids)):
+                    dup_id = duplicates_ids[i]
                     if dup_id:
+                        # We do not bother updating the master field
+                        # as it is not used any more.
+                        master_id = duplicates_ids[i]
                         duplicates[i] = master
-                        master = dup
+                        # Clear the old id to avoid a redundant remapping
+                        duplicates_ids[i] = ""
                         break
 
-            gradientsToRemove[master] = duplicates
+            yield master_id, duplicates_ids, duplicates
+
+
+def dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids):
+    func_iri = None
+    for dup_id, dup_grad in zip(duplicates_ids, duplicates):
+        # if the duplicate gradient no longer has a parent that means it was
+        # already re-mapped to another master gradient
+        if not dup_grad.parentNode:
+            continue
+
+        # With --keep-unreferenced-defs, we can end up with
+        # unreferenced gradients.  See GH#156.
+        if dup_id in referenced_ids:
+            if func_iri is None:
+                # matches url(#<ANY_DUP_ID>), url('#<ANY_DUP_ID>') and url("#<ANY_DUP_ID>")
+                dup_id_regex = "|".join(duplicates_ids)
+                func_iri = re.compile('url\\([\'"]?#(?:' + dup_id_regex + ')[\'"]?\\)')
+            for elem in referenced_ids[dup_id]:
+                # find out which attribute referenced the duplicate gradient
+                for attr in ['fill', 'stroke']:
+                    v = elem.getAttribute(attr)
+                    (v_new, n) = func_iri.subn('url(#' + master_id + ')', v)
+                    if n > 0:
+                        elem.setAttribute(attr, v_new)
+                if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
+                    elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
+                styles = _getStyle(elem)
+                for style in styles:
+                    v = styles[style]
+                    (v_new, n) = func_iri.subn('url(#' + master_id + ')', v)
+                    if n > 0:
+                        styles[style] = v_new
+                _setStyle(elem, styles)
+
+        # now that all referencing elements have been re-mapped to the master
+        # it is safe to remove this gradient from the document
+        dup_grad.parentNode.removeChild(dup_grad)
+
+    # If the gradients have an ID, we update referenced_ids to match the newly remapped IDs.
+    # This enable us to avoid calling findReferencedElements once per loop, which is helpful as it is
+    # one of the slowest functions in scour.
+    if master_id:
+        try:
+            master_references = referenced_ids[master_id]
+        except KeyError:
+            master_references = set()
+
+        for dup_id in duplicates_ids:
+            references = referenced_ids.pop(dup_id, None)
+            if references is None:
+                continue
+            master_references.update(references)
+
+        # Only necessary but needed if the master gradient did
+        # not have any references originally
+        referenced_ids[master_id] = master_references
+
+
+def removeDuplicateGradients(doc):
+    prev_num = -1
+    num = 0
 
     # get a collection of all elements that are referenced and their referencing elements
-    referencedIDs = findReferencedElements(doc.documentElement)
-    for masterGrad in gradientsToRemove:
-        master_id = masterGrad.getAttribute('id')
-        for dupGrad in gradientsToRemove[masterGrad]:
-            # if the duplicate gradient no longer has a parent that means it was
-            # already re-mapped to another master gradient
-            if not dupGrad.parentNode:
-                continue
+    referenced_ids = findReferencedElements(doc.documentElement)
 
-            # for each element that referenced the gradient we are going to replace dup_id with master_id
-            dup_id = dupGrad.getAttribute('id')
-            funcIRI = re.compile('url\\([\'"]?#' + dup_id + '[\'"]?\\)')  # matches url(#a), url('#a') and url("#a")
+    while prev_num != num:
+        prev_num = num
 
-            # With --keep-unreferenced-defs, we can end up with
-            # unreferenced gradients.  See GH#156.
-            if dup_id in referencedIDs:
-                for elem in referencedIDs[dup_id]:
-                    # find out which attribute referenced the duplicate gradient
-                    for attr in ['fill', 'stroke']:
-                        v = elem.getAttribute(attr)
-                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                        if n > 0:
-                            elem.setAttribute(attr, v_new)
-                    if elem.getAttributeNS(NS['XLINK'], 'href') == '#' + dup_id:
-                        elem.setAttributeNS(NS['XLINK'], 'href', '#' + master_id)
-                    styles = _getStyle(elem)
-                    for style in styles:
-                        v = styles[style]
-                        (v_new, n) = funcIRI.subn('url(#' + master_id + ')', v)
-                        if n > 0:
-                            styles[style] = v_new
-                    _setStyle(elem, styles)
+        linear_gradients = doc.getElementsByTagName('linearGradient')
+        radial_gradients = doc.getElementsByTagName('radialGradient')
 
-            # now that all referencing elements have been re-mapped to the master
-            # it is safe to remove this gradient from the document
-            dupGrad.parentNode.removeChild(dupGrad)
-            _num_elements_removed += 1
-            num += 1
+        for master_id, duplicates_ids, duplicates in detect_duplicate_gradients(linear_gradients, radial_gradients):
+            dedup_gradient(master_id, duplicates_ids, duplicates, referenced_ids)
+            num += len(duplicates)
+
     return num
 
 
@@ -3754,8 +3798,7 @@ def scourString(in_string, options=None):
         pass
 
     # remove duplicate gradients
-    while removeDuplicateGradients(doc) > 0:
-        pass
+    _num_elements_removed += removeDuplicateGradients(doc)
 
     if options.group_collapse:
         _num_elements_removed += mergeSiblingGroupsWithCommonAttributes(doc.documentElement)
