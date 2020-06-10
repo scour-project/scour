@@ -5,4 +5,5 @@
 		<title>Test</title>
 	</svg:rect>
 	<vector:rect height="100" width="100"/>
+	<svg:text xml:space="preserve">  Hallo World  </svg:text>
 </svg>
