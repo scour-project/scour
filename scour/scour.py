@@ -3445,7 +3445,7 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
         attrList = node.attributes
         for i in range(attrList.length):
             attr = attrList.item(i)
-            newNode.setAttributeNS(attr.namespaceURI, attr.localName, attr.nodeValue)
+            newNode.setAttributeNS(attr.namespaceURI, attr.name, attr.nodeValue)
 
         # clone and add all the child nodes
         for child in node.childNodes:

@@ -1502,7 +1502,16 @@ class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
         doc = scourXmlFile('unittests/redundant-svg-namespace.svg').documentElement
         r = doc.getElementsByTagNameNS(SVGNS, 'rect')[1]
         self.assertEqual(r.tagName, 'rect',
-                         'Redundant svg: prefix not removed')
+                         'Redundant svg: prefix not removed from rect')
+        t = doc.getElementsByTagNameNS(SVGNS, 'text')[0]
+        self.assertEqual(t.tagName, 'text',
+                         'Redundant svg: prefix not removed from text')
+
+        # Regression test for #239
+        self.assertEqual(t.getAttribute('xml:space'), 'preserve',
+                         'Required xml: prefix removed in error')
+        self.assertEqual(t.getAttribute("space"), '',
+                         'Required xml: prefix removed in error')
 
 
 class RemoveDefaultGradX1Value(unittest.TestCase):
