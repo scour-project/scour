@@ -786,20 +786,23 @@ def shortenIDs(doc, prefix, options):
     return num
 
 
+ID_CHARS = [chr(i + ord('a')) for i in range(26)] + [chr(i + ord('A')) for i in range(26)]
+
+
 def compute_id_lengths(highest):
     """Compute how many IDs are available of a given size
 
     Example:
         >>> lengths = list(compute_id_lengths(512))
         >>> lengths
-        [(1, 26), (2, 676)]
+        [(1, 52), (2, 2704)]
         >>> total_limit = sum(x[1] for x in lengths)
         >>> total_limit
-        702
+        2756
         >>> intToID(total_limit, '')
-        'zz'
+        'ZZ'
 
-    Which tells us that we got 26 IDs of length 1 and up to 676 IDs of length two
+    Which tells us that we got 52 IDs of length 1 and up to 676 IDs of length two
     if we need to allocate 512 IDs.
 
     :param highest: Highest ID that need to be allocated
@@ -808,7 +811,7 @@ def compute_id_lengths(highest):
      of shorter length).  Note that the sum of the use-limit values is always
      equal to or greater than the highest param.
     """
-    step = 26
+    step = len(ID_CHARS)
     id_length = 0
     use_limit = 1
     while highest:
@@ -824,11 +827,12 @@ def intToID(idnum, prefix):
     then from aa to az, ba to bz, etc., until zz.
     """
     rid = ''
+    id_char_len = len(ID_CHARS)
 
     while idnum > 0:
         idnum -= 1
-        rid = chr((idnum % 26) + ord('a')) + rid
-        idnum = int(idnum / 26)
+        rid = rid + ID_CHARS[idnum % id_char_len]
+        idnum = int(idnum / id_char_len)
 
     return prefix + rid
 
