@@ -847,8 +847,6 @@ def renameID(idFrom, idTo, identifiedElements, referringNodes):
 
     definingNode = identifiedElements[idFrom]
     definingNode.setAttribute("id", idTo)
-    del identifiedElements[idFrom]
-    identifiedElements[idTo] = definingNode
     num += len(idFrom) - len(idTo)
 
     # Update references to renamed node
