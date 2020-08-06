@@ -40,7 +40,7 @@ Website
 Authors:
   - Jeff Schiller, Louis Simard (original authors)
   - Tobias Oberstein (maintainer)
-  - Eduard Braun (maintainer)
+  - Patrick Storz (maintainer)
 """
 
 VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
