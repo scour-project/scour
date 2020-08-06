@@ -1,5 +1,15 @@
 # Release Notes for Scour
 
+## Version 0.38 (2020-08-06)
+* Fix issue with dropping xlink:href attribute when collapsing referenced gradients ([#206](https://github.com/scour-project/scour/pull/206))
+* Fix issue with dropping ID while de-duplicating gradients ([#207](https://github.com/scour-project/scour/pull/207))
+* Improve `--shorten-ids` so it re-maps IDs that are already used in the document if they're shorter ([#187](https://github.com/scour-project/scour/pull/187))
+* Fix whitespace handling for SVG 1.2 flowed text ([#235](https://github.com/scour-project/scour/issues/235))
+* Improvement: Merge sibling `<g>` nodes with identical attributes ([#208](https://github.com/scour-project/scour/pull/208))
+* Improve performance of XML serialization ([#247](https://github.com/scour-project/scour/pull/247))
+* Improve performance of gradient de-duplication ([#248](https://github.com/scour-project/scour/pull/248))
+* Some general performance improvements ([#249](https://github.com/scour-project/scour/pull/249))
+
 ## Version 0.37 (2018-07-04)
 * Fix escaping of quotes in attribute values. ([#152](https://github.com/scour-project/scour/pull/152))
 * A lot of performance improvements making processing significantly faster in many cases. ([#167](https://github.com/scour-project/scour/pull/167), [#169](https://github.com/scour-project/scour/pull/169), [#171](https://github.com/scour-project/scour/pull/171), [#185](https://github.com/scour-project/scour/pull/185))
