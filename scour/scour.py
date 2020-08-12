@@ -1158,6 +1158,9 @@ def mergeSiblingGroupsWithCommonAttributes(elem):
             i -= 1
             continue
         attributes = {a.nodeName: a.nodeValue for a in currentNode.attributes.values()}
+        if not attributes:
+            i -= 1
+            continue
         runStart, runEnd = i, i
         runElements = 1
         while runStart > 0:
