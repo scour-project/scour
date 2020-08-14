@@ -2821,8 +2821,8 @@ def parseListOfPoints(s):
     i = 0
     while i < len(nums):
         try:
-            nums[i] = getcontext().create_decimal(nums[i])
-            nums[i + 1] = getcontext().create_decimal(nums[i + 1])
+            nums[i] = getcontext().create_decimal(nums[i]).quantize(roundingQuantum)
+            nums[i + 1] = getcontext().create_decimal(nums[i + 1]).quantize(roundingQuantum)
         except InvalidOperation:  # one of the lengths had a unit or is an invalid number
             return []
 
@@ -3641,8 +3641,10 @@ def scourString(in_string, options=None):
     # to minimize errors
     global scouringContext
     global scouringContextC  # even more reduced precision for control points
+    global roundingQuantum
     scouringContext = Context(prec=options.digits)
     scouringContextC = Context(prec=options.cdigits)
+    roundingQuantum = Decimal(10) ** (-options.rounding)
 
     # globals for tracking statistics
     # TODO: get rid of these globals...
@@ -3976,6 +3978,9 @@ _option_group_optimization.add_option("--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
                                       help="set number of significant digits for control points "
                                            "(default: same as '--set-precision')")
+_option_group_optimization.add_option("--set-rounding",
+                                      action="store", type=int, dest="rounding", default=9, metavar="NUM",
+                                      help="set number of digits after decimal point (default: %default)")
 _option_group_optimization.add_option("--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert colors to #RRGGBB format")
