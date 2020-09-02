@@ -1,5 +1,8 @@
 # Release Notes for Scour
 
+## Version 0.38.1 (2020-09-02)
+* Fix regression caused by new feature to merge sibling groups ([#260](https://github.com/scour-project/scour/issues/260))
+
 ## Version 0.38 (2020-08-06)
 * Fix issue with dropping xlink:href attribute when collapsing referenced gradients ([#206](https://github.com/scour-project/scour/pull/206))
 * Fix issue with dropping ID while de-duplicating gradients ([#207](https://github.com/scour-project/scour/pull/207))
