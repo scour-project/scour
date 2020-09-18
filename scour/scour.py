@@ -1200,11 +1200,11 @@ def mergeSiblingGroupsWithCommonAttributes(elem):
         for node in nodes:
             if node.nodeType == Node.ELEMENT_NODE and node.nodeName == 'g' and node.namespaceURI == NS['SVG']:
                 # Merge
-                primaryGroup.childNodes.extend(node.childNodes)
-                node.childNodes = []
+                for child in node.childNodes[:]:
+                    primaryGroup.appendChild(child)
+                elem.removeChild(node).unlink()
             else:
-                primaryGroup.childNodes.append(node)
-            elem.childNodes.remove(node)
+                primaryGroup.appendChild(node)
 
     # each child gets the same treatment, recursively
     for childNode in elem.childNodes:

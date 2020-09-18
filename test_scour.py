@@ -2099,6 +2099,12 @@ class GroupSiblingMerge(unittest.TestCase):
         self.assertEqual(doc.getElementsByTagName('g').length, 8,
                          'Sibling merging is disabled by --disable-group-collapsing')
 
+    def test_sibling_merge_crash(self):
+        doc = scourXmlFile('unittests/group-sibling-merge-crash.svg',
+                           parse_args(['']))
+        self.assertEqual(doc.getElementsByTagName('g').length, 1,
+                         'Sibling merge should work without causing crashes')
+
 
 class GroupCreation(unittest.TestCase):
 
