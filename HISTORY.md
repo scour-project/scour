@@ -1,5 +1,8 @@
 # Release Notes for Scour
 
+## Version 0.38.2 (2020-11-22)
+* Fix another regression caused by new feature to merge sibling groups ([#260](https://github.com/scour-project/scour/issues/260))
+
 ## Version 0.38.1 (2020-09-02)
 * Fix regression caused by new feature to merge sibling groups ([#260](https://github.com/scour-project/scour/issues/260))
 
