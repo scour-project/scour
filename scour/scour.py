@@ -1801,26 +1801,26 @@ def repairStyle(node, options):
                 num += 1
 
     if node.nodeType == Node.ELEMENT_NODE:
-      if options.style_type == "inline":
-        # Prefer inline style
-        # Remove known SVG attributes and store their values in style attribute
-        attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
-        for attribute in attributes:
-          if attribute in svgAttributes:
-            styleMap[attribute] = node.getAttribute(attribute)
-            node.removeAttribute(attribute)
-      elif options.style_type == "preserve":
-        # Keep whatever style of attribute versus style the file currently has
-        pass
-      elif options.style_to_xml or options.style_type == "attributes":
-        # now if any of the properties match known SVG attributes we prefer attributes
-        # over style so emit them and remove them from the style map
-        for propName in list(styleMap):
-            if propName in svgAttributes:
-                node.setAttribute(propName, styleMap[propName])
-                del styleMap[propName]
+        if options.style_type == "inline":
+            # Prefer inline style
+            # Remove known SVG attributes and store their values in style attribute
+            attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
+            for attribute in attributes:
+                if attribute in svgAttributes:
+                    styleMap[attribute] = node.getAttribute(attribute)
+                    node.removeAttribute(attribute)
+        elif options.style_type == "preserve":
+            # Keep whatever style of attribute versus style the file currently has
+            pass
+        elif options.style_to_xml or options.style_type == "attributes":
+            # now if any of the properties match known SVG attributes we prefer attributes
+            # over style so emit them and remove them from the style map
+            for propName in list(styleMap):
+                if propName in svgAttributes:
+                    node.setAttribute(propName, styleMap[propName])
+                    del styleMap[propName]
       
-      _setStyle(node, styleMap)
+        _setStyle(node, styleMap)
 
     # recurse for our child elements
     for child in node.childNodes:
@@ -3999,7 +3999,8 @@ _option_group_optimization.add_option("--disable-style-to-xml",
                                       help="won't convert styles into XML attributes")
 _option_group_optimization.add_option("--style",
                                       action="store", type="string", dest="style_type", default="none", metavar="TYPE",
-                                      help="styles type (override style_to_xml): none, preserve, inline, attributes (default: %none)")
+                                      help="style type (overrides style-to-xml): none, preserve, inline,"\
+                                      "attributes (default: %none)")
 _option_group_optimization.add_option("--disable-group-collapsing",
                                       action="store_false", dest="group_collapse", default=True,
                                       help="won't collapse <g> elements")
