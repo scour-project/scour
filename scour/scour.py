@@ -1819,7 +1819,7 @@ def repairStyle(node, options):
                 if propName in svgAttributes:
                     node.setAttribute(propName, styleMap[propName])
                     del styleMap[propName]
-      
+
         _setStyle(node, styleMap)
 
     # recurse for our child elements
@@ -3999,7 +3999,7 @@ _option_group_optimization.add_option("--disable-style-to-xml",
                                       help="won't convert styles into XML attributes")
 _option_group_optimization.add_option("--style",
                                       action="store", type="string", dest="style_type", default="none", metavar="TYPE",
-                                      help="style type (overrides style-to-xml): none, preserve, inline,"\
+                                      help="style type (overrides style-to-xml): none, preserve, inline,"
                                       "attributes (default: %none)")
 _option_group_optimization.add_option("--disable-group-collapsing",
                                       action="store_false", dest="group_collapse", default=True,

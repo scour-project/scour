@@ -2217,7 +2217,7 @@ class AttrToStyle(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/attr-to-style.svg',
-            parse_args(['--style=inline']))
+                           parse_args(['--style=inline']))
         line = doc.getElementsByTagName('line')[0]
         self.assertEqual(line.getAttribute('stroke'), '')
         self.assertEqual(line.getAttribute('marker-start'), '')
@@ -2237,7 +2237,7 @@ class StylePreserve(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/attr-to-style.svg',
-            parse_args(['--style=preserve']))
+                           parse_args(['--style=preserve']))
 
         # First line uses attributes.
         line = doc.getElementsByTagName('line')[0]
