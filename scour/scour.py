@@ -1381,12 +1381,11 @@ def removeUnusedAttributesOnParent(elem):
             unusedAttrs[attr.nodeName] = attr.nodeValue
 
     # for each child, if at least one child inherits the parent's attribute, then remove
-    for childNum in range(len(childElements)):
-        child = childElements[childNum]
+    for child in childElements:
         inheritedAttrs = []
         for name in unusedAttrs:
             val = child.getAttribute(name)
-            if val == '' or val is None or val == 'inherit':
+            if val == '' or val == 'inherit':
                 inheritedAttrs.append(name)
         for a in inheritedAttrs:
             del unusedAttrs[a]
