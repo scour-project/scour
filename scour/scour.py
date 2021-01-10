@@ -3401,7 +3401,6 @@ def properlySizeDoc(docElement, options):
     # parse viewBox attribute
     vbSep = RE_COMMA_WSP.split(docElement.getAttribute('viewBox'))
     # if we have a valid viewBox we need to check it
-    vbWidth, vbHeight = 0, 0
     if len(vbSep) == 4:
         try:
             # if x or y are specified and non-zero then it is not ok to overwrite it
@@ -3436,7 +3435,6 @@ def remapNamespacePrefix(node, oldprefix, newprefix):
         parent = node.parentNode
 
         # create a replacement node
-        newNode = None
         if newprefix != '':
             newNode = doc.createElementNS(namespace, newprefix + ":" + localName)
         else:
