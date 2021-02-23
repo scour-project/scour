@@ -310,7 +310,7 @@ all_colors = [
     Color('mediumspringgreen', (0, 250, 154)),
     Color('mediumturquoise', (72, 209, 204)),
     Color('mediumvioletred', (199, 21, 133)),
-    Color('midnightblue', ( 25, 25, 112)),
+    Color('midnightblue', (25, 25, 112)),
     Color('mintcream', (245, 255, 250)),
     Color('mistyrose', (255, 228, 225)),
     Color('moccasin', (255, 228, 181)),
