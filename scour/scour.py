@@ -2245,6 +2245,9 @@ def convertColor(s):
     """
        Converts the input color string and returns it to the shortest known format for it.
     """
+    if s[0] == '#':
+        # Normalize #RGB into lower case early as our lookup relies on the lower case name
+        s = s.lower()
     color = colors.get(s)
     # Short cut: if we know the color (either by name or hex code) then skip the
     # parsing logic.  This makes
@@ -2255,7 +2258,6 @@ def convertColor(s):
         # If it is in #RGB/#RRGGBB format already, then we can also avoid
         # the regex parsing code.  Notably, if it is not a known hex code,
         # then at best we can truncate #RRGGBB into #RGB.
-        s = s.lower()
         if len(s) == 7 and s[1] == s[2] and s[3] == s[4] and s[5] == s[6]:
             s = '#' + s[1] + s[3] + s[5]
         return s
