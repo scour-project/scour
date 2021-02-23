@@ -1211,7 +1211,7 @@ class TranslateRGBPctIntoHex(unittest.TestCase):
 class TranslateColorNamesIntoHex(unittest.TestCase):
 
     def runTest(self):
-        elem = scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'rect')[0]
+        elem = scourXmlFile('unittests/color-formats.svg').getElementById('rect')
         self.assertEqual(elem.getAttribute('stroke'), '#a9a9a9',
                          'Not converting standard color names into hex')
 
@@ -1230,6 +1230,22 @@ class TranslateLongHexColorIntoShortHex(unittest.TestCase):
         elem = scourXmlFile('unittests/color-formats.svg').getElementsByTagNameNS(SVGNS, 'ellipse')[0]
         self.assertEqual(elem.getAttribute('fill'), '#fff',
                          'Not converting long hex color into short hex')
+
+
+class TranslateColorIntoNameIfShorter(unittest.TestCase):
+
+    def runTest(self):
+        short = scourXmlFile('unittests/color-formats.svg').getElementById('short_color')
+        tied = scourXmlFile('unittests/color-formats.svg').getElementById('tied_color')
+        self.assertEqual(short.getAttribute('fill'), 'red',
+                         'Not converting color into color name')
+        self.assertEqual(short.getAttribute('stroke'), 'red',
+                         'Not converting color into color name')
+
+        self.assertEqual(tied.getAttribute('fill'), 'blue',
+                         'Not keeping the current name when it ties with the shortest match')
+        self.assertEqual(tied.getAttribute('stroke'), '#00f',
+                         'Not using color hex code when rewriting color where len(hex_code) == len(name)')
 
 
 class DoNotConvertShortColorNames(unittest.TestCase):
