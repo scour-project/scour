@@ -1242,10 +1242,10 @@ class TranslateColorIntoNameIfShorter(unittest.TestCase):
         self.assertEqual(short.getAttribute('stroke'), 'red',
                          'Not converting color into color name')
 
-        self.assertEqual(tied.getAttribute('fill'), 'blue',
-                         'Not keeping the current name when it ties with the shortest match')
+        self.assertEqual(tied.getAttribute('fill'), '#00f',
+                         'Not converting to hex code when name ties with hex code in length')
         self.assertEqual(tied.getAttribute('stroke'), '#00f',
-                         'Not using color hex code when rewriting color where len(hex_code) == len(name)')
+                         'Not converting to hex code when name ties with hex code in length')
 
 
 class DoNotConvertShortColorNames(unittest.TestCase):
@@ -1740,7 +1740,7 @@ class MoveCommonAttributesToParent(unittest.TestCase):
     def runTest(self):
         g = scourXmlFile('unittests/move-common-attributes-to-parent.svg') \
                  .getElementsByTagNameNS(SVGNS, 'g')[0]
-        self.assertEqual(g.getAttribute('fill'), '#0F0',
+        self.assertEqual(g.getAttribute('fill'), '#0f0',
                          'Did not move common fill attribute to parent group')
 
 
@@ -1749,7 +1749,7 @@ class RemoveCommonAttributesFromChild(unittest.TestCase):
     def runTest(self):
         r = scourXmlFile('unittests/move-common-attributes-to-parent.svg') \
                  .getElementsByTagNameNS(SVGNS, 'rect')[0]
-        self.assertNotEqual(r.getAttribute('fill'), '#0F0',
+        self.assertNotEqual(r.getAttribute('fill'), '#0f0',
                             'Did not remove common fill attribute from child')
 
 
@@ -1767,7 +1767,7 @@ class PropagateCommonAttributesUp(unittest.TestCase):
     def runTest(self):
         g = scourXmlFile('unittests/move-common-attributes-to-grandparent.svg') \
                  .getElementsByTagNameNS(SVGNS, 'g')[0]
-        self.assertEqual(g.getAttribute('fill'), '#0F0',
+        self.assertEqual(g.getAttribute('fill'), '#0f0',
                          'Did not move common fill attribute to grandparent')
 
 
@@ -1785,7 +1785,7 @@ class DoNotRemoveCommonAttributesOnParentIfAtLeastOneUsed(unittest.TestCase):
     def runTest(self):
         g = scourXmlFile('unittests/remove-unused-attributes-on-parent.svg') \
                  .getElementsByTagNameNS(SVGNS, 'g')[0]
-        self.assertEqual(g.getAttribute('fill'), '#0F0',
+        self.assertEqual(g.getAttribute('fill'), '#0f0',
                          'Used attributes on group were removed')
 
 

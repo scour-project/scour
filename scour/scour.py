@@ -2316,16 +2316,16 @@ def convertColors(element):
             newColorValue = convertColor(oldColorValue)
             oldBytes = len(oldColorValue)
             newBytes = len(newColorValue)
-            if oldBytes > newBytes:
+            if oldBytes >= newBytes and oldColorValue != newColorValue:
                 element.setAttribute(attr, newColorValue)
-                numBytes += (oldBytes - len(element.getAttribute(attr)))
+                numBytes += (oldBytes - newBytes)
         # colors might also hide in styles
         if attr in styles:
             oldColorValue = styles[attr]
             newColorValue = convertColor(oldColorValue)
             oldBytes = len(oldColorValue)
             newBytes = len(newColorValue)
-            if oldBytes > newBytes:
+            if oldBytes >= newBytes and oldColorValue != newColorValue:
                 styles[attr] = newColorValue
                 numBytes += (oldBytes - newBytes)
     _setStyle(element, styles)
