@@ -2109,7 +2109,7 @@ def removeDefaultAttributeValue(node, attribute):
     """
     Removes the DefaultAttribute 'attribute' from 'node' if specified conditions are fulfilled
 
-    Warning: Does NOT check if the attribute is actually valid for the passed element type for increased preformance!
+    Warning: Does NOT check if the attribute is actually valid for the passed element type for increased performance!
     """
     if not node.hasAttribute(attribute.name):
         return 0
@@ -2134,13 +2134,16 @@ def removeDefaultAttributeValue(node, attribute):
     return 0
 
 
-def removeDefaultAttributeValues(node, options, tainted=set()):
+def removeDefaultAttributeValues(node, options, tainted=None):
     u"""'tainted' keeps a set of attributes defined in parent nodes.
 
     For such attributes, we don't delete attributes with default values."""
     num = 0
     if node.nodeType != Node.ELEMENT_NODE:
         return 0
+
+    if tainted is None:
+        tainted = set()
 
     # Conditionally remove all default attributes defined in 'default_attributes' (a list of 'DefaultAttribute's)
     #
