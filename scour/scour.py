@@ -4043,7 +4043,7 @@ _option_group_optimization.add_option("--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
                                       help="set number of significant digits for control points "
                                            "(default: same as '--set-precision')")
-_option_group_optimization.add_option("--disable-simplify-colors",
+_option_group_optimization.add_option("--disable-shorten-colors", "--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
                                       help="won't convert colors to a shorter format format")
 _option_group_optimization.add_option("--disable-style-to-xml",
