@@ -1016,13 +1016,18 @@ def remove_descriptive_elements(doc, options):
     return len(elementsToRemove)
 
 
-def g_tag_is_unmergeable(node):
+def g_tag_is_mergeable(node):
     """Check if a <g> tag can be merged or not
 
     <g> tags with a title or descriptions should generally be left alone.
     """
-    return any(True for n in node.childNodes if n.nodeType == Node.ELEMENT_NODE
-               and n.nodeName in ('title', 'desc') and n.namespaceURI == NS['SVG'])
+    if any(
+            True for n in node.childNodes
+            if n.nodeType == Node.ELEMENT_NODE and n.nodeName in ('title', 'desc')
+            and n.namespaceURI == NS['SVG']
+    ):
+        return False
+    return True
 
 
 def remove_nested_groups(node, stats):
@@ -1040,7 +1045,7 @@ def remove_nested_groups(node, stats):
         for child in node.childNodes:
             if child.nodeName == 'g' and child.namespaceURI == NS['SVG'] and len(child.attributes) == 0:
                 # only collapse group if it does not have a title or desc as a direct descendant,
-                if not g_tag_is_unmergeable(child):
+                if g_tag_is_mergeable(child):
                     groupsToRemove.append(child)
 
     for g in groupsToRemove:
@@ -1168,7 +1173,7 @@ def mergeSiblingGroupsWithCommonAttributes(elem):
                 if nextNode.nodeName != 'g' or nextNode.namespaceURI != NS['SVG']:
                     break
                 nextAttributes = {a.nodeName: a.nodeValue for a in nextNode.attributes.values()}
-                if attributes != nextAttributes or g_tag_is_unmergeable(nextNode):
+                if attributes != nextAttributes or not g_tag_is_mergeable(nextNode):
                     break
                 else:
                     runElements += 1
