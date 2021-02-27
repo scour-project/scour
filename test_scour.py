@@ -1517,8 +1517,21 @@ class RemoveRedundantSvgNamespacePrefix(unittest.TestCase):
 class RemoveDefaultGradX1Value(unittest.TestCase):
 
     def runTest(self):
-        g = scourXmlFile('unittests/gradient-default-attrs.svg').getElementById('grad1')
-        self.assertEqual(g.getAttribute('x1'), '',
+        doc = scourXmlFile('unittests/gradient-default-attrs.svg')
+        g1 = doc.getElementById('grad1')
+        g1b = doc.getElementById('grad1b')
+        g1c = doc.getElementById('grad1c')
+        g1d = doc.getElementById('grad1d')
+        g1e = doc.getElementById('grad1e')
+        self.assertEqual(g1.getAttribute('x1'), '',
+                         'x1="0" not removed')
+        self.assertEqual(g1b.getAttribute('x1'), '',
+                         'x1="0" not removed')
+        self.assertEqual(g1c.getAttribute('x1'), '',
+                         'x1="0" removed (but should not be due to gradientUnits)')
+        self.assertEqual(g1d.getAttribute('x1'), '',
+                         'x1="0" removed (but should not be due to href)')
+        self.assertEqual(g1e.getAttribute('x1'), '',
                          'x1="0" not removed')
 
 
