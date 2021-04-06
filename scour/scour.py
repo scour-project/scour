@@ -3970,6 +3970,10 @@ _option_group_optimization.add_option("--no-renderer-workaround",
 _options_parser.add_option_group(_option_group_optimization)
 
 _option_group_document = optparse.OptionGroup(_options_parser, "SVG document")
+
+_option_group_document.add_option("--allow-file-overwrite",
+                                  action="store_true", dest="allow_file_overwrite", default=False,
+                                  help="Allow file overwrite in case of input and output are the same")
 _option_group_document.add_option("--strip-xml-prolog",
                                   action="store_true", dest="strip_xml_prolog", default=False,
                                   help="won't output the XML prolog (<?xml ?>)")
@@ -4062,8 +4066,9 @@ def parse_args(args=None, ignore_additional_args=False):
         _options_parser.error("Invalid value for --indent, see --help")
     if options.indent_depth < 0:
         _options_parser.error("Value for --nindent should be positive (or zero), see --help")
-    if options.infilename and options.outfilename and options.infilename == options.outfilename:
-        _options_parser.error("Input filename is the same as output filename")
+    if not options.allow_file_overwrite and options.infilename \
+            and options.outfilename and options.infilename == options.outfilename:
+        _options_parser.error("Input filename is the same as output filename, use --allow-file-overwrite")
 
     return options
 
@@ -4092,6 +4097,10 @@ def maybe_gziped_file(filename, mode="r"):
 
 
 def getInOut(options):
+    if options.infilename and options.outfilename and options.infilename == options.outfilename:
+        file = maybe_gziped_file(options.infilename, "r+b")
+        return [file, file]
+
     if options.infilename:
         infile = maybe_gziped_file(options.infilename, "rb")
         # GZ: could catch a raised IOError here and report
@@ -4150,6 +4159,9 @@ def start(options, input, output):
     # do the work
     in_string = input.read()
     out_string = scourString(in_string, options, stats=stats).encode("UTF-8")
+    if input is output:
+        input.seek(0)
+        input.truncate()
     output.write(out_string)
 
     # Close input and output files (but do not attempt to close stdin/stdout!)
