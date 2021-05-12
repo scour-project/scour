@@ -2766,6 +2766,18 @@ def clean_path(element, options, stats):
         stats.num_bytes_saved_in_path_data += (len(oldPathStr) - len(newPathStr))
         element.setAttribute('d', newPathStr)
 
+def clean_animated_path(element, options, stats):
+    """
+    Cleans (precision only) the path strings (values that will replace a path's d attribute) of the animation element
+    These are ';' delimited path data that must keep the same number of nodes, so the only cleaning is via serializePath   
+    """
+    oldPathStr = element.getAttribute('values')
+    oldPathStrs = oldPathStr.split(';')
+    newPathStr = ""
+    for oldPathStrPart in oldPathStrs:
+        path = svg_parser.parse(oldPathStrPart)
+        newPathStr += serializePath(path, options) + " ;\n"
+    element.setAttribute('values', newPathStr)
 
 def parseListOfPoints(s):
     """
@@ -3803,7 +3815,12 @@ def scourString(in_string, options=None, stats=None):
             elem.parentNode.removeChild(elem)
         else:
             clean_path(elem, options, stats)
-
+            
+    # clean path based animation data
+    for elem in doc.documentElement.getElementsByTagName('animate'):
+        if elem.getAttribute('attributeName') == 'd':
+            clean_animated_path(elem, options, stats)
+            
     # shorten ID names as much as possible
     if options.shorten_ids:
         stats.num_bytes_saved_in_ids += shortenIDs(doc, options.shorten_ids_prefix, options)
