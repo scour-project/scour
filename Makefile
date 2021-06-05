@@ -1,7 +1,7 @@
 all: clean install
 
 install:
-	python3 setup.py install
+	python setup.py install
 
 clean:
 	rm -rf build
@@ -14,21 +14,21 @@ clean:
 	find . -name "*__pycache__" -type d -prune -exec rm -rf {} \;
 
 publish: clean
-	python3 setup.py register
-	python3 setup.py sdist upload
+	python setup.py register
+	python setup.py sdist upload
 
 check: test flake8
 
 
 
 test:
-	python3 test_scour.py
+	python test_scour.py
 
 test_version:
-	PYTHONPATH=. python3 -m scour.scour --version
+	PYTHONPATH=. python -m scour.scour --version
 
 test_help:
-	PYTHONPATH=. python3 -m scour.scour --help
+	PYTHONPATH=. python -m scour.scour --help
 
 flake8:
 	flake8 --max-line-length=119
