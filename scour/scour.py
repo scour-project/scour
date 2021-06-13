@@ -2772,11 +2772,10 @@ def clean_animated_path(element, options, stats):
     These are ';' delimited path data that must keep the same number of nodes, so the only cleaning is via serializePath   
     """
     oldPathStr = element.getAttribute('values')
+    if oldPathStr=="":
+      return
     oldPathStrs = oldPathStr.split(';')
-    newPathStr = ""
-    for oldPathStrPart in oldPathStrs:
-        path = svg_parser.parse(oldPathStrPart)
-        newPathStr += serializePath(path, options) + " ;\n"
+    newPathStr = ";".join(map(lambda s:serializePath(svg_parser.parse(s),options),oldPathStrs)
     element.setAttribute('values', newPathStr)
 
 def parseListOfPoints(s):
