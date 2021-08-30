@@ -1484,7 +1484,7 @@ def collapse_singly_referenced_gradients(doc, stats):
                     if target_href:
                         # If the elem node had an xlink:href, then the
                         # refElem have to point to it as well to
-                        # perserve the semantics of the image.
+                        # preserve the semantics of the image.
                         refElem.setAttributeNS(NS['XLINK'], 'href', target_href)
                     else:
                         # The elem node had no xlink:href reference,
@@ -1883,7 +1883,7 @@ def styleInheritedByChild(node, style, nodeIsChild=False):
                          'missing-glyph', 'pattern', 'svg', 'switch', 'symbol']:
         return False
 
-    # in all other cases we have to assume the inherited value of 'style' is meaningfull and has to be kept
+    # in all other cases we have to assume the inherited value of 'style' is meaningful and has to be kept
     # (e.g nodes without children at the end of the DOM tree, text nodes, ...)
     return True
 
@@ -2925,7 +2925,7 @@ def scourCoordinates(data, options, force_whitespace=False, control_points=[], f
             #   - this number starts with a dot but the previous number had *no* dot or exponent
             #     i.e. '1.3 0.5' -> '1.3.5' or '1e3 0.5' -> '1e3.5' is fine but '123 0.5' -> '123.5' is obviously not
             #   - 'force_whitespace' is explicitly set to 'True'
-            # we never need a space after flags (occuring in elliptical arcs), but librsvg struggles without it
+            # we never need a space after flags (occurring in elliptical arcs), but librsvg struggles without it
             if (c > 0
                     and (force_whitespace
                          or scouredCoord[0].isdigit()
