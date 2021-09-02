@@ -190,157 +190,204 @@ svgAttributes = [
     'viewport-fill-opacity',
 ]
 
-colors = {
-    'aliceblue': 'rgb(240, 248, 255)',
-    'antiquewhite': 'rgb(250, 235, 215)',
-    'aqua': 'rgb( 0, 255, 255)',
-    'aquamarine': 'rgb(127, 255, 212)',
-    'azure': 'rgb(240, 255, 255)',
-    'beige': 'rgb(245, 245, 220)',
-    'bisque': 'rgb(255, 228, 196)',
-    'black': 'rgb( 0, 0, 0)',
-    'blanchedalmond': 'rgb(255, 235, 205)',
-    'blue': 'rgb( 0, 0, 255)',
-    'blueviolet': 'rgb(138, 43, 226)',
-    'brown': 'rgb(165, 42, 42)',
-    'burlywood': 'rgb(222, 184, 135)',
-    'cadetblue': 'rgb( 95, 158, 160)',
-    'chartreuse': 'rgb(127, 255, 0)',
-    'chocolate': 'rgb(210, 105, 30)',
-    'coral': 'rgb(255, 127, 80)',
-    'cornflowerblue': 'rgb(100, 149, 237)',
-    'cornsilk': 'rgb(255, 248, 220)',
-    'crimson': 'rgb(220, 20, 60)',
-    'cyan': 'rgb( 0, 255, 255)',
-    'darkblue': 'rgb( 0, 0, 139)',
-    'darkcyan': 'rgb( 0, 139, 139)',
-    'darkgoldenrod': 'rgb(184, 134, 11)',
-    'darkgray': 'rgb(169, 169, 169)',
-    'darkgreen': 'rgb( 0, 100, 0)',
-    'darkgrey': 'rgb(169, 169, 169)',
-    'darkkhaki': 'rgb(189, 183, 107)',
-    'darkmagenta': 'rgb(139, 0, 139)',
-    'darkolivegreen': 'rgb( 85, 107, 47)',
-    'darkorange': 'rgb(255, 140, 0)',
-    'darkorchid': 'rgb(153, 50, 204)',
-    'darkred': 'rgb(139, 0, 0)',
-    'darksalmon': 'rgb(233, 150, 122)',
-    'darkseagreen': 'rgb(143, 188, 143)',
-    'darkslateblue': 'rgb( 72, 61, 139)',
-    'darkslategray': 'rgb( 47, 79, 79)',
-    'darkslategrey': 'rgb( 47, 79, 79)',
-    'darkturquoise': 'rgb( 0, 206, 209)',
-    'darkviolet': 'rgb(148, 0, 211)',
-    'deeppink': 'rgb(255, 20, 147)',
-    'deepskyblue': 'rgb( 0, 191, 255)',
-    'dimgray': 'rgb(105, 105, 105)',
-    'dimgrey': 'rgb(105, 105, 105)',
-    'dodgerblue': 'rgb( 30, 144, 255)',
-    'firebrick': 'rgb(178, 34, 34)',
-    'floralwhite': 'rgb(255, 250, 240)',
-    'forestgreen': 'rgb( 34, 139, 34)',
-    'fuchsia': 'rgb(255, 0, 255)',
-    'gainsboro': 'rgb(220, 220, 220)',
-    'ghostwhite': 'rgb(248, 248, 255)',
-    'gold': 'rgb(255, 215, 0)',
-    'goldenrod': 'rgb(218, 165, 32)',
-    'gray': 'rgb(128, 128, 128)',
-    'grey': 'rgb(128, 128, 128)',
-    'green': 'rgb( 0, 128, 0)',
-    'greenyellow': 'rgb(173, 255, 47)',
-    'honeydew': 'rgb(240, 255, 240)',
-    'hotpink': 'rgb(255, 105, 180)',
-    'indianred': 'rgb(205, 92, 92)',
-    'indigo': 'rgb( 75, 0, 130)',
-    'ivory': 'rgb(255, 255, 240)',
-    'khaki': 'rgb(240, 230, 140)',
-    'lavender': 'rgb(230, 230, 250)',
-    'lavenderblush': 'rgb(255, 240, 245)',
-    'lawngreen': 'rgb(124, 252, 0)',
-    'lemonchiffon': 'rgb(255, 250, 205)',
-    'lightblue': 'rgb(173, 216, 230)',
-    'lightcoral': 'rgb(240, 128, 128)',
-    'lightcyan': 'rgb(224, 255, 255)',
-    'lightgoldenrodyellow': 'rgb(250, 250, 210)',
-    'lightgray': 'rgb(211, 211, 211)',
-    'lightgreen': 'rgb(144, 238, 144)',
-    'lightgrey': 'rgb(211, 211, 211)',
-    'lightpink': 'rgb(255, 182, 193)',
-    'lightsalmon': 'rgb(255, 160, 122)',
-    'lightseagreen': 'rgb( 32, 178, 170)',
-    'lightskyblue': 'rgb(135, 206, 250)',
-    'lightslategray': 'rgb(119, 136, 153)',
-    'lightslategrey': 'rgb(119, 136, 153)',
-    'lightsteelblue': 'rgb(176, 196, 222)',
-    'lightyellow': 'rgb(255, 255, 224)',
-    'lime': 'rgb( 0, 255, 0)',
-    'limegreen': 'rgb( 50, 205, 50)',
-    'linen': 'rgb(250, 240, 230)',
-    'magenta': 'rgb(255, 0, 255)',
-    'maroon': 'rgb(128, 0, 0)',
-    'mediumaquamarine': 'rgb(102, 205, 170)',
-    'mediumblue': 'rgb( 0, 0, 205)',
-    'mediumorchid': 'rgb(186, 85, 211)',
-    'mediumpurple': 'rgb(147, 112, 219)',
-    'mediumseagreen': 'rgb( 60, 179, 113)',
-    'mediumslateblue': 'rgb(123, 104, 238)',
-    'mediumspringgreen': 'rgb( 0, 250, 154)',
-    'mediumturquoise': 'rgb( 72, 209, 204)',
-    'mediumvioletred': 'rgb(199, 21, 133)',
-    'midnightblue': 'rgb( 25, 25, 112)',
-    'mintcream': 'rgb(245, 255, 250)',
-    'mistyrose': 'rgb(255, 228, 225)',
-    'moccasin': 'rgb(255, 228, 181)',
-    'navajowhite': 'rgb(255, 222, 173)',
-    'navy': 'rgb( 0, 0, 128)',
-    'oldlace': 'rgb(253, 245, 230)',
-    'olive': 'rgb(128, 128, 0)',
-    'olivedrab': 'rgb(107, 142, 35)',
-    'orange': 'rgb(255, 165, 0)',
-    'orangered': 'rgb(255, 69, 0)',
-    'orchid': 'rgb(218, 112, 214)',
-    'palegoldenrod': 'rgb(238, 232, 170)',
-    'palegreen': 'rgb(152, 251, 152)',
-    'paleturquoise': 'rgb(175, 238, 238)',
-    'palevioletred': 'rgb(219, 112, 147)',
-    'papayawhip': 'rgb(255, 239, 213)',
-    'peachpuff': 'rgb(255, 218, 185)',
-    'peru': 'rgb(205, 133, 63)',
-    'pink': 'rgb(255, 192, 203)',
-    'plum': 'rgb(221, 160, 221)',
-    'powderblue': 'rgb(176, 224, 230)',
-    'purple': 'rgb(128, 0, 128)',
-    'red': 'rgb(255, 0, 0)',
-    'rosybrown': 'rgb(188, 143, 143)',
-    'royalblue': 'rgb( 65, 105, 225)',
-    'saddlebrown': 'rgb(139, 69, 19)',
-    'salmon': 'rgb(250, 128, 114)',
-    'sandybrown': 'rgb(244, 164, 96)',
-    'seagreen': 'rgb( 46, 139, 87)',
-    'seashell': 'rgb(255, 245, 238)',
-    'sienna': 'rgb(160, 82, 45)',
-    'silver': 'rgb(192, 192, 192)',
-    'skyblue': 'rgb(135, 206, 235)',
-    'slateblue': 'rgb(106, 90, 205)',
-    'slategray': 'rgb(112, 128, 144)',
-    'slategrey': 'rgb(112, 128, 144)',
-    'snow': 'rgb(255, 250, 250)',
-    'springgreen': 'rgb( 0, 255, 127)',
-    'steelblue': 'rgb( 70, 130, 180)',
-    'tan': 'rgb(210, 180, 140)',
-    'teal': 'rgb( 0, 128, 128)',
-    'thistle': 'rgb(216, 191, 216)',
-    'tomato': 'rgb(255, 99, 71)',
-    'turquoise': 'rgb( 64, 224, 208)',
-    'violet': 'rgb(238, 130, 238)',
-    'wheat': 'rgb(245, 222, 179)',
-    'white': 'rgb(255, 255, 255)',
-    'whitesmoke': 'rgb(245, 245, 245)',
-    'yellow': 'rgb(255, 255, 0)',
-    'yellowgreen': 'rgb(154, 205, 50)',
-}
 
-# A list of default poperties that are safe to remove
+def _as_hex(color_tuple):
+    s = '#%02x%02x%02x' % color_tuple
+    if s[1] == s[2] and s[3] == s[4] and s[5] == s[6]:
+        s = '#' + s[1] + s[3] + s[5]
+    return s
+
+
+class Color:
+
+    __slots__ = ('name', 'rgb', 'hex_format', 'shortest_format')
+
+    def __init__(self, name, rgb):
+        self.name = name
+        self.rgb = rgb
+        self.hex_format = _as_hex(rgb)
+        # For colors like "red", "tan" and "pink", name is shorter
+        # For colors like "antiquewhite", hex is shorter
+        # For colors like "aqua" and "blue", it is a tie and we use hex
+        # (One of the reason for using hex is to avoid getting into the
+        #  debate about "grey" vs. "gray" or "aqua" vs. "cyan".)
+        self.shortest_format = self.hex_format if len(self.hex_format) <= len(name) else name
+
+
+all_colors = [
+    Color('aliceblue', (240, 248, 255)),
+    Color('antiquewhite', (250, 235, 215)),
+    Color('aqua', (0, 255, 255)),
+    Color('aquamarine', (127, 255, 212)),
+    Color('azure', (240, 255, 255)),
+    Color('beige', (245, 245, 220)),
+    Color('bisque', (255, 228, 196)),
+    Color('black', (0, 0, 0)),
+    Color('blanchedalmond', (255, 235, 205)),
+    Color('blue', (0, 0, 255)),
+    Color('blueviolet', (138, 43, 226)),
+    Color('brown', (165, 42, 42)),
+    Color('burlywood', (222, 184, 135)),
+    Color('cadetblue', (95, 158, 160)),
+    Color('chartreuse', (127, 255, 0)),
+    Color('chocolate', (210, 105, 30)),
+    Color('coral', (255, 127, 80)),
+    Color('cornflowerblue', (100, 149, 237)),
+    Color('cornsilk', (255, 248, 220)),
+    Color('crimson', (220, 20, 60)),
+    Color('cyan', (0, 255, 255)),
+    Color('darkblue', (0, 0, 139)),
+    Color('darkcyan', (0, 139, 139)),
+    Color('darkgoldenrod', (184, 134, 11)),
+    Color('darkgray', (169, 169, 169)),
+    Color('darkgreen', (0, 100, 0)),
+    Color('darkgrey', (169, 169, 169)),
+    Color('darkkhaki', (189, 183, 107)),
+    Color('darkmagenta', (139, 0, 139)),
+    Color('darkolivegreen', (85, 107, 47)),
+    Color('darkorange', (255, 140, 0)),
+    Color('darkorchid', (153, 50, 204)),
+    Color('darkred', (139, 0, 0)),
+    Color('darksalmon', (233, 150, 122)),
+    Color('darkseagreen', (143, 188, 143)),
+    Color('darkslateblue', (72, 61, 139)),
+    Color('darkslategray', (47, 79, 79)),
+    Color('darkslategrey', (47, 79, 79)),
+    Color('darkturquoise', (0, 206, 209)),
+    Color('darkviolet', (148, 0, 211)),
+    Color('deeppink', (255, 20, 147)),
+    Color('deepskyblue', (0, 191, 255)),
+    Color('dimgray', (105, 105, 105)),
+    Color('dimgrey', (105, 105, 105)),
+    Color('dodgerblue', (30, 144, 255)),
+    Color('firebrick', (178, 34, 34)),
+    Color('floralwhite', (255, 250, 240)),
+    Color('forestgreen', (34, 139, 34)),
+    Color('fuchsia', (255, 0, 255)),
+    Color('gainsboro', (220, 220, 220)),
+    Color('ghostwhite', (248, 248, 255)),
+    Color('gold', (255, 215, 0)),
+    Color('goldenrod', (218, 165, 32)),
+    Color('gray', (128, 128, 128)),
+    Color('grey', (128, 128, 128)),
+    Color('green', (0, 128, 0)),
+    Color('greenyellow', (173, 255, 47)),
+    Color('honeydew', (240, 255, 240)),
+    Color('hotpink', (255, 105, 180)),
+    Color('indianred', (205, 92, 92)),
+    Color('indigo', (75, 0, 130)),
+    Color('ivory', (255, 255, 240)),
+    Color('khaki', (240, 230, 140)),
+    Color('lavender', (230, 230, 250)),
+    Color('lavenderblush', (255, 240, 245)),
+    Color('lawngreen', (124, 252, 0)),
+    Color('lemonchiffon', (255, 250, 205)),
+    Color('lightblue', (173, 216, 230)),
+    Color('lightcoral', (240, 128, 128)),
+    Color('lightcyan', (224, 255, 255)),
+    Color('lightgoldenrodyellow', (250, 250, 210)),
+    Color('lightgray', (211, 211, 211)),
+    Color('lightgreen', (144, 238, 144)),
+    Color('lightgrey', (211, 211, 211)),
+    Color('lightpink', (255, 182, 193)),
+    Color('lightsalmon', (255, 160, 122)),
+    Color('lightseagreen', (32, 178, 170)),
+    Color('lightskyblue', (135, 206, 250)),
+    Color('lightslategray', (119, 136, 153)),
+    Color('lightslategrey', (119, 136, 153)),
+    Color('lightsteelblue', (176, 196, 222)),
+    Color('lightyellow', (255, 255, 224)),
+    Color('lime', (0, 255, 0)),
+    Color('limegreen', (50, 205, 50)),
+    Color('linen', (250, 240, 230)),
+    Color('magenta', (255, 0, 255)),
+    Color('maroon', (128, 0, 0)),
+    Color('mediumaquamarine', (102, 205, 170)),
+    Color('mediumblue', (0, 0, 205)),
+    Color('mediumorchid', (186, 85, 211)),
+    Color('mediumpurple', (147, 112, 219)),
+    Color('mediumseagreen', (60, 179, 113)),
+    Color('mediumslateblue', (123, 104, 238)),
+    Color('mediumspringgreen', (0, 250, 154)),
+    Color('mediumturquoise', (72, 209, 204)),
+    Color('mediumvioletred', (199, 21, 133)),
+    Color('midnightblue', (25, 25, 112)),
+    Color('mintcream', (245, 255, 250)),
+    Color('mistyrose', (255, 228, 225)),
+    Color('moccasin', (255, 228, 181)),
+    Color('navajowhite', (255, 222, 173)),
+    Color('navy', (0, 0, 128)),
+    Color('oldlace', (253, 245, 230)),
+    Color('olive', (128, 128, 0)),
+    Color('olivedrab', (107, 142, 35)),
+    Color('orange', (255, 165, 0)),
+    Color('orangered', (255, 69, 0)),
+    Color('orchid', (218, 112, 214)),
+    Color('palegoldenrod', (238, 232, 170)),
+    Color('palegreen', (152, 251, 152)),
+    Color('paleturquoise', (175, 238, 238)),
+    Color('palevioletred', (219, 112, 147)),
+    Color('papayawhip', (255, 239, 213)),
+    Color('peachpuff', (255, 218, 185)),
+    Color('peru', (205, 133, 63)),
+    Color('pink', (255, 192, 203)),
+    Color('plum', (221, 160, 221)),
+    Color('powderblue', (176, 224, 230)),
+    Color('purple', (128, 0, 128)),
+    Color('red', (255, 0, 0)),
+    Color('rosybrown', (188, 143, 143)),
+    Color('royalblue', (65, 105, 225)),
+    Color('saddlebrown', (139, 69, 19)),
+    Color('salmon', (250, 128, 114)),
+    Color('sandybrown', (244, 164, 96)),
+    Color('seagreen', (46, 139, 87)),
+    Color('seashell', (255, 245, 238)),
+    Color('sienna', (160, 82, 45)),
+    Color('silver', (192, 192, 192)),
+    Color('skyblue', (135, 206, 235)),
+    Color('slateblue', (106, 90, 205)),
+    Color('slategray', (112, 128, 144)),
+    Color('slategrey', (112, 128, 144)),
+    Color('snow', (255, 250, 250)),
+    Color('springgreen', (0, 255, 127)),
+    Color('steelblue', (70, 130, 180)),
+    Color('tan', (210, 180, 140)),
+    Color('teal', (0, 128, 128)),
+    Color('thistle', (216, 191, 216)),
+    Color('tomato', (255, 99, 71)),
+    Color('turquoise', (64, 224, 208)),
+    Color('violet', (238, 130, 238)),
+    Color('wheat', (245, 222, 179)),
+    Color('white', (255, 255, 255)),
+    Color('whitesmoke', (245, 245, 245)),
+    Color('yellow', (255, 255, 0)),
+    Color('yellowgreen', (154, 205, 50)),
+]
+
+colors = {}
+
+# Use non-standard names here to avoid tripping warnings about shadowing
+# them later
+for c_ in all_colors:
+    colors[c_.name] = c_
+    colors[c_.rgb] = c_
+    hc_ = c_.hex_format
+    # Some colors appear twice (e.g. aqua and cyan have the same hex code).
+    # Use the shortest version available - if they have same length, then
+    # the first defined version will be used.
+    ec_ = colors.get(hc_)
+    if ec_ is not None and len(ec_.shortest_format) < len(c_.shortest_format):
+        continue
+    colors[c_.hex_format] = c_
+    if len(c_.hex_format) == 4:
+        hcs_ = '#' + hc_[1] + hc_[1] + hc_[2] + hc_[2] + hc_[3] + hc_[3]
+        colors[hcs_] = c_
+
+
+del c_, hc_, ec_, hcs_
+
+
+# A list of default properties that are safe to remove
 #
 # Sources for this list:
 #     https://www.w3.org/TR/SVG/propidx.html              (implemented)
@@ -2189,40 +2236,59 @@ rgb = re.compile(r"\s*rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*")
 rgbp = re.compile(r"\s*rgb\(\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*,\s*(\d*\.?\d+)%\s*\)\s*")
 
 
-def convertColor(value):
+def convertColor(s):
     """
-       Converts the input color string and returns a #RRGGBB (or #RGB if possible) string
+       Converts the input color string and returns it to the shortest known format for it.
     """
-    s = value
+    if s[0] == '#':
+        # Normalize #RGB into lower case early as our lookup relies on the lower case name
+        s = s.lower()
+    color = colors.get(s)
+    # Short cut: if we know the color (either by name or hex code) then skip the
+    # parsing logic.  This makes
+    if color is not None:
+        return color.shortest_format
 
-    if s in colors:
-        s = colors[s]
+    if s[0] == '#':
+        # If it is in #RGB/#RRGGBB format already, then we can also avoid
+        # the regex parsing code.  Notably, if it is not a known hex code,
+        # then at best we can truncate #RRGGBB into #RGB.
+        if len(s) == 7 and s[1] == s[2] and s[3] == s[4] and s[5] == s[6]:
+            s = '#' + s[1] + s[3] + s[5]
+        return s
 
+    # Probably a long format like "rga(255, 0, 0)".  Attempt to convert it
+    # into hex.
     rgbpMatch = rgbp.match(s)
     if rgbpMatch is not None:
         r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
         g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
         b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
-        s = '#%02x%02x%02x' % (r, g, b)
+        s = _as_hex((r, g, b))
     else:
         rgbMatch = rgb.match(s)
         if rgbMatch is not None:
             r = int(rgbMatch.group(1))
             g = int(rgbMatch.group(2))
             b = int(rgbMatch.group(3))
-            s = '#%02x%02x%02x' % (r, g, b)
+            s = _as_hex((r, g, b))
+        else:
+            # This happens for e.g. "url(#a)" - we do not resolve those.
+            return s
 
-    if s[0] == '#':
-        s = s.lower()
-        if len(s) == 7 and s[1] == s[2] and s[3] == s[4] and s[5] == s[6]:
-            s = '#' + s[1] + s[3] + s[5]
-
+    # We managed to parse the color and turn it into hex format.
+    # Check if we know a shorter variant of the color.  This happens with
+    # colors like "red", "tan" or "pink" where the name is shorter than
+    # the hex code for the color.
+    color = colors.get(s)
+    if color is not None:
+        return color.shortest_format
     return s
 
 
 def convertColors(element):
     """
-       Recursively converts all color properties into #RRGGBB format if shorter
+       Recursively converts all color properties into the shortest possible format
     """
     numBytes = 0
 
@@ -2247,16 +2313,16 @@ def convertColors(element):
             newColorValue = convertColor(oldColorValue)
             oldBytes = len(oldColorValue)
             newBytes = len(newColorValue)
-            if oldBytes > newBytes:
+            if oldBytes >= newBytes and oldColorValue != newColorValue:
                 element.setAttribute(attr, newColorValue)
-                numBytes += (oldBytes - len(element.getAttribute(attr)))
+                numBytes += (oldBytes - newBytes)
         # colors might also hide in styles
         if attr in styles:
             oldColorValue = styles[attr]
             newColorValue = convertColor(oldColorValue)
             oldBytes = len(oldColorValue)
             newBytes = len(newColorValue)
-            if oldBytes > newBytes:
+            if oldBytes >= newBytes and oldColorValue != newColorValue:
                 styles[attr] = newColorValue
                 numBytes += (oldBytes - newBytes)
     _setStyle(element, styles)
@@ -3722,7 +3788,7 @@ def scourString(in_string, options=None, stats=None):
     # repair style (remove unnecessary style properties and change them into XML attributes)
     stats.num_style_properties_fixed = repairStyle(doc.documentElement, options)
 
-    # convert colors to #RRGGBB format
+    # convert colors to a shorter format
     if options.simple_colors:
         stats.num_bytes_saved_in_colors = convertColors(doc.documentElement)
 
@@ -3942,9 +4008,9 @@ _option_group_optimization.add_option("--set-c-precision",
                                       action="store", type=int, dest="cdigits", default=-1, metavar="NUM",
                                       help="set number of significant digits for control points "
                                            "(default: same as '--set-precision')")
-_option_group_optimization.add_option("--disable-simplify-colors",
+_option_group_optimization.add_option("--disable-shorten-colors", "--disable-simplify-colors",
                                       action="store_false", dest="simple_colors", default=True,
-                                      help="won't convert colors to #RRGGBB format")
+                                      help="won't convert colors to a shorter format format")
 _option_group_optimization.add_option("--disable-style-to-xml",
                                       action="store_false", dest="style_to_xml", default=True,
                                       help="won't convert styles into XML attributes")
