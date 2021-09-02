@@ -1931,6 +1931,37 @@ def mayContainTextNodes(node):
     return result
 
 
+def _gradient_units_is_not_user_space(node):
+    current_node = node
+    doc = None
+    while True:
+        gradient_unit = current_node.getAttribute('gradientUnits')
+        if gradient_unit != '':
+            # The current node has a value, then it decides
+            break
+
+        # The current node did not have value - check if we reference
+        # another node that might have it.
+        href = current_node.getAttributeNS(NS['XLINK'], 'href')
+        if href == '' or not href.startswith('#'):
+            return True
+        if doc is None:
+            doc = current_node.ownerDocument
+            # Should not happen in practise as our nodes should
+            # always be attached to a document.  However, if it
+            # does, then we assume we can strip the attribute.
+            if doc is None:
+                return True
+        node_id = href[1:]
+        current_node = doc.getElementById(node_id)
+        if current_node is None:
+            # Assume we can strip the attribute when we cannot find
+            # the other node
+            return True
+
+    return gradient_unit != 'userSpaceOnUse'
+
+
 # A list of default attributes that are safe to remove if all conditions are fulfilled
 #
 # Each default attribute is an object of type 'DefaultAttribute' with the following fields:
@@ -2006,16 +2037,16 @@ default_attributes = [
     # filters and masks
     DefaultAttribute('x', -10, Unit.PCT, ['filter', 'mask']),
     DefaultAttribute('x', -0.1, Unit.NONE, ['filter', 'mask'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('y', -10, Unit.PCT, ['filter', 'mask']),
     DefaultAttribute('y', -0.1, Unit.NONE, ['filter', 'mask'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('width', 120, Unit.PCT, ['filter', 'mask']),
     DefaultAttribute('width', 1.2, Unit.NONE, ['filter', 'mask'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('height', 120, Unit.PCT, ['filter', 'mask']),
     DefaultAttribute('height', 1.2, Unit.NONE, ['filter', 'mask'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
 
     # gradients
     DefaultAttribute('x1', 0, elements=['linearGradient']),
@@ -2023,7 +2054,7 @@ default_attributes = [
     DefaultAttribute('y2', 0, elements=['linearGradient']),
     DefaultAttribute('x2', 100, Unit.PCT, elements=['linearGradient']),
     DefaultAttribute('x2', 1, Unit.NONE, elements=['linearGradient'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     # remove fx/fy before cx/cy to catch the case where fx = cx = 50% or fy = cy = 50% respectively
     DefaultAttribute('fx', elements=['radialGradient'],
                      conditions=lambda node: node.getAttribute('fx') == node.getAttribute('cx')),
@@ -2031,13 +2062,13 @@ default_attributes = [
                      conditions=lambda node: node.getAttribute('fy') == node.getAttribute('cy')),
     DefaultAttribute('r',  50, Unit.PCT, elements=['radialGradient']),
     DefaultAttribute('r',  0.5, Unit.NONE, elements=['radialGradient'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('cx', 50, Unit.PCT, elements=['radialGradient']),
     DefaultAttribute('cx', 0.5, Unit.NONE, elements=['radialGradient'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('cy', 50, Unit.PCT, elements=['radialGradient']),
     DefaultAttribute('cy', 0.5, Unit.NONE, elements=['radialGradient'],
-                     conditions=lambda node: node.getAttribute('gradientUnits') != 'userSpaceOnUse'),
+                     conditions=_gradient_units_is_not_user_space),
     DefaultAttribute('spreadMethod', 'pad', elements=['linearGradient', 'radialGradient']),
 
     # filter effects
@@ -3641,6 +3672,7 @@ def scourString(in_string, options=None, stats=None):
     scouringContextC = Context(prec=options.cdigits)
 
     doc = xml.dom.minidom.parseString(in_string)
+    _mark_id_attributes(doc)
 
     # determine number of flowRoot elements in input document
     # flowRoot elements don't render at all on current browsers (04/2016)
@@ -3882,6 +3914,12 @@ def scourXmlFile(filename, options=None, stats=None):
     # prepare the output xml.dom.minidom object
     doc = xml.dom.minidom.parseString(out_string.encode('utf-8'))
 
+    _mark_id_attributes(doc)
+
+    return doc
+
+
+def _mark_id_attributes(doc):
     # since minidom does not seem to parse DTDs properly
     # manually declare all attributes with name "id" to be of type ID
     # (otherwise things like doc.getElementById() won't work)
@@ -3891,8 +3929,6 @@ def scourXmlFile(filename, options=None, stats=None):
             node.setIdAttribute('id')
         except NotFoundErr:
             pass
-
-    return doc
 
 
 # GZ: Seems most other commandline tools don't do this, is it really wanted?
