@@ -1805,7 +1805,7 @@ def repairStyle(node, options):
         elif options.style_type == "preserve":
             # Keep whatever style of attribute versus style the file currently has
             pass
-        elif options.style_to_xml or options.style_type == "attributes":
+        elif options.style_type == "attributes":
             # now if any of the properties match known SVG attributes we prefer attributes
             # over style so emit them and remove them from the style map
             for propName in list(styleMap):
@@ -4083,6 +4083,10 @@ def parse_args(args=None, ignore_additional_args=False):
         _options_parser.error("Input filename is the same as output filename")
     if options.style_type not in ['none', 'preserve', 'attributes', 'inline-css']:
         _options_parser.error("Invalid value for --style, see --help")
+
+    #For backwards compatibility, we support style_to_xml but style_type can override it.
+    if options.style_type == 'none' and options.style_to_xml:
+      options.style_type = 'attributes'
 
     return options
 
