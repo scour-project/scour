@@ -28,10 +28,10 @@ vector graphics by optimizing structure and removing unnecessary data.
 It can be used to create streamlined vector graphics suitable for web
 deployment, publishing/sharing or further processing.
 
-The goal of Scour is to output a file that renderes identically at a
+The goal of Scour is to output a file that renders identically at a
 fraction of the size by removing a lot of redundant information created
 by most SVG editors. Optimization options are typically lossless but can
-be tweaked for more agressive cleaning.
+be tweaked for more aggressive cleaning.
 
 Website
   - http://www.codedread.com/scour/ (original website)

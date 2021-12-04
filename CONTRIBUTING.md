@@ -4,7 +4,7 @@ Contributions to Scour are welcome, feel free to create a pull request!
 
 In order to be able to merge your PR as fast as possible please try to stick to the following guidelines.
 
-> _**TL;DR** (if you now what you're doing) –  Always run [`make check`](https://github.com/scour-project/scour/blob/master/Makefile) before creating a PR to check for common problems._
+> _**TL;DR** (if you now what you're doing) â€“ Always run [`make check`](https://github.com/scour-project/scour/blob/master/Makefile) before creating a PR to check for common problems._
 
 
 ## Code Style
