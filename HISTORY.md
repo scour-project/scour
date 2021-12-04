@@ -47,7 +47,7 @@
 ## Version 0.35 (2016-09-14)
 
 * Drop official support for Python 2.6. (While it will probably continue to work for a while compatibility is not guaranteed anymore. If you continue to use Scour with Python 2.6 and should find/fix any compatibility issues pull requests are welcome, though.)
-* Fix: Unused IDs were not shortended when `--shorten-ids` was used. ([#19](https://github.com/scour-project/scour/issues/62))
+* Fix: Unused IDs were not shortened when `--shorten-ids` was used. ([#19](https://github.com/scour-project/scour/issues/62))
 * Fix: Most elements were still removed from `<defs>` when `--keep-unreferenced-defs` was used. ([#62](https://github.com/scour-project/scour/issues/62))
 * Improve escaping of single/double quotes ('/") in attributes. ([#64](https://github.com/scour-project/scour/issues/64))
 * Print usage information if no input file was specified (and no data is available from `stdin`). ([#65](https://github.com/scour-project/scour/issues/65))
@@ -56,13 +56,13 @@
 * Improve code to remove default attribute values and add a lot of new default values. ([#70](https://github.com/scour-project/scour/issues/70))
 * Fix: Only attempt to group elements that the content model allows to be children of a `<g>` when `--create-groups` is specified. ([#98](https://github.com/scour-project/scour/issues/98))
 * Fix: Update list of SVG presentation attributes allowing more styles to be converted to attributes and remove two entries (`line-height` and `visibility`) that were actually invalid. ([#99](https://github.com/scour-project/scour/issues/99))
-* Add three options that work analoguous to `--remove-metadata` (removes `<metadata>` elements) ([#102](https://github.com/scour-project/scour/issues/102))
+* Add three options that work analogous to `--remove-metadata` (removes `<metadata>` elements) ([#102](https://github.com/scour-project/scour/issues/102))
    * `--remove-titles` (removes `<title>` elements)
    * `--remove-descriptions` (removes `<desc>` elements)
    * `--remove-descriptive-elements` (removes all of the descriptive elements, i.e. `<title>`, `<desc>` and `<metadata>`)
 * Fix removal rules for the `overflow` attribute. ([#104](https://github.com/scour-project/scour/issues/104))
 * Improvement: Automatically order all attributes ([#105](https://github.com/scour-project/scour/issues/105)), as well as `style` declarations ([#107](https://github.com/scour-project/scour/issues/107)) allowing for a constant output across multiple runs of Scour. Before order could change arbitrarily.
-* Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all caculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
+* Improve path scouring. ([#108](https://github.com/scour-project/scour/issues/108))<br>Notably Scour performs all calculations with enhanced precision now, guaranteeing maximum accuracy when optimizing path data. Numerical precision is reduced as a last step of the optimization according to the `--precision` option.
 * Fix replacement of removed duplicate gradients if the `fill`/`stroke` properties contained a fallback. ([#109](https://github.com/scour-project/scour/issues/109))
 * Fix conversion of cubic Bézier "curveto" commands into "shorthand/smooth curveto" commands. ([#110](https://github.com/scour-project/scour/issues/110))
 * Fix some issues due to removal of properties without considering inheritance rules. ([#111](https://github.com/scour-project/scour/issues/111))
@@ -74,7 +74,7 @@
 * Input/output file can now be specified as positional arguments (e.g. `scour input.svg output.svg`). ([#46](https://github.com/scour-project/scour/issues/46))
 * Improve `--help` output by intuitively arranging options in groups. ([#46](https://github.com/scour-project/scour/issues/46))
 * Add option `--error-on-flowtext` to raise an exception whenever a non-standard `<flowText>` element is found (which is only supported in Inkscape). If this option is not specified a warning will be shown. ([#53](https://github.com/scour-project/scour/issues/53))
-* Automate tests with continouous integration via Travis. ([#52](https://github.com/scour-project/scour/issues/52))
+* Automate tests with continuous integration via Travis. ([#52](https://github.com/scour-project/scour/issues/52))
 
 
 ## Version 0.33 (2016-01-29)
@@ -90,7 +90,7 @@
 * Fix a potential regex matching issue in `points` attribute of `<polygon>` and `<polyline>` elements. ([#24](https://github.com/scour-project/scour/issues/24))
 * Fix a crash with `points` attribute of `<polygon>` and `<polyline>` starting with a negative number. ([#24](https://github.com/scour-project/scour/issues/24))
 * Fix encoding issues when input file contained unicode characters. ([#27](https://github.com/scour-project/scour/issues/27))
-* Fix encoding issues when using `stding`/`stdout` as input/output.  ([#27](https://github.com/scour-project/scour/issues/27))
+* Fix encoding issues when using `stding`/`stdout` as input/output. ([#27](https://github.com/scour-project/scour/issues/27))
 * Fix removal of comments. If a node contained multiple comments usually not all of them were removed. ([#28](https://github.com/scour-project/scour/issues/28))
 
 
@@ -104,7 +104,7 @@
 
 ## Version 0.30 (2014-08-05)
 
-* Fix ingoring of additional args when invoked from scons.
+* Fix ignoring of additional args when invoked from scons.
 
 
 ## Version 0.29 (2014-07-26)
