@@ -1793,7 +1793,7 @@ def repairStyle(node, options):
                 num += 1
 
     if node.nodeType == Node.ELEMENT_NODE:
-        if options.style_type == "inline":
+        if options.style_type == "inline-css":
             # Prefer inline style
             # Remove known SVG attributes and store their values in style attribute
             attributes = [node.attributes.item(i) for i in range(node.attributes.length)]
@@ -3963,7 +3963,7 @@ _option_group_optimization.add_option("--disable-style-to-xml",
                                       help="won't convert styles into XML attributes")
 _option_group_optimization.add_option("--style",
                                       action="store", type="string", dest="style_type", default="none", metavar="TYPE",
-                                      help="style type (overrides style-to-xml): none, preserve, inline,"
+                                      help="style type (overrides style-to-xml): none, preserve, inline-css,"
                                       "attributes (default: %none)")
 _option_group_optimization.add_option("--disable-group-collapsing",
                                       action="store_false", dest="group_collapse", default=True,
@@ -4081,7 +4081,7 @@ def parse_args(args=None, ignore_additional_args=False):
         _options_parser.error("Value for --nindent should be positive (or zero), see --help")
     if options.infilename and options.outfilename and options.infilename == options.outfilename:
         _options_parser.error("Input filename is the same as output filename")
-    if options.style_type not in ['none', 'preserve', 'attributes', 'inline']:
+    if options.style_type not in ['none', 'preserve', 'attributes', 'inline-css']:
         _options_parser.error("Invalid value for --style, see --help")
 
     return options
