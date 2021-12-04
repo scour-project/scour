@@ -1804,11 +1804,12 @@ def repairStyle(node, options):
         if options.style_type == "inline":
             # Prefer inline style
             # Remove known SVG attributes and store their values in style attribute
-            attributes = [node.attributes.item(i).nodeName for i in range(node.attributes.length)]
+            attributes = [node.attributes.item(i) for i in range(node.attributes.length)]
             for attribute in attributes:
-                if attribute in svgAttributes:
-                    styleMap[attribute] = node.getAttribute(attribute)
-                    node.removeAttribute(attribute)
+                attributeName = attribute.nodeName
+                if attributeName in svgAttributes:
+                    styleMap[attributeName] = attribute.nodeValue
+                    node.removeAttribute(attributeName)
         elif options.style_type == "preserve":
             # Keep whatever style of attribute versus style the file currently has
             pass
