@@ -4084,10 +4084,6 @@ def parse_args(args=None, ignore_additional_args=False):
     if options.style_type not in ['none', 'preserve', 'attributes', 'inline-css']:
         _options_parser.error("Invalid value for --style, see --help")
 
-    #For backwards compatibility, we support style_to_xml but style_type can override it.
-    if options.style_type == 'none' and options.style_to_xml:
-      options.style_type = 'attributes'
-
     return options
 
 
@@ -4103,6 +4099,10 @@ def sanitizeOptions(options=None):
 
     sanitizedOptions = _options_parser.get_default_values()
     sanitizedOptions._update_careful(optionsDict)
+
+    #For backwards compatibility, we support style_to_xml but style_type can override it.
+    if sanitizedOptions.style_type == 'none' and sanitizedOptions.style_to_xml:
+      sanitizedOptions.style_type = 'attributes'
 
     return sanitizedOptions
 
