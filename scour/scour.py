@@ -61,7 +61,7 @@ from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
-from six.moves import range, urllib
+import urllib
 
 from scour.stats import ScourStats
 from scour.svg_regex import svg_parser
@@ -3963,8 +3963,8 @@ _option_group_optimization.add_option("--disable-style-to-xml",
                                       help="won't convert styles into XML attributes")
 _option_group_optimization.add_option("--style",
                                       action="store", type="string", dest="style_type", default="none", metavar="TYPE",
-                                      help="style type (overrides style-to-xml): none, preserve, inline-css,"
-                                      "attributes (default: %none)")
+                                      help="style type (overrides style-to-xml): none, preserve, inline-css, "
+                                      "attributes (default: none)")
 _option_group_optimization.add_option("--disable-group-collapsing",
                                       action="store_false", dest="group_collapse", default=True,
                                       help="won't collapse <g> elements")
@@ -4208,4 +4208,5 @@ def run():
 
 
 if __name__ == '__main__':
+    print('running')
     run()
