@@ -2213,6 +2213,47 @@ class StyleToAttr(unittest.TestCase):
         self.assertEqual(line.getAttribute('marker-end'), 'url(#m)')
 
 
+class AttrToStyle(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/attr-to-style.svg',
+                           parse_args(['--style=inline-css']))
+        line = doc.getElementsByTagName('line')[0]
+        self.assertEqual(line.getAttribute('stroke'), '')
+        self.assertEqual(line.getAttribute('marker-start'), '')
+        self.assertEqual(line.getAttribute('marker-mid'), '')
+        self.assertEqual(line.getAttribute('marker-end'), '')
+
+        style_attribute = line.getAttribute('style')
+        rawStyles = style_attribute.split(';')
+        self.assertTrue("color:#FF0000" in rawStyles)
+        self.assertTrue("stroke:#000" in rawStyles)
+        self.assertTrue("marker-start:url(#m)" in rawStyles)
+        self.assertTrue("marker-end:url(#m)" in rawStyles)
+        self.assertTrue("marker-mid:url(#m)" in rawStyles)
+
+
+class StylePreserve(unittest.TestCase):
+
+    def runTest(self):
+        doc = scourXmlFile('unittests/attr-to-style.svg',
+                           parse_args(['--style=preserve']))
+
+        # First line uses attributes.
+        line = doc.getElementsByTagName('line')[0]
+        self.assertNotEqual(line.getAttribute('stroke'), '')
+        self.assertNotEqual(line.getAttribute('marker-start'), '')
+        self.assertNotEqual(line.getAttribute('marker-mid'), '')
+        self.assertNotEqual(line.getAttribute('marker-end'), '')
+
+        # Second line uses style attribute.
+        line = doc.getElementsByTagName('line')[1]
+        self.assertEqual(line.getAttribute('stroke'), '')
+        self.assertEqual(line.getAttribute('marker-start'), '')
+        self.assertEqual(line.getAttribute('marker-mid'), '')
+        self.assertEqual(line.getAttribute('marker-end'), '')
+
+
 class PathCommandRewrites(unittest.TestCase):
 
     def runTest(self):

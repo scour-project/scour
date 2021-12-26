@@ -61,7 +61,7 @@ from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
-from six.moves import range, urllib
+import urllib
 
 from scour.stats import ScourStats
 from scour.svg_regex import svg_parser
@@ -1792,9 +1792,22 @@ def repairStyle(node, options):
                 del styleMap['overflow']
                 num += 1
 
-        # now if any of the properties match known SVG attributes we prefer attributes
-        # over style so emit them and remove them from the style map
-        if options.style_to_xml:
+    if node.nodeType == Node.ELEMENT_NODE:
+        if options.style_type == "inline-css":
+            # Prefer inline style
+            # Remove known SVG attributes and store their values in style attribute
+            attributes = [node.attributes.item(i) for i in range(node.attributes.length)]
+            for attribute in attributes:
+                attributeName = attribute.nodeName
+                if attributeName in svgAttributes:
+                    styleMap[attributeName] = attribute.nodeValue
+                    node.removeAttribute(attributeName)
+        elif options.style_type == "preserve":
+            # Keep whatever style of attribute versus style the file currently has
+            pass
+        elif options.style_type == "attributes":
+            # now if any of the properties match known SVG attributes we prefer attributes
+            # over style so emit them and remove them from the style map
             for propName in list(styleMap):
                 if propName in svgAttributes:
                     node.setAttribute(propName, styleMap[propName])
@@ -3948,6 +3961,10 @@ _option_group_optimization.add_option("--disable-simplify-colors",
 _option_group_optimization.add_option("--disable-style-to-xml",
                                       action="store_false", dest="style_to_xml", default=True,
                                       help="won't convert styles into XML attributes")
+_option_group_optimization.add_option("--style",
+                                      action="store", type="string", dest="style_type", default="none", metavar="TYPE",
+                                      help="style type (overrides style-to-xml): none, preserve, inline-css, "
+                                      "attributes (default: none)")
 _option_group_optimization.add_option("--disable-group-collapsing",
                                       action="store_false", dest="group_collapse", default=True,
                                       help="won't collapse <g> elements")
@@ -4064,6 +4081,8 @@ def parse_args(args=None, ignore_additional_args=False):
         _options_parser.error("Value for --nindent should be positive (or zero), see --help")
     if options.infilename and options.outfilename and options.infilename == options.outfilename:
         _options_parser.error("Input filename is the same as output filename")
+    if options.style_type not in ['none', 'preserve', 'attributes', 'inline-css']:
+        _options_parser.error("Invalid value for --style, see --help")
 
     return options
 
@@ -4080,6 +4099,10 @@ def sanitizeOptions(options=None):
 
     sanitizedOptions = _options_parser.get_default_values()
     sanitizedOptions._update_careful(optionsDict)
+
+    #For backwards compatibility, we support style_to_xml but style_type can override it.
+    if sanitizedOptions.style_type == 'none' and sanitizedOptions.style_to_xml:
+      sanitizedOptions.style_type = 'attributes'
 
     return sanitizedOptions
 
@@ -4185,4 +4208,5 @@ def run():
 
 
 if __name__ == '__main__':
+    print('running')
     run()
