@@ -340,7 +340,7 @@ colors = {
     'yellowgreen': 'rgb(154, 205, 50)',
 }
 
-# A list of default poperties that are safe to remove
+# A list of default properties that are safe to remove
 #
 # Sources for this list:
 #     https://www.w3.org/TR/SVG/propidx.html              (implemented)

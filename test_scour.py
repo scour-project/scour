@@ -1123,7 +1123,7 @@ class BooleanFlagsInEllipticalPath(unittest.TestCase):
         paths = doc.getElementsByTagNameNS(SVGNS, 'path')
         for path in paths:
             self.assertEqual(path.getAttribute('d'), 'm0 0a100 50 0 00100 50',
-                             'Did not ommit spaces after boolean flags in elliptical arg path command')
+                             'Did not omit spaces after boolean flags in elliptical arg path command')
 
     def test_output_spaces_with_renderer_workaround(self):
         doc = scourXmlFile('unittests/path-elliptical-flags.svg', parse_args(['--renderer-workaround']))
