@@ -2786,6 +2786,13 @@ class ViewBox(unittest.TestCase):
         self.assertEqual(width, '', "width not removed with '--enable-viewboxing'.")
         self.assertEqual(height, '', "height not removed with '--enable-viewboxing'.")
 
+    def test_viewbox_remove_width_and_height_ws(self):
+        doc = scourXmlFile('unittests/viewbox-remove-ws.svg', parse_args(['--enable-viewboxing']))
+        width = doc.documentElement.getAttribute('width')
+        height = doc.documentElement.getAttribute('height')
+        self.assertEqual(width, '', "width not removed with '--enable-viewboxing'.")
+        self.assertEqual(height, '', "height not removed with '--enable-viewboxing'.")
+
 
 # TODO: write tests for --keep-editor-data
 

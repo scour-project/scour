@@ -3390,7 +3390,9 @@ def properlySizeDoc(docElement, options):
     # else we have a statically sized image and we should try to remedy that
 
     # parse viewBox attribute
-    vbSep = RE_COMMA_WSP.split(docElement.getAttribute('viewBox'))
+    viewBox = docElement.getAttribute('viewBox')
+    lengths = RE_COMMA_WSP.split(viewBox)
+    vbSep = [length for length in lengths if length.strip()]
     # if we have a valid viewBox we need to check it
     if len(vbSep) == 4:
         try:
@@ -3819,7 +3821,7 @@ def scourString(in_string, options=None, stats=None):
     viewBox = doc.documentElement.getAttribute('viewBox')
     if viewBox:
         lengths = RE_COMMA_WSP.split(viewBox)
-        lengths = [scourUnitlessLength(length) for length in lengths]
+        lengths = [scourUnitlessLength(length) for length in lengths if length.strip()]
         doc.documentElement.setAttribute('viewBox', ' '.join(lengths))
 
     # more length scouring in this function
