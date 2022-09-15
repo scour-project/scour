@@ -379,6 +379,13 @@ class KeepUnreferencedDefs(unittest.TestCase):
         self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 1,
                          'Unreferenced circle removed from defs with `--keep-unreferenced-defs`')
 
+class KeepUnreferencedElementWithReferencedChild(unittest.TestCase):
+    def runTest(self):
+        doc = scourXmlFile('unittests/referenced_child.svg')
+
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+                         'Referenced element was deleted')
+
 
 class DoNotRemoveChainedRefsInDefs(unittest.TestCase):
 

@@ -646,7 +646,7 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
     # removeUnusedDefs do not change the XML itself; therefore there is no point in
     # recomputing findReferencedElements when we recurse into child nodes.
     if referencedIDs is None:
-        referencedIDs = findReferencedElements(doc.documentElement)
+        referencedIDs = set(findReferencedElements(doc.documentElement).keys())
 
     keepTags = ['font', 'style', 'metadata', 'script', 'title', 'desc']
     for elem in defElem.childNodes:
@@ -660,10 +660,13 @@ def removeUnusedDefs(doc, defElem, elemsToRemove=None, referencedIDs=None):
             # we only inspect the children of a group in a defs if the group
             # is not referenced anywhere else
             if elem.nodeName == 'g' and elem.namespaceURI == NS['SVG']:
-                elemsToRemove = removeUnusedDefs(doc, elem, elemsToRemove, referencedIDs=referencedIDs)
+                removeUnusedDefs(doc, elem, elemsToRemove, referencedIDs=referencedIDs)
             # we only remove if it is not one of our tags we always keep (see above)
+            # also we can't remove an element if a child is referenced
             elif elem.nodeName not in keepTags:
-                elemsToRemove.append(elem)
+                if (set(findElementsWithId(elem).keys()).intersection(referencedIDs) == set() or
+                        elem.tagName == 'defs'):
+                    elemsToRemove.append(elem)
     return elemsToRemove
 
 
