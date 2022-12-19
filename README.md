@@ -16,7 +16,7 @@ The goal of Scour is to output a file that renders identically at a fraction of 
 Scour is open-source and licensed under [Apache License 2.0](https://github.com/codedread/scour/blob/master/LICENSE).
 
 Scour was originally developed by Jeff "codedread" Schiller and Louis Simard in in 2010.
-The project moved to GitLab in 2013 an is now maintained by Tobias "oberstet" Oberstein and Patrick "Ede_123" Storz.
+The project moved to GitHub in 2013 an is now maintained by Tobias "oberstet" Oberstein and Patrick "Ede_123" Storz.
 
 ## Installation
 
