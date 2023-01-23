@@ -3899,7 +3899,7 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
 
     def format_usage(self, usage):
         return "{} {}\n{}\n{}".format(APP, VER, COPYRIGHT,
-                                  optparse.IndentedHelpFormatter.format_usage(self, usage))
+                                      optparse.IndentedHelpFormatter.format_usage(self, usage))
 
 
 # GZ: would prefer this to be in a function or class scope, but tests etc need
