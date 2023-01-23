@@ -2580,9 +2580,9 @@ class CommandLineUsage(unittest.TestCase):
         class InOutBuffer(six.StringIO):
             def write(self, string):
                 try:
-                    return super(InOutBuffer, self).write(string)
+                    return super().write(string)
                 except TypeError:
-                    return super(InOutBuffer, self).write(string.decode())
+                    return super().write(string.decode())
 
         sys.stdin = self.temp_stdin = InOutBuffer()
         sys.stdout = self.temp_stdout = InOutBuffer()
