@@ -2095,7 +2095,7 @@ def taint(taintedSet, taintedAttribute):
     Related attributes are also included."""
     taintedSet.add(taintedAttribute)
     if taintedAttribute == 'marker':
-        taintedSet |= set(['marker-start', 'marker-mid', 'marker-end'])
+        taintedSet |= {'marker-start', 'marker-mid', 'marker-end'}
     if taintedAttribute in ['marker-start', 'marker-mid', 'marker-end']:
         taintedSet.add('marker')
     return taintedSet
@@ -4072,7 +4072,7 @@ def generateDefaultOptions():
 
 # sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
 def sanitizeOptions(options=None):
-    optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
+    optionsDict = {key: getattr(options, key) for key in dir(options) if not key.startswith('__')}
 
     sanitizedOptions = _options_parser.get_default_values()
     sanitizedOptions._update_careful(optionsDict)
