@@ -25,7 +25,6 @@ import sys
 import unittest
 
 import six
-from six.moves import map, range
 
 from scour.scour import (make_well_formed, parse_args, scourString, scourXmlFile, start, run,
                          XML_ENTS_ESCAPE_APOS, XML_ENTS_ESCAPE_QUOT)
@@ -1146,30 +1145,30 @@ class HandleEncodingUTF8(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/encoding-utf8.svg')
-        text = u'Hello in many languages:\n' \
-               u'ar: أهلا\n' \
-               u'bn: হ্যালো\n' \
-               u'el: Χαίρετε\n' \
-               u'en: Hello\n' \
-               u'hi: नमस्ते\n' \
-               u'iw: שלום\n' \
-               u'ja: こんにちは\n' \
-               u'km: ជំរាបសួរ\n' \
-               u'ml: ഹലോ\n' \
-               u'ru: Здравствуйте\n' \
-               u'ur: ہیلو\n' \
-               u'zh: 您好'
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+        text = 'Hello in many languages:\n' \
+               'ar: أهلا\n' \
+               'bn: হ্যালো\n' \
+               'el: Χαίρετε\n' \
+               'en: Hello\n' \
+               'hi: नमस्ते\n' \
+               'iw: שלום\n' \
+               'ja: こんにちは\n' \
+               'km: ជំរាបសួរ\n' \
+               'ml: ഹലോ\n' \
+               'ru: Здравствуйте\n' \
+               'ur: ہیلو\n' \
+               'zh: 您好'
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
         self.assertEqual(desc, text,
                          'Did not handle international UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[1].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'“”‘’–—…‐‒°©®™•½¼¾⅓⅔†‡µ¢£€«»♠♣♥♦¿�',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[1].firstChild.wholeText).strip()
+        self.assertEqual(desc, '“”‘’–—…‐‒°©®™•½¼¾⅓⅔†‡µ¢£€«»♠♣♥♦¿�',
                          'Did not handle common UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[2].firstChild.wholeText).strip()
-        self.assertEqual(desc, u':-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[2].firstChild.wholeText).strip()
+        self.assertEqual(desc, ':-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔',
                          'Did not handle mathematical UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[3].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[3].firstChild.wholeText).strip()
+        self.assertEqual(desc, '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎',
                          'Did not handle superscript/subscript UTF8 characters')
 
 
@@ -1177,8 +1176,8 @@ class HandleEncodingISO_8859_15(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/encoding-iso-8859-15.svg')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'áèîäöüß€ŠšŽžŒœŸ', 'Did not handle ISO 8859-15 encoded characters')
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+        self.assertEqual(desc, 'áèîäöüß€ŠšŽžŒœŸ', 'Did not handle ISO 8859-15 encoded characters')
 
 
 class HandleSciNoInPathData(unittest.TestCase):

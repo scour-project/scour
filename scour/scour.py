@@ -57,7 +57,7 @@ from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
 import six
-from six.moves import range, urllib
+from six.moves import urllib
 
 from scour.stats import ScourStats
 from scour.svg_regex import svg_parser
@@ -1433,7 +1433,7 @@ def collapse_singly_referenced_gradients(doc, stats):
     identifiedElements = findElementsWithId(doc.documentElement)
 
     # make sure to reset the ref'ed ids for when we are running this in testscour
-    for rid, nodes in six.iteritems(findReferencedElements(doc.documentElement)):
+    for rid, nodes in findReferencedElements(doc.documentElement).items():
         # Make sure that there's actually a defining element for the current ID name.
         # (Cyn: I've seen documents with #id references but no element with that ID!)
         if len(nodes) == 1 and rid in identifiedElements:
@@ -1540,7 +1540,7 @@ def detect_duplicate_gradients(*grad_lists):
             key = computeGradientBucketKey(grad)
             grad_buckets[key].append(grad)
 
-        for bucket in six.itervalues(grad_buckets):
+        for bucket in grad_buckets.values():
             if len(bucket) < 2:
                 # The gradient must be unique if it is the only one in
                 # this bucket.
@@ -3005,7 +3005,7 @@ def scourUnitlessLength(length, renderer_workaround=False, is_control_point=Fals
         exponent = length.adjusted()  # how far do we have to shift the dot?
         length = length.scaleb(-exponent).normalize()  # shift the dot and remove potential trailing zeroes
 
-        sci = six.text_type(length) + 'e' + six.text_type(exponent)
+        sci = str(length) + 'e' + str(exponent)
 
         if len(sci) < len(nonsci):
             return_value = sci

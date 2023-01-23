@@ -60,7 +60,6 @@ import re
 from decimal import Decimal
 from functools import partial
 
-from six.moves import range
 
 
 # Sentinel.
