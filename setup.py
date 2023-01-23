@@ -45,7 +45,7 @@ Authors:
 
 VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
 verstrline = open(VERSIONFILE).read()
-VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
 if mo:
     verstr = mo.group(1)
