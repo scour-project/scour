@@ -19,8 +19,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import print_function   # use print() as a function in Python 2 (see PEP 3105)
-from __future__ import absolute_import  # use absolute imports by default in Python 2 (see PEP 328)
 
 import os
 import sys

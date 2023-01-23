@@ -55,7 +55,6 @@ Multiple transformations are supported:
 In [12]: svg_transform_parser.parse('translate(30 -30) rotate(36)')
 Out[12]: [('translate', [30.0, -30.0]), ('rotate', [36.0])]
 """
-from __future__ import absolute_import
 
 import re
 from decimal import Decimal

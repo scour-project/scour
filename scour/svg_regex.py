@@ -41,7 +41,6 @@ Out[4]: [('M', [(0.60509999999999997, 0.5)])]
 In [5]: svg_parser.parse('M 100-200')  # Another edge case
 Out[5]: [('M', [(100.0, -200.0)])]
 """
-from __future__ import absolute_import
 
 import re
 from decimal import Decimal, getcontext
