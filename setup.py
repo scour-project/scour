@@ -44,13 +44,13 @@ Authors:
 """
 
 VERSIONFILE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "scour", "__init__.py")
-verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
+verstrline = open(VERSIONFILE).read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
 if mo:
     verstr = mo.group(1)
 else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+    raise RuntimeError("Unable to find version string in {}.".format(VERSIONFILE))
 
 
 setup(
@@ -64,7 +64,7 @@ setup(
     author_email='codedread@gmail.com',
     url='https://github.com/scour-project/scour',
     platforms=('Any'),
-    install_requires=['six>=1.9.0'],
+    install_requires=[],
     packages=find_packages(),
     zip_safe=True,
     entry_points={

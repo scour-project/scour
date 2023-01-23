@@ -41,7 +41,6 @@ Out[4]: [('M', [(0.60509999999999997, 0.5)])]
 In [5]: svg_parser.parse('M 100-200')  # Another edge case
 Out[5]: [('M', [(100.0, -200.0)])]
 """
-from __future__ import absolute_import
 
 import re
 from decimal import Decimal, getcontext
@@ -51,7 +50,7 @@ from functools import partial
 # Sentinel.
 
 
-class _EOF(object):
+class _EOF:
 
     def __repr__(self):
         return 'EOF'
@@ -66,7 +65,7 @@ lexicon = [
 ]
 
 
-class Lexer(object):
+class Lexer:
     """ Break SVG path data into tokens.
 
     The SVG spec requires that tokens are greedy. This lexer relies on Python's
@@ -81,7 +80,7 @@ class Lexer(object):
         self.lexicon = lexicon
         parts = []
         for name, regex in lexicon:
-            parts.append('(?P<%s>%s)' % (name, regex))
+            parts.append('(?P<{}>{})'.format(name, regex))
         self.regex_string = '|'.join(parts)
         self.regex = re.compile(self.regex_string)
 
@@ -103,7 +102,7 @@ class Lexer(object):
 svg_lexer = Lexer(lexicon)
 
 
-class SVGPathParser(object):
+class SVGPathParser:
     """ Parse SVG <path> data into a list of commands.
 
     Each distinct command will take the form of a tuple (command, data). The
@@ -163,7 +162,7 @@ class SVGPathParser(object):
         commands = []
         while token[0] is not EOF:
             if token[0] != 'command':
-                raise SyntaxError("expecting a command; got %r" % (token,))
+                raise SyntaxError("expecting a command; got {!r}".format(token))
             rule = self.command_dispatch[token[1]]
             command_group, token = rule(next_val_fn, token)
             commands.append(command_group)
@@ -232,23 +231,23 @@ class SVGPathParser(object):
         while token[0] in self.number_tokens:
             rx = Decimal(token[1]) * 1
             if rx < Decimal("0.0"):
-                raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
+                raise SyntaxError("expecting a nonnegative number; got {!r}".format(token))
 
             token = next_val_fn()
             if token[0] not in self.number_tokens:
-                raise SyntaxError("expecting a number; got %r" % (token,))
+                raise SyntaxError("expecting a number; got {!r}".format(token))
             ry = Decimal(token[1]) * 1
             if ry < Decimal("0.0"):
-                raise SyntaxError("expecting a nonnegative number; got %r" % (token,))
+                raise SyntaxError("expecting a nonnegative number; got {!r}".format(token))
 
             token = next_val_fn()
             if token[0] not in self.number_tokens:
-                raise SyntaxError("expecting a number; got %r" % (token,))
+                raise SyntaxError("expecting a number; got {!r}".format(token))
             axis_rotation = Decimal(token[1]) * 1
 
             token = next_val_fn()
             if token[1][0] not in ('0', '1'):
-                raise SyntaxError("expecting a boolean flag; got %r" % (token,))
+                raise SyntaxError("expecting a boolean flag; got {!r}".format(token))
             large_arc_flag = Decimal(token[1][0]) * 1
 
             if len(token[1]) > 1:
@@ -257,7 +256,7 @@ class SVGPathParser(object):
             else:
                 token = next_val_fn()
             if token[1][0] not in ('0', '1'):
-                raise SyntaxError("expecting a boolean flag; got %r" % (token,))
+                raise SyntaxError("expecting a boolean flag; got {!r}".format(token))
             sweep_flag = Decimal(token[1][0]) * 1
 
             if len(token[1]) > 1:
@@ -266,12 +265,12 @@ class SVGPathParser(object):
             else:
                 token = next_val_fn()
             if token[0] not in self.number_tokens:
-                raise SyntaxError("expecting a number; got %r" % (token,))
+                raise SyntaxError("expecting a number; got {!r}".format(token))
             x = Decimal(token[1]) * 1
 
             token = next_val_fn()
             if token[0] not in self.number_tokens:
-                raise SyntaxError("expecting a number; got %r" % (token,))
+                raise SyntaxError("expecting a number; got {!r}".format(token))
             y = Decimal(token[1]) * 1
 
             token = next_val_fn()
@@ -281,7 +280,7 @@ class SVGPathParser(object):
 
     def rule_coordinate(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
-            raise SyntaxError("expecting a number; got %r" % (token,))
+            raise SyntaxError("expecting a number; got {!r}".format(token))
         x = getcontext().create_decimal(token[1])
         token = next_val_fn()
         return x, token
@@ -289,11 +288,11 @@ class SVGPathParser(object):
     def rule_coordinate_pair(self, next_val_fn, token):
         # Inline these since this rule is so common.
         if token[0] not in self.number_tokens:
-            raise SyntaxError("expecting a number; got %r" % (token,))
+            raise SyntaxError("expecting a number; got {!r}".format(token))
         x = getcontext().create_decimal(token[1])
         token = next_val_fn()
         if token[0] not in self.number_tokens:
-            raise SyntaxError("expecting a number; got %r" % (token,))
+            raise SyntaxError("expecting a number; got {!r}".format(token))
         y = getcontext().create_decimal(token[1])
         token = next_val_fn()
         return [x, y], token

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 #  Scour
 #
@@ -45,23 +44,19 @@
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 
 
-from __future__ import division         # use "true" division instead of integer division in Python 2 (see PEP 238)
-from __future__ import print_function   # use print() as a function in Python 2 (see PEP 3105)
-from __future__ import absolute_import  # use absolute imports by default in Python 2 (see PEP 328)
-
 import math
 import optparse
 import os
 import re
 import sys
 import time
+import urllib.parse
+import urllib.request
 import xml.dom.minidom
 from xml.dom import Node, NotFoundErr
 from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
-import six
-from six.moves import range, urllib
 
 from scour.stats import ScourStats
 from scour.svg_regex import svg_parser
@@ -70,9 +65,9 @@ from scour.yocto_css import parseCssString
 from scour import __version__
 
 
-APP = u'scour'
+APP = 'scour'
 VER = __version__
-COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
+COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
 XML_ENTS_NO_QUOTES = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
@@ -425,7 +420,7 @@ sciExponent = re.compile(r"[eE]([-+]?\d+)")
 unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|%){1,1}$")
 
 
-class Unit(object):
+class Unit:
     # Integer constants for units.
     INVALID = -1
     NONE = 0
@@ -487,7 +482,7 @@ class Unit(object):
     str = staticmethod(str)
 
 
-class SVGLength(object):
+class SVGLength:
 
     def __init__(self, str):
         try:  # simple unitless and no scientific notation
@@ -928,7 +923,7 @@ def protected_ids(seenIDs, options):
 
 
 def unprotected_ids(doc, options):
-    u"""Returns a list of unprotected IDs within the document doc."""
+    """Returns a list of unprotected IDs within the document doc."""
     identifiedElements = findElementsWithId(doc.documentElement)
     protectedIDs = protected_ids(identifiedElements, options)
     if protectedIDs:
@@ -1437,7 +1432,7 @@ def collapse_singly_referenced_gradients(doc, stats):
     identifiedElements = findElementsWithId(doc.documentElement)
 
     # make sure to reset the ref'ed ids for when we are running this in testscour
-    for rid, nodes in six.iteritems(findReferencedElements(doc.documentElement)):
+    for rid, nodes in findReferencedElements(doc.documentElement).items():
         # Make sure that there's actually a defining element for the current ID name.
         # (Cyn: I've seen documents with #id references but no element with that ID!)
         if len(nodes) == 1 and rid in identifiedElements:
@@ -1544,7 +1539,7 @@ def detect_duplicate_gradients(*grad_lists):
             key = computeGradientBucketKey(grad)
             grad_buckets[key].append(grad)
 
-        for bucket in six.itervalues(grad_buckets):
+        for bucket in grad_buckets.values():
             if len(bucket) < 2:
                 # The gradient must be unique if it is the only one in
                 # this bucket.
@@ -1649,7 +1644,7 @@ def removeDuplicateGradients(doc):
 
 
 def _getStyle(node):
-    u"""Returns the style attribute of a node as a dictionary."""
+    """Returns the style attribute of a node as a dictionary."""
     if node.nodeType != Node.ELEMENT_NODE:
         return {}
     style_attribute = node.getAttribute('style')
@@ -1666,7 +1661,7 @@ def _getStyle(node):
 
 
 def _setStyle(node, styleMap):
-    u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
+    """Sets the style attribute of a node to the dictionary ``styleMap``."""
     fixedStyle = ';'.join(prop + ':' + styleMap[prop] for prop in styleMap)
     if fixedStyle != '':
         node.setAttribute('style', fixedStyle)
@@ -2094,12 +2089,12 @@ for default_attribute in default_attributes:
 
 
 def taint(taintedSet, taintedAttribute):
-    u"""Adds an attribute to a set of attributes.
+    """Adds an attribute to a set of attributes.
 
     Related attributes are also included."""
     taintedSet.add(taintedAttribute)
     if taintedAttribute == 'marker':
-        taintedSet |= set(['marker-start', 'marker-mid', 'marker-end'])
+        taintedSet |= {'marker-start', 'marker-mid', 'marker-end'}
     if taintedAttribute in ['marker-start', 'marker-mid', 'marker-end']:
         taintedSet.add('marker')
     return taintedSet
@@ -2135,7 +2130,7 @@ def removeDefaultAttributeValue(node, attribute):
 
 
 def removeDefaultAttributeValues(node, options, tainted=None):
-    u"""'tainted' keeps a set of attributes defined in parent nodes.
+    """'tainted' keeps a set of attributes defined in parent nodes.
 
     For such attributes, we don't delete attributes with default values."""
     num = 0
@@ -2203,14 +2198,14 @@ def convertColor(value):
         r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
         g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
         b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
-        s = '#%02x%02x%02x' % (r, g, b)
+        s = '#{:02x}{:02x}{:02x}'.format(r, g, b)
     else:
         rgbMatch = rgb.match(s)
         if rgbMatch is not None:
             r = int(rgbMatch.group(1))
             g = int(rgbMatch.group(2))
             b = int(rgbMatch.group(3))
-            s = '#%02x%02x%02x' % (r, g, b)
+            s = '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
     if s[0] == '#':
         s = s.lower()
@@ -2992,8 +2987,8 @@ def scourUnitlessLength(length, renderer_workaround=False, is_control_point=Fals
     # Gather the non-scientific notation version of the coordinate.
     # Re-quantize from the initial value to prevent unnecessary loss of precision
     # (e.g. 123.4 should become 123, not 120 or even 100)
-    nonsci = '{0:f}'.format(length)
-    nonsci = '{0:f}'.format(initial_length.quantize(Decimal(nonsci)))
+    nonsci = '{:f}'.format(length)
+    nonsci = '{:f}'.format(initial_length.quantize(Decimal(nonsci)))
     if not renderer_workaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
@@ -3009,7 +3004,7 @@ def scourUnitlessLength(length, renderer_workaround=False, is_control_point=Fals
         exponent = length.adjusted()  # how far do we have to shift the dot?
         length = length.scaleb(-exponent).normalize()  # shift the dot and remove potential trailing zeroes
 
-        sci = six.text_type(length) + 'e' + six.text_type(exponent)
+        sci = str(length) + 'e' + str(exponent)
 
         if len(sci) < len(nonsci):
             return_value = sci
@@ -3410,7 +3405,7 @@ def properlySizeDoc(docElement, options):
             pass
 
     # at this point it's safe to set the viewBox and remove width/height
-    docElement.setAttribute('viewBox', '0 0 %s %s' % (w.value, h.value))
+    docElement.setAttribute('viewBox', '0 0 {} {}'.format(w.value, h.value))
     docElement.removeAttribute('width')
     docElement.removeAttribute('height')
 
@@ -3903,8 +3898,8 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
     """
 
     def format_usage(self, usage):
-        return "%s %s\n%s\n%s" % (APP, VER, COPYRIGHT,
-                                  optparse.IndentedHelpFormatter.format_usage(self, usage))
+        return "{} {}\n{}\n{}".format(APP, VER, COPYRIGHT,
+                                      optparse.IndentedHelpFormatter.format_usage(self, usage))
 
 
 # GZ: would prefer this to be in a function or class scope, but tests etc need
@@ -4076,7 +4071,7 @@ def generateDefaultOptions():
 
 # sanitizes options by updating attributes in a set of defaults options while discarding unknown attributes
 def sanitizeOptions(options=None):
-    optionsDict = dict((key, getattr(options, key)) for key in dir(options) if not key.startswith('__'))
+    optionsDict = {key: getattr(options, key) for key in dir(options) if not key.startswith('__')}
 
     sanitizedOptions = _options_parser.get_default_values()
     sanitizedOptions._update_careful(optionsDict)

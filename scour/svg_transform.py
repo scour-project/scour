@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 #  SVG transformation list parser
 #
@@ -56,17 +55,14 @@ Multiple transformations are supported:
 In [12]: svg_transform_parser.parse('translate(30 -30) rotate(36)')
 Out[12]: [('translate', [30.0, -30.0]), ('rotate', [36.0])]
 """
-from __future__ import absolute_import
 
 import re
 from decimal import Decimal
 from functools import partial
 
-from six.moves import range
-
 
 # Sentinel.
-class _EOF(object):
+class _EOF:
 
     def __repr__(self):
         return 'EOF'
@@ -83,7 +79,7 @@ lexicon = [
 ]
 
 
-class Lexer(object):
+class Lexer:
     """ Break SVG path data into tokens.
 
     The SVG spec requires that tokens are greedy. This lexer relies on Python's
@@ -98,7 +94,7 @@ class Lexer(object):
         self.lexicon = lexicon
         parts = []
         for name, regex in lexicon:
-            parts.append('(?P<%s>%s)' % (name, regex))
+            parts.append('(?P<{}>{})'.format(name, regex))
         self.regex_string = '|'.join(parts)
         self.regex = re.compile(self.regex_string)
 
@@ -120,7 +116,7 @@ class Lexer(object):
 svg_lexer = Lexer(lexicon)
 
 
-class SVGTransformationParser(object):
+class SVGTransformationParser:
     """ Parse SVG transform="" data into a list of commands.
 
     Each distinct command will take the form of a tuple (type, data). The
@@ -166,15 +162,15 @@ class SVGTransformationParser(object):
 
     def rule_svg_transform(self, next_val_fn, token):
         if token[0] != 'command':
-            raise SyntaxError("expecting a transformation type; got %r" % (token,))
+            raise SyntaxError("expecting a transformation type; got {!r}".format(token))
         command = token[1]
         rule = self.command_dispatch[command]
         token = next_val_fn()
         if token[0] != 'coordstart':
-            raise SyntaxError("expecting '('; got %r" % (token,))
+            raise SyntaxError("expecting '('; got {!r}".format(token))
         numbers, token = rule(next_val_fn, token)
         if token[0] != 'coordend':
-            raise SyntaxError("expecting ')'; got %r" % (token,))
+            raise SyntaxError("expecting ')'; got {!r}".format(token))
         token = next_val_fn()
         return (command, numbers), token
 
@@ -227,7 +223,7 @@ class SVGTransformationParser(object):
 
     def rule_number(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
-            raise SyntaxError("expecting a number; got %r" % (token,))
+            raise SyntaxError("expecting a number; got {!r}".format(token))
         x = Decimal(token[1]) * 1
         token = next_val_fn()
         return x, token

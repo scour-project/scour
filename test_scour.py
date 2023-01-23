@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 #  Test Harness for Scour
 #
@@ -20,15 +19,11 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import print_function   # use print() as a function in Python 2 (see PEP 3105)
-from __future__ import absolute_import  # use absolute imports by default in Python 2 (see PEP 328)
 
+import io
 import os
 import sys
 import unittest
-
-import six
-from six.moves import map, range
 
 from scour.scour import (make_well_formed, parse_args, scourString, scourXmlFile, start, run,
                          XML_ENTS_ESCAPE_APOS, XML_ENTS_ESCAPE_QUOT)
@@ -1149,30 +1144,30 @@ class HandleEncodingUTF8(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/encoding-utf8.svg')
-        text = u'Hello in many languages:\n' \
-               u'ar: أهلا\n' \
-               u'bn: হ্যালো\n' \
-               u'el: Χαίρετε\n' \
-               u'en: Hello\n' \
-               u'hi: नमस्ते\n' \
-               u'iw: שלום\n' \
-               u'ja: こんにちは\n' \
-               u'km: ជំរាបសួរ\n' \
-               u'ml: ഹലോ\n' \
-               u'ru: Здравствуйте\n' \
-               u'ur: ہیلو\n' \
-               u'zh: 您好'
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+        text = 'Hello in many languages:\n' \
+               'ar: أهلا\n' \
+               'bn: হ্যালো\n' \
+               'el: Χαίρετε\n' \
+               'en: Hello\n' \
+               'hi: नमस्ते\n' \
+               'iw: שלום\n' \
+               'ja: こんにちは\n' \
+               'km: ជំរាបសួរ\n' \
+               'ml: ഹലോ\n' \
+               'ru: Здравствуйте\n' \
+               'ur: ہیلو\n' \
+               'zh: 您好'
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
         self.assertEqual(desc, text,
                          'Did not handle international UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[1].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'“”‘’–—…‐‒°©®™•½¼¾⅓⅔†‡µ¢£€«»♠♣♥♦¿�',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[1].firstChild.wholeText).strip()
+        self.assertEqual(desc, '“”‘’–—…‐‒°©®™•½¼¾⅓⅔†‡µ¢£€«»♠♣♥♦¿�',
                          'Did not handle common UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[2].firstChild.wholeText).strip()
-        self.assertEqual(desc, u':-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[2].firstChild.wholeText).strip()
+        self.assertEqual(desc, ':-×÷±∞π∅≤≥≠≈∧∨∩∪∈∀∃∄∑∏←↑→↓↔↕↖↗↘↙↺↻⇒⇔',
                          'Did not handle mathematical UTF8 characters')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[3].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎',
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[3].firstChild.wholeText).strip()
+        self.assertEqual(desc, '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁽⁾ⁿⁱ₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎',
                          'Did not handle superscript/subscript UTF8 characters')
 
 
@@ -1180,8 +1175,8 @@ class HandleEncodingISO_8859_15(unittest.TestCase):
 
     def runTest(self):
         doc = scourXmlFile('unittests/encoding-iso-8859-15.svg')
-        desc = six.text_type(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
-        self.assertEqual(desc, u'áèîäöüß€ŠšŽžŒœŸ', 'Did not handle ISO 8859-15 encoded characters')
+        desc = str(doc.getElementsByTagNameNS(SVGNS, 'desc')[0].firstChild.wholeText).strip()
+        self.assertEqual(desc, 'áèîäöüß€ŠšŽžŒœŸ', 'Did not handle ISO 8859-15 encoded characters')
 
 
 class HandleSciNoInPathData(unittest.TestCase):
@@ -2231,7 +2226,7 @@ class PathCommandRewrites(unittest.TestCase):
             expected_path, message = expected_paths[i]
             self.assertEqual(actual_path,
                              expected_path,
-                             '%s: "%s" != "%s"' % (message, actual_path, expected_path))
+                             '{}: "{}" != "{}"'.format(message, actual_path, expected_path))
 
 
 class DefaultsRemovalToplevel(unittest.TestCase):
@@ -2553,7 +2548,7 @@ class CommandLineUsage(unittest.TestCase):
     #     stdout: a string representing the combined output to 'stdout'
     #     stderr: a string representing the combined output to 'stderr'
     def _run_scour(self):
-        class Result(object):
+        class Result:
             pass
 
         result = Result()
@@ -2581,12 +2576,12 @@ class CommandLineUsage(unittest.TestCase):
         # TODO: can we create file objects that behave *exactly* like the original?
         #       this is a mess since we have to ensure compatibility across Python 2 and 3 and it seems impossible
         #       to replicate all the details of 'stdin', 'stdout' and 'stderr'
-        class InOutBuffer(six.StringIO, object):
+        class InOutBuffer(io.StringIO):
             def write(self, string):
                 try:
-                    return super(InOutBuffer, self).write(string)
+                    return super().write(string)
                 except TypeError:
-                    return super(InOutBuffer, self).write(string.decode())
+                    return super().write(string.decode())
 
         sys.stdin = self.temp_stdin = InOutBuffer()
         sys.stdout = self.temp_stdout = InOutBuffer()
@@ -2740,7 +2735,7 @@ class EmbedRasters(unittest.TestCase):
                             "Raster image from local path '" + href + "' not embedded.")
 
     def test_raster_paths_local_absolute(self):
-        with open('unittests/raster-formats.svg', 'r') as f:
+        with open('unittests/raster-formats.svg') as f:
             svg = f.read()
 
         # create a reference string by scouring the original file with relative links
