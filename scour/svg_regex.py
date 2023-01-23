@@ -50,7 +50,7 @@ from functools import partial
 # Sentinel.
 
 
-class _EOF(object):
+class _EOF:
 
     def __repr__(self):
         return 'EOF'
@@ -65,7 +65,7 @@ lexicon = [
 ]
 
 
-class Lexer(object):
+class Lexer:
     """ Break SVG path data into tokens.
 
     The SVG spec requires that tokens are greedy. This lexer relies on Python's
@@ -102,7 +102,7 @@ class Lexer(object):
 svg_lexer = Lexer(lexicon)
 
 
-class SVGPathParser(object):
+class SVGPathParser:
     """ Parse SVG <path> data into a list of commands.
 
     Each distinct command will take the form of a tuple (command, data). The

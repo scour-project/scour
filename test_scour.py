@@ -2550,7 +2550,7 @@ class CommandLineUsage(unittest.TestCase):
     #     stdout: a string representing the combined output to 'stdout'
     #     stderr: a string representing the combined output to 'stderr'
     def _run_scour(self):
-        class Result(object):
+        class Result:
             pass
 
         result = Result()
@@ -2578,7 +2578,7 @@ class CommandLineUsage(unittest.TestCase):
         # TODO: can we create file objects that behave *exactly* like the original?
         #       this is a mess since we have to ensure compatibility across Python 2 and 3 and it seems impossible
         #       to replicate all the details of 'stdin', 'stdout' and 'stderr'
-        class InOutBuffer(six.StringIO, object):
+        class InOutBuffer(six.StringIO):
             def write(self, string):
                 try:
                     return super(InOutBuffer, self).write(string)

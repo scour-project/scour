@@ -1,4 +1,4 @@
-class ScourStats(object):
+class ScourStats:
 
     __slots__ = (
         'num_elements_removed',

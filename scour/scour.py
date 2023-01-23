@@ -421,7 +421,7 @@ sciExponent = re.compile(r"[eE]([-+]?\d+)")
 unit = re.compile("(em|ex|px|pt|pc|cm|mm|in|%){1,1}$")
 
 
-class Unit(object):
+class Unit:
     # Integer constants for units.
     INVALID = -1
     NONE = 0
@@ -483,7 +483,7 @@ class Unit(object):
     str = staticmethod(str)
 
 
-class SVGLength(object):
+class SVGLength:
 
     def __init__(self, str):
         try:  # simple unitless and no scientific notation
