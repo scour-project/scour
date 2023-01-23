@@ -70,9 +70,9 @@ from scour.yocto_css import parseCssString
 from scour import __version__
 
 
-APP = u'scour'
+APP = 'scour'
 VER = __version__
-COPYRIGHT = u'Copyright Jeff Schiller, Louis Simard, 2010'
+COPYRIGHT = 'Copyright Jeff Schiller, Louis Simard, 2010'
 
 
 XML_ENTS_NO_QUOTES = {'<': '&lt;', '>': '&gt;', '&': '&amp;'}
@@ -928,7 +928,7 @@ def protected_ids(seenIDs, options):
 
 
 def unprotected_ids(doc, options):
-    u"""Returns a list of unprotected IDs within the document doc."""
+    """Returns a list of unprotected IDs within the document doc."""
     identifiedElements = findElementsWithId(doc.documentElement)
     protectedIDs = protected_ids(identifiedElements, options)
     if protectedIDs:
@@ -1649,7 +1649,7 @@ def removeDuplicateGradients(doc):
 
 
 def _getStyle(node):
-    u"""Returns the style attribute of a node as a dictionary."""
+    """Returns the style attribute of a node as a dictionary."""
     if node.nodeType != Node.ELEMENT_NODE:
         return {}
     style_attribute = node.getAttribute('style')
@@ -1666,7 +1666,7 @@ def _getStyle(node):
 
 
 def _setStyle(node, styleMap):
-    u"""Sets the style attribute of a node to the dictionary ``styleMap``."""
+    """Sets the style attribute of a node to the dictionary ``styleMap``."""
     fixedStyle = ';'.join(prop + ':' + styleMap[prop] for prop in styleMap)
     if fixedStyle != '':
         node.setAttribute('style', fixedStyle)
@@ -2094,7 +2094,7 @@ for default_attribute in default_attributes:
 
 
 def taint(taintedSet, taintedAttribute):
-    u"""Adds an attribute to a set of attributes.
+    """Adds an attribute to a set of attributes.
 
     Related attributes are also included."""
     taintedSet.add(taintedAttribute)
@@ -2135,7 +2135,7 @@ def removeDefaultAttributeValue(node, attribute):
 
 
 def removeDefaultAttributeValues(node, options, tainted=None):
-    u"""'tainted' keeps a set of attributes defined in parent nodes.
+    """'tainted' keeps a set of attributes defined in parent nodes.
 
     For such attributes, we don't delete attributes with default values."""
     num = 0
