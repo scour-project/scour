@@ -96,7 +96,7 @@ class Lexer:
         self.lexicon = lexicon
         parts = []
         for name, regex in lexicon:
-            parts.append('(?P<%s>%s)' % (name, regex))
+            parts.append('(?P<{}>{})'.format(name, regex))
         self.regex_string = '|'.join(parts)
         self.regex = re.compile(self.regex_string)
 
@@ -164,15 +164,15 @@ class SVGTransformationParser:
 
     def rule_svg_transform(self, next_val_fn, token):
         if token[0] != 'command':
-            raise SyntaxError("expecting a transformation type; got %r" % (token,))
+            raise SyntaxError("expecting a transformation type; got {!r}".format(token))
         command = token[1]
         rule = self.command_dispatch[command]
         token = next_val_fn()
         if token[0] != 'coordstart':
-            raise SyntaxError("expecting '('; got %r" % (token,))
+            raise SyntaxError("expecting '('; got {!r}".format(token))
         numbers, token = rule(next_val_fn, token)
         if token[0] != 'coordend':
-            raise SyntaxError("expecting ')'; got %r" % (token,))
+            raise SyntaxError("expecting ')'; got {!r}".format(token))
         token = next_val_fn()
         return (command, numbers), token
 
@@ -225,7 +225,7 @@ class SVGTransformationParser:
 
     def rule_number(self, next_val_fn, token):
         if token[0] not in self.number_tokens:
-            raise SyntaxError("expecting a number; got %r" % (token,))
+            raise SyntaxError("expecting a number; got {!r}".format(token))
         x = Decimal(token[1]) * 1
         token = next_val_fn()
         return x, token

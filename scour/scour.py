@@ -2199,14 +2199,14 @@ def convertColor(value):
         r = int(float(rgbpMatch.group(1)) * 255.0 / 100.0)
         g = int(float(rgbpMatch.group(2)) * 255.0 / 100.0)
         b = int(float(rgbpMatch.group(3)) * 255.0 / 100.0)
-        s = '#%02x%02x%02x' % (r, g, b)
+        s = '#{:02x}{:02x}{:02x}'.format(r, g, b)
     else:
         rgbMatch = rgb.match(s)
         if rgbMatch is not None:
             r = int(rgbMatch.group(1))
             g = int(rgbMatch.group(2))
             b = int(rgbMatch.group(3))
-            s = '#%02x%02x%02x' % (r, g, b)
+            s = '#{:02x}{:02x}{:02x}'.format(r, g, b)
 
     if s[0] == '#':
         s = s.lower()
@@ -2988,8 +2988,8 @@ def scourUnitlessLength(length, renderer_workaround=False, is_control_point=Fals
     # Gather the non-scientific notation version of the coordinate.
     # Re-quantize from the initial value to prevent unnecessary loss of precision
     # (e.g. 123.4 should become 123, not 120 or even 100)
-    nonsci = '{0:f}'.format(length)
-    nonsci = '{0:f}'.format(initial_length.quantize(Decimal(nonsci)))
+    nonsci = '{:f}'.format(length)
+    nonsci = '{:f}'.format(initial_length.quantize(Decimal(nonsci)))
     if not renderer_workaround:
         if len(nonsci) > 2 and nonsci[:2] == '0.':
             nonsci = nonsci[1:]  # remove the 0, leave the dot
@@ -3406,7 +3406,7 @@ def properlySizeDoc(docElement, options):
             pass
 
     # at this point it's safe to set the viewBox and remove width/height
-    docElement.setAttribute('viewBox', '0 0 %s %s' % (w.value, h.value))
+    docElement.setAttribute('viewBox', '0 0 {} {}'.format(w.value, h.value))
     docElement.removeAttribute('width')
     docElement.removeAttribute('height')
 
@@ -3899,7 +3899,7 @@ class HeaderedFormatter(optparse.IndentedHelpFormatter):
     """
 
     def format_usage(self, usage):
-        return "%s %s\n%s\n%s" % (APP, VER, COPYRIGHT,
+        return "{} {}\n{}\n{}".format(APP, VER, COPYRIGHT,
                                   optparse.IndentedHelpFormatter.format_usage(self, usage))
 
 

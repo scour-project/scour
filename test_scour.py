@@ -2228,7 +2228,7 @@ class PathCommandRewrites(unittest.TestCase):
             expected_path, message = expected_paths[i]
             self.assertEqual(actual_path,
                              expected_path,
-                             '%s: "%s" != "%s"' % (message, actual_path, expected_path))
+                             '{}: "{}" != "{}"'.format(message, actual_path, expected_path))
 
 
 class DefaultsRemovalToplevel(unittest.TestCase):
