@@ -2736,7 +2736,7 @@ class EmbedRasters(unittest.TestCase):
                             "Raster image from local path '" + href + "' not embedded.")
 
     def test_raster_paths_local_absolute(self):
-        with open('unittests/raster-formats.svg', 'r') as f:
+        with open('unittests/raster-formats.svg') as f:
             svg = f.read()
 
         # create a reference string by scouring the original file with relative links
