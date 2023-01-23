@@ -20,11 +20,10 @@
 #   limitations under the License.
 
 
+import io
 import os
 import sys
 import unittest
-
-import six
 
 from scour.scour import (make_well_formed, parse_args, scourString, scourXmlFile, start, run,
                          XML_ENTS_ESCAPE_APOS, XML_ENTS_ESCAPE_QUOT)
@@ -2577,7 +2576,7 @@ class CommandLineUsage(unittest.TestCase):
         # TODO: can we create file objects that behave *exactly* like the original?
         #       this is a mess since we have to ensure compatibility across Python 2 and 3 and it seems impossible
         #       to replicate all the details of 'stdin', 'stdout' and 'stderr'
-        class InOutBuffer(six.StringIO):
+        class InOutBuffer(io.StringIO):
             def write(self, string):
                 try:
                     return super().write(string)

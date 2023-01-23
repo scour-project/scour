@@ -44,20 +44,19 @@
 # - if a <g> has only one element in it, collapse the <g> (ensure transform, etc are carried down)
 
 
-
 import math
 import optparse
 import os
 import re
 import sys
 import time
+import urllib.parse
+import urllib.request
 import xml.dom.minidom
 from xml.dom import Node, NotFoundErr
 from collections import namedtuple, defaultdict
 from decimal import Context, Decimal, InvalidOperation, getcontext
 
-import six
-from six.moves import urllib
 
 from scour.stats import ScourStats
 from scour.svg_regex import svg_parser

@@ -61,7 +61,6 @@ from decimal import Decimal
 from functools import partial
 
 
-
 # Sentinel.
 class _EOF:
 
