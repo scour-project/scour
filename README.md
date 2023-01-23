@@ -20,7 +20,7 @@ The project moved to GitLab in 2013 an is now maintained by Tobias "oberstet" Ob
 
 ## Installation
 
-Scour requires [Python](https://www.python.org) 2.7 or 3.4+. Further, for installation, [pip](https://pip.pypa.io) should be used.
+Scour requires [Python](https://www.python.org) 3.4+. Further, for installation, [pip](https://pip.pypa.io) should be used.
 
 To install the [latest release](https://pypi.python.org/pypi/scour) of Scour from PyPI:
 
