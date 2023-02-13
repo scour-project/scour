@@ -4006,7 +4006,7 @@ _option_group_formatting.add_option("--nindent",
                                     help="depth of the indentation, i.e. number of spaces/tabs: (default: %default)")
 _option_group_formatting.add_option("--no-line-breaks",
                                     action="store_false", dest="newlines", default=True,
-                                    help="do not create line breaks in output"
+                                    help="do not create line breaks in output "
                                     "(also disables indentation; might be overridden by xml:space=\"preserve\")")
 _option_group_formatting.add_option("--strip-xml-space",
                                     action="store_true", dest="strip_xml_space_attribute", default=False,
