@@ -61,3 +61,9 @@ Maximum scrubbing and a compressed SVGZ file:
 scour -i input.svg -o output.svgz --enable-viewboxing --enable-id-stripping \
   --enable-comment-stripping --shorten-ids --indent=none
 ```
+
+## Projects using Scour
+
+Check out these projects that are using Scour! These examples demonstrate how to use the library in real-world scenarios and can help inspire your own projects.
+
+- [Curtail](https://github.com/Huluti/Curtail): A lossless and lossy image compressor, supporting common file types. This project utilizes Scour for providing effortless compression of SVG files.
