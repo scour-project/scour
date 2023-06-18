@@ -3629,7 +3629,7 @@ def scourString(in_string, options=None, stats=None):
         stats = ScourStats()
 
     # default or invalid value
-    if(options.cdigits < 0):
+    if (options.cdigits < 0):
         options.cdigits = options.digits
 
     # create decimal contexts with reduced precision for scouring numbers
