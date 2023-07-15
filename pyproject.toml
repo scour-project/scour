@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools >= 42.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scour"
+version = "0.38.2"
+description = "Scour SVG Optimizer"
+authors = [{name = "Jeff Schiller", email = "codedread@gmail.com" }]
+keywords = ['svg optimizer']
+license = {text = "Apache License 2.0"}
+readme = "README.md"
+requires-python = ">=3.7"
+
+
+classifiers=["License :: OSI Approved :: Apache Software License",
+             "Development Status :: 5 - Production/Stable",
+             "Environment :: Console",
+             "Intended Audience :: Developers",
+             "Intended Audience :: System Administrators",
+             "Operating System :: OS Independent",
+             "Programming Language :: Python",
+             "Topic :: Internet",
+             "Topic :: Software Development :: Build Tools",
+             "Topic :: Software Development :: Pre-processors",
+             "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+             "Topic :: Utilities"],
+dependencies = [
+	"six>=1.9.0",
+]
+
+[project.urls]
+homepage = "https://github.com/scour-project/scour"
+documentation = "https://scour-docu.readthedocs.io/"
+repository = "https://github.com/scour-project/scour"
+
