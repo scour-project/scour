@@ -1016,6 +1016,38 @@ def remove_descriptive_elements(doc, options):
     return len(elementsToRemove)
 
 
+def remove_elements_with_display_none(doc):
+    """
+    Remove all elements that have display="none" in their style attribute or as an attribute.
+    Returns the number of elements removed.
+    """
+    elementsToRemove = []
+    
+    # Find all elements in the document
+    allElements = doc.getElementsByTagName("*")
+    
+    for element in allElements:
+        if element.nodeType != Node.ELEMENT_NODE:
+            continue
+            
+        # Check style attribute
+        styleMap = _getStyle(element)
+        if 'display' in styleMap and styleMap['display'] == 'none':
+            elementsToRemove.append(element)
+            continue
+            
+        # Check direct display attribute
+        if element.getAttribute('display') == 'none':
+            elementsToRemove.append(element)
+    
+    # Remove the elements
+    for element in elementsToRemove:
+        if element.parentNode:
+            element.parentNode.removeChild(element)
+    
+    return len(elementsToRemove)
+
+
 def g_tag_is_mergeable(node):
     """Check if a <g> tag can be merged or not
 
@@ -3656,6 +3688,10 @@ def scourString(in_string, options=None, stats=None):
     # remove descriptive elements
     stats.num_elements_removed += remove_descriptive_elements(doc, options)
 
+    # remove elements with display="none"
+    if options.remove_display_none:
+        stats.num_elements_removed += remove_elements_with_display_none(doc)
+
     # remove unneeded namespaced elements/attributes added by common editors
     if options.keep_editor_data is False:
         stats.num_elements_removed += removeNamespacedElements(doc.documentElement,
@@ -3995,6 +4031,9 @@ _option_group_document.add_option("--disable-embed-rasters",
 _option_group_document.add_option("--enable-viewboxing",
                                   action="store_true", dest="enable_viewboxing", default=False,
                                   help="changes document width/height to 100%/100% and creates viewbox coordinates")
+_option_group_document.add_option("--remove-display-none",
+                                  action="store_true", dest="remove_display_none", default=False,
+                                  help="remove elements with display=\"none\" style or attribute")
 _options_parser.add_option_group(_option_group_document)
 
 _option_group_formatting = optparse.OptionGroup(_options_parser, "Output formatting")

@@ -2772,6 +2772,37 @@ class EmbedRasters(unittest.TestCase):
                             "Raster image from remote path '" + href + "' not embedded.")
 
 
+class RemoveDisplayNoneElements(unittest.TestCase):
+    def runTest(self):
+        doc = scourXmlFile('unittests/display-none-elements.svg',
+                          parse_args(['--remove-display-none']))
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+                         'Elements with display="none" not removed')
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 1,
+                         'Elements with display="none" not removed')
+
+class DoNotRemoveDisplayNoneElementsByDefault(unittest.TestCase):
+    def runTest(self):
+        doc = scourXmlFile('unittests/display-none-elements.svg')
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 3,
+                         'Elements with display="none" removed when option not enabled')
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 2,
+                         'Elements with display="none" removed when option not enabled')
+
+class RemoveDisplayNoneStyleAttribute(unittest.TestCase):
+    def runTest(self):
+        doc = scourXmlFile('unittests/display-none-style.svg',
+                          parse_args(['--remove-display-none']))
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'rect')), 1,
+                         'Element with style="display: none" not removed')
+
+class RemoveDisplayNoneDirectAttribute(unittest.TestCase):
+    def runTest(self):
+        doc = scourXmlFile('unittests/display-none-direct.svg',
+                          parse_args(['--remove-display-none']))
+        self.assertEqual(len(doc.getElementsByTagNameNS(SVGNS, 'circle')), 0,
+                         'Element with display="none" attribute not removed')
+
 class ViewBox(unittest.TestCase):
 
     def test_viewbox_create(self):

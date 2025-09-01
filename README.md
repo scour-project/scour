@@ -52,12 +52,12 @@ Maximum scrubbing:
 
 ```console
 scour -i input.svg -o output.svg --enable-viewboxing --enable-id-stripping \
-  --enable-comment-stripping --shorten-ids --indent=none
+  --enable-comment-stripping --shorten-ids --indent=none --remove-display-none
 ```
 
 Maximum scrubbing and a compressed SVGZ file:
 
 ```console
 scour -i input.svg -o output.svgz --enable-viewboxing --enable-id-stripping \
-  --enable-comment-stripping --shorten-ids --indent=none
+  --enable-comment-stripping --shorten-ids --indent=none --remove-display-none
 ```
