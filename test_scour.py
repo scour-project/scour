@@ -1628,6 +1628,22 @@ class RemoveDefaultAttributeStdDeviationSVGLengthCrash(unittest.TestCase):
             self.fail("Processing the order attribute triggered an AttributeError")
 
 
+
+class TrailingJunkLengthUnitSVGLengthCrash(unittest.TestCase):
+
+    def runTest(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg">'
+            '<rect width="1/" height="2/"/></svg>'
+        )
+        try:
+            out = scourString(svg)
+        except AttributeError:
+            self.fail("Trailing junk in length units triggered AttributeError")
+        self.assertIn('width="1/"', out)
+        self.assertIn('height="2/"', out)
+
+
 class CDATAInXml(unittest.TestCase):
 
     def runTest(self):

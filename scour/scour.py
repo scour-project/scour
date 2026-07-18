@@ -523,6 +523,9 @@ class SVGLength(object):
                 unitMatch = unit.search(str, unitBegin)
                 if unitMatch is not None:
                     self.units = Unit.get(unitMatch.group(0))
+                else:
+                    # Number parsed but remainder is not a valid unit (e.g. "1/").
+                    self.units = Unit.INVALID
 
             # invalid
             else:
@@ -2959,9 +2962,11 @@ def scourLength(length):
     """
     Scours a length. Accepts units.
     """
-    length = SVGLength(length)
+    parsed = SVGLength(length)
+    if parsed.units == Unit.INVALID:
+        return length
 
-    return scourUnitlessLength(length.value) + Unit.str(length.units)
+    return scourUnitlessLength(parsed.value) + Unit.str(parsed.units)
 
 
 def scourUnitlessLength(length, renderer_workaround=False, is_control_point=False):  # length is of a numeric type
