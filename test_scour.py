@@ -1628,7 +1628,6 @@ class RemoveDefaultAttributeStdDeviationSVGLengthCrash(unittest.TestCase):
             self.fail("Processing the order attribute triggered an AttributeError")
 
 
-
 class TrailingJunkLengthUnitSVGLengthCrash(unittest.TestCase):
 
     def runTest(self):
